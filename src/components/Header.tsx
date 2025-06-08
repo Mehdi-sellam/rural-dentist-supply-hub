@@ -5,22 +5,27 @@ import { Search, User, ShoppingCart, Menu, X, Heart, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/CartContext';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [language, setLanguage] = useState('en');
   const location = useLocation();
   const { itemCount } = useCart();
+  const { language, setLanguage, t } = useLanguage();
 
   const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'ar' : language === 'ar' ? 'fr' : 'en');
+    const languages = ['fr', 'ar', 'en'] as const;
+    const currentIndex = languages.indexOf(language);
+    const nextIndex = (currentIndex + 1) % languages.length;
+    setLanguage(languages[nextIndex]);
   };
 
   const getLanguageLabel = () => {
     switch (language) {
-      case 'ar': return 'العربية';
-      case 'fr': return 'Français';
-      default: return 'English';
+      case 'ar': return t('lang.arabic');
+      case 'fr': return t('lang.french');
+      case 'en': return t('lang.english');
+      default: return t('lang.french');
     }
   };
 
@@ -51,8 +56,8 @@ const Header = () => {
               </div>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary">DentGo</h1>
-              <p className="text-xs text-muted-foreground">Supplies that travel to you</p>
+              <h1 className="text-xl font-bold text-primary heading-luxury">DentGo</h1>
+              <p className="text-xs text-muted-foreground text-luxury">Supplies that travel to you</p>
             </div>
           </Link>
 
@@ -60,39 +65,45 @@ const Header = () => {
           <nav className="hidden md:flex items-center space-x-8">
             <Link 
               to="/" 
-              className={`transition-colors ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-luxury ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              Home
+              {t('nav.home')}
             </Link>
             <Link 
               to="/shop" 
-              className={`transition-colors ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-luxury ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              Shop
+              {t('nav.shop')}
             </Link>
             <Link 
               to="/bundles" 
-              className={`transition-colors ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-luxury ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              Bundles
+              {t('nav.bundles')}
+            </Link>
+            <Link 
+              to="/catalog" 
+              className={`transition-colors text-luxury ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+            >
+              Catalog
             </Link>
             <Link 
               to="/loyalty" 
-              className={`transition-colors ${isActivePage('/loyalty') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-luxury ${isActivePage('/loyalty') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              Loyalty
+              {t('nav.loyalty')}
             </Link>
             <Link 
               to="/about" 
-              className={`transition-colors ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-luxury ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              About
+              {t('nav.about')}
             </Link>
             <Link 
               to="/contact" 
-              className={`transition-colors ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-luxury ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              Contact
+              {t('nav.contact')}
             </Link>
           </nav>
 
@@ -103,7 +114,7 @@ const Header = () => {
               variant="outline" 
               size="sm" 
               onClick={toggleLanguage}
-              className="hidden sm:flex"
+              className="hidden sm:flex text-luxury"
             >
               {getLanguageLabel()}
             </Button>
@@ -154,45 +165,52 @@ const Header = () => {
             <div className="flex flex-col space-y-3">
               <Link 
                 to="/" 
-                className={`transition-colors py-2 ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-luxury ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Home
+                {t('nav.home')}
               </Link>
               <Link 
                 to="/shop" 
-                className={`transition-colors py-2 ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-luxury ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Shop
+                {t('nav.shop')}
               </Link>
               <Link 
                 to="/bundles" 
-                className={`transition-colors py-2 ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-luxury ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Bundles
+                {t('nav.bundles')}
+              </Link>
+              <Link 
+                to="/catalog" 
+                className={`transition-colors py-2 text-luxury ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Catalog
               </Link>
               <Link 
                 to="/loyalty" 
-                className={`transition-colors py-2 ${isActivePage('/loyalty') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-luxury ${isActivePage('/loyalty') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Loyalty
+                {t('nav.loyalty')}
               </Link>
               <Link 
                 to="/about" 
-                className={`transition-colors py-2 ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-luxury ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                About
+                {t('nav.about')}
               </Link>
               <Link 
                 to="/contact" 
-                className={`transition-colors py-2 ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-luxury ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Contact
+                {t('nav.contact')}
               </Link>
               <div className="flex items-center justify-between pt-2 border-t">
                 <Button variant="outline" size="sm" onClick={toggleLanguage}>

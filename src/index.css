@@ -1,9 +1,10 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Medical/Dental design system with soft, professional colors */
+/* Enhanced Medical/Dental design system with luxury B2B feel */
 
 @layer base {
   :root {
@@ -16,7 +17,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Medical blue primary */
+    /* Luxury medical blue primary */
     --primary: 210 100% 45%;
     --primary-foreground: 210 40% 98%;
 
@@ -40,11 +41,13 @@
 
     --radius: 0.75rem;
 
-    /* Custom medical colors */
+    /* Custom luxury medical colors */
     --medical-blue: 210 100% 45%;
     --medical-green: 142 69% 58%;
     --trust-blue: 210 100% 95%;
+    --luxury-cream: 45 100% 97%;
     --soft-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --luxury-shadow: 0 10px 25px -3px rgb(0 0 0 / 0.1);
   }
 
   .dark {
@@ -76,11 +79,16 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
+    font-family: 'Poppins', 'DM Sans', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Medical professional styling */
+  /* Luxury professional styling */
+  .luxury-shadow {
+    box-shadow: var(--luxury-shadow);
+  }
+  
   .medical-shadow {
     box-shadow: var(--soft-shadow);
   }
@@ -88,9 +96,17 @@
   .trust-gradient {
     background: linear-gradient(135deg, hsl(var(--trust-blue)) 0%, hsl(var(--medical-blue)) 100%);
   }
+
+  .luxury-gradient {
+    background: linear-gradient(135deg, hsl(var(--luxury-cream)) 0%, hsl(var(--trust-blue)) 100%);
+  }
+
+  .cream-gradient {
+    background: linear-gradient(135deg, #fefbf3 0%, #f8fafc 100%);
+  }
 }
 
-/* Arabic text support */
+/* Arabic text support with enhanced RTL */
 .rtl {
   direction: rtl;
   text-align: right;
@@ -99,4 +115,77 @@
 .ltr {
   direction: ltr;
   text-align: left;
+}
+
+/* Custom graphic separators */
+.wave-separator {
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10c10-5 20 5 30 0s20-5 30 0 20 5 30 0 10-5 10 0v10H0V10z' fill='%23e0f2fe' opacity='0.3'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: center;
+  height: 20px;
+}
+
+.dental-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e3f2fd' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Elegant hover animations */
+.hover-lift {
+  @apply transition-all duration-300 ease-out;
+}
+
+.hover-lift:hover {
+  @apply transform -translate-y-1 shadow-lg;
+}
+
+/* Professional typography */
+.heading-luxury {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.text-luxury {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Floating WhatsApp button */
+.whatsapp-float {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  bottom: 40px;
+  right: 40px;
+  background-color: #25d366;
+  color: #FFF;
+  border-radius: 50px;
+  text-align: center;
+  font-size: 30px;
+  box-shadow: 2px 2px 3px #999;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.whatsapp-float:hover {
+  background-color: #20ba5a;
+  transform: scale(1.1);
+}
+
+/* Subtle parallax effect */
+.parallax-bg {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Professional product cards */
+.product-card {
+  @apply bg-white rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-100;
+}
+
+.product-card:hover {
+  @apply transform -translate-y-1;
 }

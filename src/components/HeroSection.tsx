@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Truck, Clock, Shield, MessageCircle } from 'lucide-react';
@@ -22,10 +23,17 @@ const HeroSection = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="text-lg px-8 py-6">
-                Start Shopping
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6 gap-2">
+              <Link to="/shop">
+                <Button size="lg" className="text-lg px-8 py-6">
+                  Start Shopping
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="text-lg px-8 py-6 gap-2"
+                onClick={() => window.open('https://wa.me/213XXXXXXXXX?text=Hello! I would like to place an order for dental supplies.', '_blank')}
+              >
                 <MessageCircle className="w-5 h-5" />
                 Order via WhatsApp
               </Button>

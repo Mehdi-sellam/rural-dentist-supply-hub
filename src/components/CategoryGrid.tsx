@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
@@ -7,6 +8,7 @@ import { ArrowRight } from 'lucide-react';
 const CategoryGrid = () => {
   const categories = [
     {
+      id: 'restoratives',
       name: 'Restoratives',
       nameAr: 'مواد الترميم',
       nameFr: 'Matériaux de restauration',
@@ -16,6 +18,7 @@ const CategoryGrid = () => {
       color: 'from-blue-100 to-blue-200'
     },
     {
+      id: 'surgical',
       name: 'Surgical Tools',
       nameAr: 'أدوات الجراحة',
       nameFr: 'Instruments chirurgicaux',
@@ -25,6 +28,7 @@ const CategoryGrid = () => {
       color: 'from-green-100 to-green-200'
     },
     {
+      id: 'disposables',
       name: 'Disposables',
       nameAr: 'المواد المستهلكة',
       nameFr: 'Matériel jetable',
@@ -34,6 +38,7 @@ const CategoryGrid = () => {
       color: 'from-purple-100 to-purple-200'
     },
     {
+      id: 'equipment',
       name: 'Equipment',
       nameAr: 'المعدات',
       nameFr: 'Équipement',
@@ -43,6 +48,7 @@ const CategoryGrid = () => {
       color: 'from-orange-100 to-orange-200'
     },
     {
+      id: 'orthodontics',
       name: 'Orthodontics',
       nameAr: 'تقويم الأسنان',
       nameFr: 'Orthodontie',
@@ -52,6 +58,7 @@ const CategoryGrid = () => {
       color: 'from-teal-100 to-teal-200'
     },
     {
+      id: 'endodontics',
       name: 'Endodontics',
       nameAr: 'علاج الجذور',
       nameFr: 'Endodontie',
@@ -95,10 +102,12 @@ const CategoryGrid = () => {
                     </p>
                   </div>
                   
-                  <Button className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
-                    Browse Category
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
+                  <Link to={`/shop?category=${category.id}`}>
+                    <Button className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
+                      Browse Category
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
@@ -106,9 +115,11 @@ const CategoryGrid = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Button variant="outline" size="lg" className="px-8">
-            View All Categories
-          </Button>
+          <Link to="/shop">
+            <Button variant="outline" size="lg" className="px-8">
+              View All Categories
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

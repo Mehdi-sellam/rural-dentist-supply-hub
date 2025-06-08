@@ -1,16 +1,29 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, ShoppingCart, MessageCircle, Star } from 'lucide-react';
-import { products } from '@/data/products';
+import { Input } from '@/components/ui/input';
+import { Heart, ShoppingCart, MessageCircle, Star, Search } from 'lucide-react';
+import { products, categories } from '@/data/products';
 import { useCart } from '@/context/CartContext';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
-const FeaturedProducts = () => {
+const Shop = () => {
+  const [searchParams] = useSearchParams();
+  const categoryFilter = searchParams.get('category');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(categoryFilter || '');
   const { addItem } = useCart();
-  const featuredProducts = products.slice(0, 4);
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const getBadgeColor = (badge: string) => {
     switch (badge) {
@@ -28,19 +41,57 @@ const FeaturedProducts = () => {
   };
 
   return (
-    <section className="py-16 px-4">
-      <div className="container mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Featured Products
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Hand-picked supplies trusted by dentists across Algeria
+    <div className="min-h-screen">
+      <Header />
+      
+      <div className="container mx-auto px-4 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Dental Supplies Shop
+          </h1>
+          <p className="text-xl text-gray-600">
+            Professional dental materials and equipment for your practice
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
+        {/* Search and Filters */}
+        <div className="mb-8 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Category Filter */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={selectedCategory === '' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory('')}
+            >
+              All Categories
+            </Button>
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(category.id)}
+              >
+                {category.icon} {category.name}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Products Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProducts.map((product) => (
             <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden">
               <CardContent className="p-0">
                 {/* Product Image Area */}
@@ -65,8 +116,8 @@ const FeaturedProducts = () => {
                   
                   {/* Quick actions on hover */}
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Button size="sm" className="gap-2" onClick={() => addItem(product)}>
-                      <ShoppingCart className="w-4 h-4" />
+                    <Button size="sm" onClick={() => addItem(product)}>
+                      <ShoppingCart className="w-4 h-4 mr-1" />
                       Add to Cart
                     </Button>
                   </div>
@@ -111,9 +162,21 @@ const FeaturedProducts = () => {
                     )}
                   </div>
 
+                  {/* Stock Status */}
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className={`text-xs ${product.inStock ? 'text-green-600' : 'text-red-600'}`}>
+                      {product.inStock ? 'In Stock' : 'Out of Stock'}
+                    </span>
+                  </div>
+
                   {/* Action buttons */}
                   <div className="flex gap-2">
-                    <Button className="flex-1 text-sm" onClick={() => addItem(product)}>
+                    <Button 
+                      className="flex-1 text-sm" 
+                      onClick={() => addItem(product)}
+                      disabled={!product.inStock}
+                    >
                       <ShoppingCart className="w-4 h-4 mr-1" />
                       Add to Cart
                     </Button>
@@ -132,16 +195,17 @@ const FeaturedProducts = () => {
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <Link to="/shop">
-            <Button variant="outline" size="lg" className="px-8">
-              View All Products
-            </Button>
-          </Link>
-        </div>
+        {/* No products found */}
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No products found matching your criteria.</p>
+          </div>
+        )}
       </div>
-    </section>
+
+      <Footer />
+    </div>
   );
 };
 
-export default FeaturedProducts;
+export default Shop;

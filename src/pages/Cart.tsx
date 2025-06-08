@@ -11,18 +11,22 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const Cart = () => {
-  const { items, total, itemCount, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, bundles, totalAmount, itemCount, updateQuantity, updateBundleQuantity, removeItem, removeBundle, clearCart } = useCart();
 
   const generateWhatsAppOrder = () => {
     let message = "Hello! I'd like to place an order:\n\n";
     items.forEach(item => {
       message += `${item.name} - Qty: ${item.quantity} - ${(item.price * item.quantity).toLocaleString()} DZD\n`;
     });
-    message += `\nTotal: ${total.toLocaleString()} DZD\n\nPlease confirm availability and delivery details.`;
+    bundles.forEach(bundle => {
+      const price = parseInt(bundle.bundlePrice.replace(/[^0-9]/g, ''));
+      message += `${bundle.name} (Bundle) - Qty: ${bundle.quantity} - ${(price * bundle.quantity).toLocaleString()} DZD\n`;
+    });
+    message += `\nTotal: ${totalAmount.toLocaleString()} DZD\n\nPlease confirm availability and delivery details.`;
     return `https://wa.me/213XXXXXXXXX?text=${encodeURIComponent(message)}`;
   };
 
-  if (items.length === 0) {
+  if (items.length === 0 && bundles.length === 0) {
     return (
       <div className="min-h-screen">
         <Header />
@@ -117,6 +121,62 @@ const Cart = () => {
               </Card>
             ))}
 
+            {bundles.map((bundle) => (
+              <Card key={bundle.id} className="overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    {/* Bundle Image */}
+                    <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">📦</span>
+                    </div>
+
+                    {/* Bundle Details */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 mb-1">{bundle.name}</h3>
+                      <p className="text-sm text-gray-600 mb-2">Bundle ({bundle.items.length} items)</p>
+                      <div className="flex items-center gap-4">
+                        <span className="font-bold text-primary">{bundle.bundlePrice}</span>
+                      </div>
+                    </div>
+
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateBundleQuantity(bundle.id, bundle.quantity - 1)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="w-8 text-center text-sm font-medium">{bundle.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateBundleQuantity(bundle.id, bundle.quantity + 1)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+
+                    {/* Bundle Total */}
+                    <div className="text-right">
+                      <p className="font-bold text-lg">{(parseInt(bundle.bundlePrice.replace(/[^0-9]/g, '')) * bundle.quantity).toLocaleString()} DZD</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeBundle(bundle.id)}
+                        className="text-red-500 hover:text-red-700 p-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
             <div className="flex justify-between items-center pt-4">
               <Button variant="outline" onClick={clearCart}>
                 Clear Cart
@@ -138,7 +198,7 @@ const Cart = () => {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
                     <span>Subtotal ({itemCount} items)</span>
-                    <span>{total.toLocaleString()} DZD</span>
+                    <span>{totalAmount.toLocaleString()} DZD</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
@@ -147,7 +207,7 @@ const Cart = () => {
                   <hr />
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>{total.toLocaleString()} DZD</span>
+                    <span>{totalAmount.toLocaleString()} DZD</span>
                   </div>
                 </div>
 

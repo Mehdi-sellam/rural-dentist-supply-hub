@@ -67,7 +67,12 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Professional dental colors
+				'dental-navy': 'hsl(var(--dental-navy))',
+				'dental-silver': 'hsl(var(--dental-silver))',
+				'dental-grey': 'hsl(var(--dental-grey))',
+				'professional-white': 'hsl(var(--professional-white))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

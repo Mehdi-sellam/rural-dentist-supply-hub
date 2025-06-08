@@ -1,44 +1,64 @@
 
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Search, User, ShoppingCart, Menu, X, Heart, Phone } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Search, User, ShoppingCart, Menu, X, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/hooks/useLanguage';
+import { products } from '@/data/products';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { itemCount } = useCart();
   const { language, setLanguage, t } = useLanguage();
 
   const toggleLanguage = () => {
-    const languages = ['fr', 'ar', 'en'] as const;
-    const currentIndex = languages.indexOf(language);
-    const nextIndex = (currentIndex + 1) % languages.length;
-    setLanguage(languages[nextIndex]);
+    const newLanguage = language === 'fr' ? 'en' : 'fr';
+    setLanguage(newLanguage);
   };
 
   const getLanguageLabel = () => {
-    switch (language) {
-      case 'ar': return t('lang.arabic');
-      case 'fr': return t('lang.french');
-      case 'en': return t('lang.english');
-      default: return t('lang.french');
-    }
+    return language === 'fr' ? t('lang.french') : t('lang.english');
   };
 
   const isActivePage = (path: string) => {
     return location.pathname === path;
   };
 
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    if (value.length > 0) {
+      const results = products.filter(product =>
+        product.name.toLowerCase().includes(value.toLowerCase()) ||
+        product.nameFr.toLowerCase().includes(value.toLowerCase()) ||
+        product.productId.includes(value)
+      ).slice(0, 5);
+      setSearchResults(results);
+      setShowResults(true);
+    } else {
+      setShowResults(false);
+    }
+  };
+
+  const selectProduct = (product) => {
+    setSearchTerm('');
+    setShowResults(false);
+    navigate(`/shop?search=${product.name}`);
+  };
+
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-white sharp-shadow border-b sticky top-0 z-50">
       {/* Top bar */}
       <div className="bg-primary text-primary-foreground py-2 px-4">
         <div className="container mx-auto flex justify-between items-center text-sm">
-          <p>🚀 Free delivery to rural areas • Livraison gratuite • توصيل مجاني</p>
+          <p className="text-professional">{t('common.fastShipping')} • {t('common.bestPrices')} • {t('common.customerSupport')}</p>
           <div className="flex items-center gap-4">
             <Phone className="w-4 h-4" />
             <span>WhatsApp: +213 XXX XXX XXX</span>
@@ -50,58 +70,84 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                <div className="w-3 h-3 bg-primary rounded-full"></div>
+            <div className="w-10 h-10 bg-primary border border-primary/20 flex items-center justify-center">
+              <div className="w-6 h-6 bg-white flex items-center justify-center">
+                <div className="w-3 h-3 bg-primary"></div>
               </div>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary heading-luxury">DentGo</h1>
-              <p className="text-xs text-muted-foreground text-luxury">Supplies that travel to you</p>
+              <h1 className="text-xl font-bold text-primary heading-professional">DentGo</h1>
+              <p className="text-xs text-muted-foreground text-professional">Professional Dental Supplies</p>
             </div>
           </Link>
 
+          {/* Search Bar */}
+          <div className="hidden md:flex relative flex-1 max-w-md mx-8">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder={t('nav.search')}
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-10 border-border"
+              />
+              {showResults && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 bg-white border border-border mt-1 rounded-sm shadow-lg z-50">
+                  {searchResults.map((product) => (
+                    <div
+                      key={product.id}
+                      onClick={() => selectProduct(product)}
+                      className="p-3 hover:bg-muted cursor-pointer border-b border-border last:border-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img src={product.image} alt={product.name} className="w-8 h-8 object-cover" />
+                        <div>
+                          <p className="text-sm font-medium text-professional">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">ID: {product.productId}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-6">
             <Link 
               to="/" 
-              className={`transition-colors text-luxury ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-professional ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
               {t('nav.home')}
             </Link>
             <Link 
               to="/shop" 
-              className={`transition-colors text-luxury ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-professional ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
               {t('nav.shop')}
             </Link>
             <Link 
               to="/bundles" 
-              className={`transition-colors text-luxury ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-professional ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
               {t('nav.bundles')}
             </Link>
             <Link 
               to="/catalog" 
-              className={`transition-colors text-luxury ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-professional ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
               Catalog
             </Link>
             <Link 
-              to="/loyalty" 
-              className={`transition-colors text-luxury ${isActivePage('/loyalty') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
-            >
-              {t('nav.loyalty')}
-            </Link>
-            <Link 
               to="/about" 
-              className={`transition-colors text-luxury ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-professional ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
               {t('nav.about')}
             </Link>
             <Link 
               to="/contact" 
-              className={`transition-colors text-luxury ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+              className={`transition-colors text-professional ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
               {t('nav.contact')}
             </Link>
@@ -114,20 +160,9 @@ const Header = () => {
               variant="outline" 
               size="sm" 
               onClick={toggleLanguage}
-              className="hidden sm:flex text-luxury"
+              className="hidden sm:flex text-professional border-border"
             >
               {getLanguageLabel()}
-            </Button>
-
-            {/* Search */}
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
-              <Search className="w-4 h-4" />
-            </Button>
-
-            {/* Wishlist */}
-            <Button variant="ghost" size="sm" className="relative">
-              <Heart className="w-4 h-4" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">3</Badge>
             </Button>
 
             {/* Cart */}
@@ -135,7 +170,7 @@ const Header = () => {
               <Button variant="ghost" size="sm" className="relative">
                 <ShoppingCart className="w-4 h-4" />
                 {itemCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs bg-primary">
                     {itemCount}
                   </Badge>
                 )}
@@ -163,61 +198,64 @@ const Header = () => {
         {isMenuOpen && (
           <nav className="md:hidden mt-4 pb-4 border-t pt-4">
             <div className="flex flex-col space-y-3">
+              {/* Mobile Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder={t('nav.search')}
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-10 border-border"
+                />
+              </div>
+              
+              {/* Navigation Links */}
               <Link 
                 to="/" 
-                className={`transition-colors py-2 text-luxury ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-professional ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('nav.home')}
               </Link>
               <Link 
                 to="/shop" 
-                className={`transition-colors py-2 text-luxury ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-professional ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('nav.shop')}
               </Link>
               <Link 
                 to="/bundles" 
-                className={`transition-colors py-2 text-luxury ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-professional ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('nav.bundles')}
               </Link>
               <Link 
                 to="/catalog" 
-                className={`transition-colors py-2 text-luxury ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-professional ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Catalog
               </Link>
               <Link 
-                to="/loyalty" 
-                className={`transition-colors py-2 text-luxury ${isActivePage('/loyalty') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {t('nav.loyalty')}
-              </Link>
-              <Link 
                 to="/about" 
-                className={`transition-colors py-2 text-luxury ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-professional ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('nav.about')}
               </Link>
               <Link 
                 to="/contact" 
-                className={`transition-colors py-2 text-luxury ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
+                className={`transition-colors py-2 text-professional ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('nav.contact')}
               </Link>
+              
               <div className="flex items-center justify-between pt-2 border-t">
-                <Button variant="outline" size="sm" onClick={toggleLanguage}>
+                <Button variant="outline" size="sm" onClick={toggleLanguage} className="border-border">
                   {getLanguageLabel()}
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Search className="w-4 h-4" />
                 </Button>
               </div>
             </div>

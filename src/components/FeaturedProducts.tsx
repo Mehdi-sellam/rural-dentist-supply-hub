@@ -3,139 +3,86 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Heart, ShoppingCart, MessageCircle, Star } from 'lucide-react';
-import { products } from '@/data/products';
-import { useCart } from '@/context/CartContext';
+import { DollarSign, CreditCard, Headphones, Truck } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 
-const FeaturedProducts = () => {
-  const { addItem } = useCart();
-  const featuredProducts = products.slice(0, 4);
-
-  const getBadgeColor = (badge: string) => {
-    switch (badge) {
-      case 'Best Seller': return 'bg-green-500 text-white';
-      case 'New Arrival': return 'bg-blue-500 text-white';
-      case 'Rural Favorite': return 'bg-purple-500 text-white';
-      case 'Limited Offer': return 'bg-red-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
-
-  const generateWhatsAppMessage = (product: any) => {
-    const message = `Hello! I'm interested in ordering:\n${product.name}\nPrice: ${product.price.toLocaleString()} DZD\n\nPlease provide more details about availability and delivery.`;
-    return `https://wa.me/213XXXXXXXXX?text=${encodeURIComponent(message)}`;
-  };
+const InfoSection = () => {
+  const { t } = useLanguage();
 
   return (
-    <section className="py-16 px-4">
+    <section className="py-16 px-4 premium-gradient">
       <div className="container mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Featured Products
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 heading-professional">
+            Pourquoi Choisir DentGo ?
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Hand-picked supplies trusted by dentists across Algeria
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-professional">
+            Des solutions professionnelles adaptées à votre pratique dentaire
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden">
-              <CardContent className="p-0">
-                {/* Product Image Area */}
-                <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 aspect-square flex items-center justify-center">
-                  <div className="text-6xl">{product.image}</div>
-                  
-                  {/* Badge */}
-                  {product.badge && (
-                    <Badge className={`absolute top-3 left-3 ${getBadgeColor(product.badge)}`}>
-                      {product.badge}
-                    </Badge>
-                  )}
-                  
-                  {/* Wishlist button */}
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute top-3 right-3 h-8 w-8 p-0 bg-white/80 hover:bg-white"
-                  >
-                    <Heart className="w-4 h-4" />
-                  </Button>
-                  
-                  {/* Quick actions on hover */}
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Button size="sm" className="gap-2" onClick={() => addItem(product)}>
-                      <ShoppingCart className="w-4 h-4" />
-                      Add to Cart
-                    </Button>
-                  </div>
-                </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <Card className="text-center border-border bg-white professional-shadow hover:sharp-shadow transition-all duration-200">
+            <CardContent className="p-8">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Truck className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3 heading-professional">
+                {t('common.fastShipping')}
+              </h3>
+              <p className="text-muted-foreground text-professional">
+                Livraison rapide dans toute l'Algérie, même en zones rurales
+              </p>
+            </CardContent>
+          </Card>
 
-                {/* Product Info */}
-                <div className="p-4 space-y-3">
-                  {/* Rating */}
-                  <div className="flex items-center gap-1 text-sm">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3 h-3 ${
-                            i < Math.floor(product.rating) 
-                              ? 'fill-yellow-400 text-yellow-400' 
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-gray-600">({product.reviews})</span>
-                  </div>
+          <Card className="text-center border-border bg-white professional-shadow hover:sharp-shadow transition-all duration-200">
+            <CardContent className="p-8">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <DollarSign className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3 heading-professional">
+                {t('common.bestPrices')}
+              </h3>
+              <p className="text-muted-foreground text-professional">
+                Prix compétitifs grâce à nos partenariats directs avec les fabricants
+              </p>
+            </CardContent>
+          </Card>
 
-                  {/* Product Name */}
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">{product.name}</h3>
-                    <p className="text-xs text-gray-600">{product.description}</p>
-                  </div>
+          <Card className="text-center border-border bg-white professional-shadow hover:sharp-shadow transition-all duration-200">
+            <CardContent className="p-8">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CreditCard className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3 heading-professional">
+                {t('common.installmentPayment')}
+              </h3>
+              <p className="text-muted-foreground text-professional">
+                Options de paiement échelonné adaptées à votre budget
+              </p>
+            </CardContent>
+          </Card>
 
-                  {/* Multilingual names */}
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p className="rtl">{product.nameAr}</p>
-                    <p className="italic">{product.nameFr}</p>
-                  </div>
-
-                  {/* Price */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-primary">{product.price.toLocaleString()} DZD</span>
-                    {product.originalPrice && (
-                      <span className="text-sm text-gray-400 line-through">{product.originalPrice.toLocaleString()} DZD</span>
-                    )}
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex gap-2">
-                    <Button className="flex-1 text-sm" onClick={() => addItem(product)}>
-                      <ShoppingCart className="w-4 h-4 mr-1" />
-                      Add to Cart
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="px-3"
-                      onClick={() => window.open(generateWhatsAppMessage(product), '_blank')}
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <Card className="text-center border-border bg-white professional-shadow hover:sharp-shadow transition-all duration-200">
+            <CardContent className="p-8">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Headphones className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3 heading-professional">
+                {t('common.customerSupport')}
+              </h3>
+              <p className="text-muted-foreground text-professional">
+                Support technique et commercial disponible 24/7
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="text-center mt-12">
           <Link to="/shop">
-            <Button variant="outline" size="lg" className="px-8">
-              View All Products
+            <Button size="lg" className="px-8 btn-professional">
+              {t('common.viewAll')} Nos Produits
             </Button>
           </Link>
         </div>
@@ -144,4 +91,4 @@ const FeaturedProducts = () => {
   );
 };
 
-export default FeaturedProducts;
+export default InfoSection;

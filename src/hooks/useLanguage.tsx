@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-type Language = 'fr' | 'ar' | 'en';
+type Language = 'fr' | 'en';
 
 interface LanguageContextType {
   language: Language;
@@ -20,20 +20,32 @@ const translations = {
     'nav.contact': 'Contact',
     'nav.faq': 'FAQ',
     'nav.cart': 'Panier',
+    'nav.search': 'Rechercher...',
     
     // Common
     'common.addToCart': 'Ajouter au panier',
     'common.orderWhatsApp': 'Commander via WhatsApp',
+    'common.orderTelegram': 'Commander via Telegram',
     'common.price': 'Prix',
     'common.inStock': 'En stock',
     'common.outOfStock': 'Rupture de stock',
     'common.viewAll': 'Voir tout',
     'common.loading': 'Chargement...',
+    'common.bestPrices': 'Meilleurs Prix',
+    'common.paymentPlans': 'Paiement Échelonné',
+    'common.customerSupport': 'Support Client',
+    'common.euAsiaSourced': 'Produits EU/Asie',
+    'common.fastShipping': 'Livraison Rapide',
+    'common.installmentPayment': 'Paiement Échelonné',
     
     // Homepage
-    'hero.title': 'Fournitures Dentaires pour l\'Algérie Rurale',
-    'hero.subtitle': 'Équipements professionnels livrés directement à votre clinique',
+    'hero.title': 'Fournitures Dentaires Professionnelles',
+    'hero.subtitle': 'Équipements de qualité européenne et asiatique pour votre cabinet dentaire',
     'hero.cta': 'Découvrir nos produits',
+    'hero.pillars.bestPrices': 'Meilleurs Prix',
+    'hero.pillars.paymentPlans': 'Paiement Échelonné',
+    'hero.pillars.support': 'Support Client 24/7',
+    'hero.pillars.sourced': 'Produits EU/Asie',
     
     // Product categories
     'category.restoratives': 'Restaurations',
@@ -42,6 +54,7 @@ const translations = {
     'category.equipment': 'Équipements',
     'category.orthodontics': 'Orthodontie',
     'category.endodontics': 'Endodontie',
+    'category.sterilization': 'Stérilisation',
     
     // Cart
     'cart.title': 'Votre Panier',
@@ -72,72 +85,6 @@ const translations = {
     
     // Languages
     'lang.french': 'Français',
-    'lang.arabic': 'العربية',
-    'lang.english': 'English'
-  },
-  ar: {
-    // Navigation
-    'nav.home': 'الرئيسية',
-    'nav.shop': 'المتجر',
-    'nav.bundles': 'الحزم',
-    'nav.loyalty': 'الولاء',
-    'nav.about': 'حولنا',
-    'nav.contact': 'اتصل',
-    'nav.faq': 'الأسئلة',
-    'nav.cart': 'السلة',
-    
-    // Common
-    'common.addToCart': 'أضف للسلة',
-    'common.orderWhatsApp': 'اطلب عبر واتساب',
-    'common.price': 'السعر',
-    'common.inStock': 'متوفر',
-    'common.outOfStock': 'غير متوفر',
-    'common.viewAll': 'عرض الكل',
-    'common.loading': 'جاري التحميل...',
-    
-    // Homepage
-    'hero.title': 'مستلزمات طب الأسنان للجزائر الريفية',
-    'hero.subtitle': 'معدات مهنية توصل مباشرة لعيادتك',
-    'hero.cta': 'اكتشف منتجاتنا',
-    
-    // Product categories
-    'category.restoratives': 'مواد الترميم',
-    'category.surgical': 'أدوات الجراحة',
-    'category.disposables': 'المواد المستهلكة',
-    'category.equipment': 'المعدات',
-    'category.orthodontics': 'تقويم الأسنان',
-    'category.endodontics': 'علاج الجذور',
-    
-    // Cart
-    'cart.title': 'سلة التسوق',
-    'cart.empty': 'السلة فارغة',
-    'cart.total': 'المجموع',
-    'cart.checkout': 'إتمام الطلب',
-    'cart.quantity': 'الكمية',
-    'cart.remove': 'حذف',
-    
-    // Contact
-    'contact.title': 'اتصل بنا',
-    'contact.name': 'الاسم',
-    'contact.email': 'البريد الإلكتروني',
-    'contact.message': 'الرسالة',
-    'contact.send': 'إرسال',
-    
-    // About
-    'about.title': 'حول DentGo',
-    'about.mission': 'مهمتنا',
-    
-    // Bundles
-    'bundles.title': 'حزم الإجراءات',
-    'bundles.save': 'وفر',
-    'bundles.includes': 'يتضمن:',
-    
-    // FAQ
-    'faq.title': 'الأسئلة الشائعة',
-    
-    // Languages
-    'lang.french': 'Français',
-    'lang.arabic': 'العربية',
     'lang.english': 'English'
   },
   en: {
@@ -150,20 +97,32 @@ const translations = {
     'nav.contact': 'Contact',
     'nav.faq': 'FAQ',
     'nav.cart': 'Cart',
+    'nav.search': 'Search...',
     
     // Common
     'common.addToCart': 'Add to Cart',
     'common.orderWhatsApp': 'Order via WhatsApp',
+    'common.orderTelegram': 'Order via Telegram',
     'common.price': 'Price',
     'common.inStock': 'In Stock',
     'common.outOfStock': 'Out of Stock',
     'common.viewAll': 'View All',
     'common.loading': 'Loading...',
+    'common.bestPrices': 'Best Prices',
+    'common.paymentPlans': 'Payment Plans',
+    'common.customerSupport': 'Customer Support',
+    'common.euAsiaSourced': 'EU/Asia Sourced',
+    'common.fastShipping': 'Fast Shipping',
+    'common.installmentPayment': 'Installment Payment',
     
     // Homepage
-    'hero.title': 'Dental Supplies for Rural Algeria',
-    'hero.subtitle': 'Professional equipment delivered directly to your clinic',
+    'hero.title': 'Professional Dental Supplies',
+    'hero.subtitle': 'European and Asian quality equipment for your dental practice',
     'hero.cta': 'Discover our products',
+    'hero.pillars.bestPrices': 'Best Prices',
+    'hero.pillars.paymentPlans': 'Payment Plans',
+    'hero.pillars.support': '24/7 Support',
+    'hero.pillars.sourced': 'EU/Asia Sourced',
     
     // Product categories
     'category.restoratives': 'Restoratives',
@@ -172,6 +131,7 @@ const translations = {
     'category.equipment': 'Equipment',
     'category.orthodontics': 'Orthodontics',
     'category.endodontics': 'Endodontics',
+    'category.sterilization': 'Sterilization',
     
     // Cart
     'cart.title': 'Your Cart',
@@ -202,7 +162,6 @@ const translations = {
     
     // Languages
     'lang.french': 'Français',
-    'lang.arabic': 'العربية',
     'lang.english': 'English'
   }
 };

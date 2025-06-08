@@ -3,88 +3,96 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Truck, Clock, Shield, MessageCircle } from 'lucide-react';
+import { DollarSign, CreditCard, Headphones, Globe, MessageCircle } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const HeroSection = () => {
+  const { t } = useLanguage();
+
   return (
-    <section className="bg-gradient-to-br from-blue-50 to-green-50 py-16 px-4">
+    <section className="dental-gradient py-16 px-4">
       <div className="container mx-auto">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Text content */}
           <div className="space-y-6">
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-                Professional Dental Supplies
-                <span className="text-primary block">Delivered Anywhere</span>
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground leading-tight heading-professional">
+                {t('hero.title')}
+                <span className="text-primary block">{t('hero.subtitle')}</span>
               </h1>
-              <p className="text-xl text-gray-600 leading-relaxed">
-                Empowering dentists in rural Algeria with fast, reliable access to quality dental materials and equipment. From Algiers to the most remote villages.
+              <p className="text-xl text-muted-foreground leading-relaxed text-professional">
+                Équipements de qualité européenne et asiatique pour votre cabinet dentaire professionnel.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/shop">
-                <Button size="lg" className="text-lg px-8 py-6">
-                  Start Shopping
+                <Button size="lg" className="text-lg px-8 py-6 btn-professional">
+                  {t('hero.cta')}
                 </Button>
               </Link>
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="text-lg px-8 py-6 gap-2"
+                className="text-lg px-8 py-6 gap-2 border-border"
                 onClick={() => window.open('https://wa.me/213XXXXXXXXX?text=Hello! I would like to place an order for dental supplies.', '_blank')}
               >
                 <MessageCircle className="w-5 h-5" />
-                Order via WhatsApp
+                {t('common.orderWhatsApp')}
               </Button>
             </div>
 
-            {/* Trust indicators */}
-            <div className="grid grid-cols-3 gap-4 mt-8">
-              <Card className="p-4 text-center border-primary/20 bg-white/50">
-                <Truck className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="text-sm font-medium">Rural Delivery</p>
-                <p className="text-xs text-muted-foreground">48h anywhere</p>
+            {/* Professional pillars */}
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              <Card className="p-4 text-center border-border bg-white/80 professional-shadow">
+                <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-medium heading-professional">{t('hero.pillars.bestPrices')}</p>
+                <p className="text-xs text-muted-foreground text-professional">Prix compétitifs</p>
               </Card>
-              <Card className="p-4 text-center border-primary/20 bg-white/50">
-                <Shield className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="text-sm font-medium">Quality Assured</p>
-                <p className="text-xs text-muted-foreground">EU/Asia sourced</p>
+              <Card className="p-4 text-center border-border bg-white/80 professional-shadow">
+                <CreditCard className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-medium heading-professional">{t('hero.pillars.paymentPlans')}</p>
+                <p className="text-xs text-muted-foreground text-professional">Facilités de paiement</p>
               </Card>
-              <Card className="p-4 text-center border-primary/20 bg-white/50">
-                <Clock className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="text-sm font-medium">24/7 Support</p>
-                <p className="text-xs text-muted-foreground">AR/FR/EN</p>
+              <Card className="p-4 text-center border-border bg-white/80 professional-shadow">
+                <Headphones className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-medium heading-professional">{t('hero.pillars.support')}</p>
+                <p className="text-xs text-muted-foreground text-professional">Support dédié</p>
+              </Card>
+              <Card className="p-4 text-center border-border bg-white/80 professional-shadow">
+                <Globe className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-medium heading-professional">{t('hero.pillars.sourced')}</p>
+                <p className="text-xs text-muted-foreground text-professional">Qualité garantie</p>
               </Card>
             </div>
           </div>
 
-          {/* Image/Visual */}
+          {/* Professional showcase */}
           <div className="relative">
-            <div className="bg-white rounded-2xl shadow-xl p-8 medical-shadow">
-              <div className="aspect-square bg-gradient-to-br from-primary/10 to-accent/20 rounded-xl mb-6 flex items-center justify-center">
+            <div className="bg-white border border-border professional-shadow p-8">
+              <div className="aspect-square bg-gradient-to-br from-muted to-secondary flex items-center justify-center mb-6">
                 <div className="text-6xl">🦷</div>
               </div>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="text-sm font-medium">Composite Fillings Kit</span>
-                  <span className="text-primary font-bold">In Stock</span>
+                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200">
+                  <span className="text-sm font-medium text-professional">Kit Composite Premium</span>
+                  <span className="text-primary font-bold text-professional">En Stock</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm font-medium">Surgical Instruments</span>
-                  <span className="text-primary font-bold">Fast Ship</span>
+                <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200">
+                  <span className="text-sm font-medium text-professional">Instruments Chirurgicaux</span>
+                  <span className="text-primary font-bold text-professional">Livraison Rapide</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="text-sm font-medium">Disposable Gloves</span>
-                  <span className="text-primary font-bold">Bulk Available</span>
+                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200">
+                  <span className="text-sm font-medium text-professional">Gants Jetables (Bulk)</span>
+                  <span className="text-primary font-bold text-professional">Prix Dégressif</span>
                 </div>
               </div>
             </div>
             
-            {/* Floating testimonial */}
-            <Card className="absolute -bottom-4 -left-4 p-4 bg-white shadow-lg max-w-xs">
-              <p className="text-sm italic">"Finally, quality supplies reach our clinic in Ouargla!"</p>
-              <p className="text-xs text-muted-foreground mt-2">- Dr. Amina K., Rural Dentist</p>
+            {/* Professional testimonial */}
+            <Card className="absolute -bottom-4 -left-4 p-4 bg-white professional-shadow max-w-xs border-border">
+              <p className="text-sm italic text-professional">"Enfin des fournitures de qualité qui arrivent à temps dans notre clinique !"</p>
+              <p className="text-xs text-muted-foreground mt-2 text-professional">- Dr. Amina K., Dentiste</p>
             </Card>
           </div>
         </div>

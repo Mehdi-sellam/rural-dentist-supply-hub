@@ -37,6 +37,7 @@ const translations = {
     'common.euAsiaSourced': 'Produits EU/Asie',
     'common.fastShipping': 'Livraison Rapide',
     'common.installmentPayment': 'Paiement Échelonné',
+    'common.downloadCatalog': 'Télécharger le Catalogue',
     
     // Homepage
     'hero.title': 'Fournitures Dentaires Professionnelles',
@@ -44,7 +45,7 @@ const translations = {
     'hero.cta': 'Découvrir nos produits',
     'hero.pillars.bestPrices': 'Meilleurs Prix',
     'hero.pillars.paymentPlans': 'Paiement Échelonné',
-    'hero.pillars.support': 'Support Client 24/7',
+    'hero.pillars.support': 'Support Client',
     'hero.pillars.sourced': 'Produits EU/Asie',
     
     // Product categories
@@ -85,7 +86,18 @@ const translations = {
     
     // Languages
     'lang.french': 'Français',
-    'lang.english': 'English'
+    'lang.english': 'English',
+    
+    // Info section
+    'info.fastShipping': 'Livraison Rapide',
+    'info.bestPrices': 'Meilleurs Prix',
+    'info.installmentPayment': 'Paiement Échelonné',
+    'info.customerSupport': 'Support Client',
+    
+    // Catalog
+    'catalog.title': 'Catalogue Produits',
+    'catalog.description': 'Catalogue complet de nos produits dentaires professionnels',
+    'catalog.download': 'Télécharger le PDF'
   },
   en: {
     // Navigation
@@ -114,6 +126,7 @@ const translations = {
     'common.euAsiaSourced': 'EU/Asia Sourced',
     'common.fastShipping': 'Fast Shipping',
     'common.installmentPayment': 'Installment Payment',
+    'common.downloadCatalog': 'Download Catalog',
     
     // Homepage
     'hero.title': 'Professional Dental Supplies',
@@ -121,7 +134,7 @@ const translations = {
     'hero.cta': 'Discover our products',
     'hero.pillars.bestPrices': 'Best Prices',
     'hero.pillars.paymentPlans': 'Payment Plans',
-    'hero.pillars.support': '24/7 Support',
+    'hero.pillars.support': 'Customer Support',
     'hero.pillars.sourced': 'EU/Asia Sourced',
     
     // Product categories
@@ -162,7 +175,18 @@ const translations = {
     
     // Languages
     'lang.french': 'Français',
-    'lang.english': 'English'
+    'lang.english': 'English',
+    
+    // Info section
+    'info.fastShipping': 'Fast Shipping',
+    'info.bestPrices': 'Best Prices',
+    'info.installmentPayment': 'Installment Payment',
+    'info.customerSupport': 'Customer Support',
+    
+    // Catalog
+    'catalog.title': 'Product Catalog',
+    'catalog.description': 'Complete catalog of our professional dental products',
+    'catalog.download': 'Download PDF'
   }
 };
 
@@ -177,9 +201,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
-      <div className={language === 'ar' ? 'rtl' : 'ltr'}>
-        {children}
-      </div>
+      {children}
     </LanguageContext.Provider>
   );
 };

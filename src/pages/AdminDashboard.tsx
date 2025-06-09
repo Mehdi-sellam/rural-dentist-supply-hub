@@ -36,9 +36,9 @@ const AdminDashboard = () => {
 
   const savedOrders = JSON.parse(localStorage.getItem('dentgo_orders') || '[]');
   const savedUsers = JSON.parse(localStorage.getItem('dentgo_users') || '[]');
-  const savedProducts = JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products));
-  const savedCategories = JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories));
-  const savedBundles = JSON.parse(localStorage.getItem('dentgo_bundles') || '[]');
+  const [savedProducts, setSavedProducts] = useState(JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products)));
+  const [savedCategories, setSavedCategories] = useState(JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories)));
+  const [savedBundles, setSavedBundles] = useState(JSON.parse(localStorage.getItem('dentgo_bundles') || '[]'));
 
   const updateOrderStatus = (orderId: string, status: string) => {
     const orders = savedOrders.map((order: any) => 
@@ -81,55 +81,115 @@ const AdminDashboard = () => {
   };
 
   const saveProduct = (productData: any) => {
-    const products = [...savedProducts];
-    if (editingProduct) {
-      const index = products.findIndex(p => p.id === editingProduct.id);
-      products[index] = { ...editingProduct, ...productData };
+    let updatedProducts = [...savedProducts];
+    if (editingProduct && editingProduct.id) {
+      // Edit existing product
+      const index = updatedProducts.findIndex(p => p.id === editingProduct.id);
+      if (index !== -1) {
+        updatedProducts[index] = { ...editingProduct, ...productData };
+      }
     } else {
+      // Add new product
       const newProduct = {
         id: Date.now().toString(),
         productId: `PROD${Date.now()}`,
-        productCode: productData.productCode,
-        ...productData
+        productCode: productData.productCode || `PC${Date.now()}`,
+        nameFr: productData.nameFr,
+        descriptionFr: productData.descriptionFr,
+        price: parseInt(productData.price) || 0,
+        category: productData.category,
+        image: productData.image || '/placeholder.svg',
+        inStock: true,
+        name: productData.nameFr, // English fallback
+        description: productData.descriptionFr
       };
-      products.push(newProduct);
+      updatedProducts.push(newProduct);
     }
-    localStorage.setItem('dentgo_products', JSON.stringify(products));
+    localStorage.setItem('dentgo_products', JSON.stringify(updatedProducts));
+    setSavedProducts(updatedProducts);
     setEditingProduct(null);
-    toast.success('Produit sauvegardé');
-    window.location.reload();
+    toast.success('Produit sauvegardé avec succès');
   };
 
   const deleteProduct = (productId: string) => {
-    const products = savedProducts.filter((p: any) => p.id !== productId);
-    localStorage.setItem('dentgo_products', JSON.stringify(products));
-    toast.success('Produit supprimé');
-    window.location.reload();
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+      const updatedProducts = savedProducts.filter((p: any) => p.id !== productId);
+      localStorage.setItem('dentgo_products', JSON.stringify(updatedProducts));
+      setSavedProducts(updatedProducts);
+      toast.success('Produit supprimé avec succès');
+    }
   };
 
   const saveCategory = (categoryData: any) => {
-    const categories = [...savedCategories];
-    if (editingCategory) {
-      const index = categories.findIndex(c => c.id === editingCategory.id);
-      categories[index] = { ...editingCategory, ...categoryData };
+    let updatedCategories = [...savedCategories];
+    if (editingCategory && editingCategory.id) {
+      // Edit existing category
+      const index = updatedCategories.findIndex(c => c.id === editingCategory.id);
+      if (index !== -1) {
+        updatedCategories[index] = { ...editingCategory, ...categoryData };
+      }
     } else {
+      // Add new category
       const newCategory = {
         id: Date.now().toString(),
-        ...categoryData
+        nameFr: categoryData.nameFr,
+        descriptionFr: categoryData.descriptionFr,
+        icon: categoryData.icon || '📦',
+        color: categoryData.color || 'from-blue-50 to-indigo-100',
+        name: categoryData.nameFr, // English fallback
+        description: categoryData.descriptionFr
       };
-      categories.push(newCategory);
+      updatedCategories.push(newCategory);
     }
-    localStorage.setItem('dentgo_categories', JSON.stringify(categories));
+    localStorage.setItem('dentgo_categories', JSON.stringify(updatedCategories));
+    setSavedCategories(updatedCategories);
     setEditingCategory(null);
-    toast.success('Catégorie sauvegardée');
-    window.location.reload();
+    toast.success('Catégorie sauvegardée avec succès');
   };
 
   const deleteCategory = (categoryId: string) => {
-    const categories = savedCategories.filter((c: any) => c.id !== categoryId);
-    localStorage.setItem('dentgo_categories', JSON.stringify(categories));
-    toast.success('Catégorie supprimée');
-    window.location.reload();
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
+      const updatedCategories = savedCategories.filter((c: any) => c.id !== categoryId);
+      localStorage.setItem('dentgo_categories', JSON.stringify(updatedCategories));
+      setSavedCategories(updatedCategories);
+      toast.success('Catégorie supprimée avec succès');
+    }
+  };
+
+  const saveBundle = (bundleData: any) => {
+    let updatedBundles = [...savedBundles];
+    if (editingBundle && editingBundle.id) {
+      // Edit existing bundle
+      const index = updatedBundles.findIndex(b => b.id === editingBundle.id);
+      if (index !== -1) {
+        updatedBundles[index] = { ...editingBundle, ...bundleData };
+      }
+    } else {
+      // Add new bundle
+      const newBundle = {
+        id: Date.now().toString(),
+        name: bundleData.name,
+        description: bundleData.description,
+        bundlePrice: bundleData.bundlePrice,
+        originalPrice: bundleData.originalPrice,
+        items: bundleData.selectedProducts || [],
+        category: bundleData.category
+      };
+      updatedBundles.push(newBundle);
+    }
+    localStorage.setItem('dentgo_bundles', JSON.stringify(updatedBundles));
+    setSavedBundles(updatedBundles);
+    setEditingBundle(null);
+    toast.success('Kit sauvegardé avec succès');
+  };
+
+  const deleteBundle = (bundleId: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce kit ?')) {
+      const updatedBundles = savedBundles.filter((b: any) => b.id !== bundleId);
+      localStorage.setItem('dentgo_bundles', JSON.stringify(updatedBundles));
+      setSavedBundles(updatedBundles);
+      toast.success('Kit supprimé avec succès');
+    }
   };
 
   return (
@@ -390,7 +450,7 @@ const AdminDashboard = () => {
                       <Input
                         type="number"
                         value={editingProduct.price || ''}
-                        onChange={(e) => setEditingProduct({...editingProduct, price: parseInt(e.target.value)})}
+                        onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value})}
                       />
                     </div>
                     <div>
@@ -400,7 +460,7 @@ const AdminDashboard = () => {
                         onValueChange={(value) => setEditingProduct({...editingProduct, category: value})}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Sélectionner une catégorie" />
                         </SelectTrigger>
                         <SelectContent>
                           {savedCategories.map((cat: any) => (
@@ -423,6 +483,7 @@ const AdminDashboard = () => {
                       <Input
                         value={editingProduct.image || ''}
                         onChange={(e) => setEditingProduct({...editingProduct, image: e.target.value})}
+                        placeholder="/placeholder.svg"
                       />
                     </div>
                   </div>
@@ -491,6 +552,7 @@ const AdminDashboard = () => {
                       <Input
                         value={editingCategory.icon || ''}
                         onChange={(e) => setEditingCategory({...editingCategory, icon: e.target.value})}
+                        placeholder="🦷"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -541,10 +603,133 @@ const AdminDashboard = () => {
         {activeTab === 'bundles' && (
           <Card>
             <CardHeader>
-              <CardTitle>Gestion des kits</CardTitle>
+              <CardTitle className="flex justify-between items-center">
+                Gestion des kits
+                <Button onClick={() => setEditingBundle({ selectedProducts: [] })}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Ajouter kit
+                </Button>
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Fonctionnalité de gestion des kits à implémenter.</p>
+              {editingBundle && (
+                <div className="border rounded p-4 mb-6">
+                  <h3 className="font-medium mb-4">
+                    {editingBundle.id ? 'Modifier kit' : 'Nouveau kit'}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Nom du kit</Label>
+                      <Input
+                        value={editingBundle.name || ''}
+                        onChange={(e) => setEditingBundle({...editingBundle, name: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Prix du kit (DZD)</Label>
+                      <Input
+                        value={editingBundle.bundlePrice || ''}
+                        onChange={(e) => setEditingBundle({...editingBundle, bundlePrice: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Prix original (DZD)</Label>
+                      <Input
+                        value={editingBundle.originalPrice || ''}
+                        onChange={(e) => setEditingBundle({...editingBundle, originalPrice: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Catégorie</Label>
+                      <Select
+                        value={editingBundle.category || ''}
+                        onValueChange={(value) => setEditingBundle({...editingBundle, category: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner une catégorie" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {savedCategories.map((cat: any) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.nameFr}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Description</Label>
+                      <Textarea
+                        value={editingBundle.description || ''}
+                        onChange={(e) => setEditingBundle({...editingBundle, description: e.target.value})}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Produits inclus</Label>
+                      <div className="border rounded p-2 max-h-40 overflow-y-auto">
+                        {savedProducts.map((product: any) => (
+                          <div key={product.id} className="flex items-center space-x-2 p-1">
+                            <input
+                              type="checkbox"
+                              checked={editingBundle.selectedProducts?.includes(product.id) || false}
+                              onChange={(e) => {
+                                const selected = editingBundle.selectedProducts || [];
+                                if (e.target.checked) {
+                                  setEditingBundle({
+                                    ...editingBundle, 
+                                    selectedProducts: [...selected, product.id]
+                                  });
+                                } else {
+                                  setEditingBundle({
+                                    ...editingBundle, 
+                                    selectedProducts: selected.filter((id: string) => id !== product.id)
+                                  });
+                                }
+                              }}
+                            />
+                            <span className="text-sm">{product.nameFr}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button onClick={() => saveBundle(editingBundle)}>
+                      Sauvegarder
+                    </Button>
+                    <Button variant="outline" onClick={() => setEditingBundle(null)}>
+                      Annuler
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {savedBundles.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    Aucun kit créé. Cliquez sur "Ajouter kit" pour commencer.
+                  </p>
+                ) : (
+                  savedBundles.map((bundle: any) => (
+                    <div key={bundle.id} className="border rounded p-4 flex justify-between items-center">
+                      <div>
+                        <h3 className="font-medium">{bundle.name}</h3>
+                        <p className="text-sm text-muted-foreground">{bundle.description}</p>
+                        <p className="text-sm">Prix: {bundle.bundlePrice} DZD</p>
+                        <p className="text-xs text-muted-foreground">{bundle.items?.length || 0} produit(s) inclus</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setEditingBundle(bundle)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => deleteBundle(bundle.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </CardContent>
           </Card>
         )}

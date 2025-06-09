@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,12 +41,6 @@ const Catalog = () => {
     link.click();
     document.body.removeChild(link);
   };
-
-  // Group products by category
-  const productsByCategory = savedCategories.map((category: any) => ({
-    ...category,
-    products: savedProducts.filter((product: any) => product.category === category.id)
-  }));
 
   // Scroll to top when component mounts
   React.useEffect(() => {
@@ -124,67 +117,74 @@ const Catalog = () => {
           </Card>
         </div>
 
-        {/* Categories Overview */}
-        <div className="mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center heading-professional">
-            Nos Catégories
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {savedCategories.map((category: any) => (
-              <Card key={category.id} className={`border-border bg-gradient-to-br ${category.color || 'from-blue-50 to-indigo-100'}`}>
-                <CardContent className="p-6 text-center">
-                  <div className="text-4xl mb-4">{category.icon}</div>
-                  <h3 className="font-bold text-lg mb-2 heading-professional text-foreground">
-                    {category.nameFr}
-                  </h3>
-                  <p className="text-sm text-muted-foreground text-professional">
-                    {category.descriptionFr}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Products by Category */}
+        {/* Categories with Products */}
         <div className="space-y-12">
-          {productsByCategory.map((category: any) => (
-            category.products.length > 0 && (
-              <div key={category.id}>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center heading-professional flex items-center justify-center gap-3">
-                  <span className="text-4xl">{category.icon}</span>
-                  {category.nameFr}
-                </h2>
-                <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {category.products.map((product: any) => (
-                    <Card key={product.id} className="border-border">
-                      <CardContent className="p-4">
-                        <div className="aspect-square bg-muted rounded mb-3 flex items-center justify-center">
-                          <img 
-                            src={product.image} 
-                            alt={product.nameFr}
-                            className="w-full h-full object-cover rounded"
-                          />
-                        </div>
-                        <h3 className="font-medium text-sm mb-1 text-foreground heading-professional">
-                          {product.nameFr}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mb-2 text-professional">
-                          Code: {product.productCode}
-                        </p>
-                        <p className="font-bold text-primary heading-professional">
-                          {product.price.toLocaleString()} DZD
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2 text-professional line-clamp-3">
-                          {product.descriptionFr}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center heading-professional">
+            Nos Catégories et Produits
+          </h2>
+          
+          {savedCategories.map((category: any) => {
+            const categoryProducts = savedProducts.filter((product: any) => product.category === category.id);
+            
+            return (
+              <div key={category.id} className="space-y-6">
+                {/* Category Header */}
+                <Card className={`border-border bg-gradient-to-br ${category.color || 'from-blue-50 to-indigo-100'}`}>
+                  <CardContent className="p-6 text-center">
+                    <div className="text-4xl mb-4">{category.icon}</div>
+                    <h3 className="font-bold text-2xl mb-2 heading-professional text-foreground">
+                      {category.nameFr}
+                    </h3>
+                    <p className="text-muted-foreground text-professional">
+                      {category.descriptionFr}
+                    </p>
+                    <p className="text-sm text-primary font-medium mt-2">
+                      {categoryProducts.length} produit(s) disponible(s)
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Category Products */}
+                {categoryProducts.length > 0 && (
+                  <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {categoryProducts.map((product: any) => (
+                      <Card key={product.id} className="border-border hover:shadow-lg transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="aspect-square bg-muted rounded mb-3 flex items-center justify-center">
+                            <img 
+                              src={product.image} 
+                              alt={product.nameFr}
+                              className="w-full h-full object-cover rounded"
+                            />
+                          </div>
+                          <h4 className="font-medium text-sm mb-1 text-foreground heading-professional">
+                            {product.nameFr}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mb-2 text-professional">
+                            Code: {product.productCode}
+                          </p>
+                          <p className="font-bold text-primary heading-professional">
+                            {product.price.toLocaleString()} DZD
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2 text-professional line-clamp-3">
+                            {product.descriptionFr}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                {categoryProducts.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground text-professional">
+                      Aucun produit disponible dans cette catégorie pour le moment.
+                    </p>
+                  </div>
+                )}
               </div>
-            )
-          ))}
+            );
+          })}
         </div>
 
         {/* Contact Information */}

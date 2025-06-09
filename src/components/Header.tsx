@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, ShoppingCart, Menu, X, Phone, MessageCircle, Send, LogOut, Settings } from 'lucide-react';
@@ -181,19 +180,17 @@ const Header = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4">
-            {/* Cart - Only show for non-admin users */}
-            {user && !user.isAdmin && (
-              <Link to="/cart">
-                <Button variant="ghost" size="sm" className="relative">
-                  <ShoppingCart className="w-4 h-4" />
-                  {itemCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs bg-primary">
-                      {itemCount}
-                    </Badge>
-                  )}
-                </Button>
-              </Link>
-            )}
+            {/* Cart - Always show, even for non-logged users and admins */}
+            <Link to="/cart">
+              <Button variant="ghost" size="sm" className="relative">
+                <ShoppingCart className="w-4 h-4" />
+                {itemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs bg-primary">
+                    {itemCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
 
             {/* User Menu */}
             {user ? (

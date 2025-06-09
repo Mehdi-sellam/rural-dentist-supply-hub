@@ -1,16 +1,14 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DollarSign, CreditCard, Headphones, Globe, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
-
 const HeroSection = () => {
-  const { t } = useLanguage();
-
-  return (
-    <section className="dental-gradient py-16 px-4">
+  const {
+    t
+  } = useLanguage();
+  return <section className="dental-gradient py-16 px-4">
       <div className="container mx-auto">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Text content */}
@@ -31,12 +29,7 @@ const HeroSection = () => {
                   {t('hero.cta')}
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="text-lg px-8 py-6 gap-2 border-border"
-                onClick={() => window.open('https://wa.me/213XXXXXXXXX?text=Hello! I would like to place an order for dental supplies.', '_blank')}
-              >
+              <Button variant="outline" size="lg" className="text-lg px-8 py-6 gap-2 border-border" onClick={() => window.open('https://wa.me/213XXXXXXXXX?text=Hello! I would like to place an order for dental supplies.', '_blank')}>
                 <MessageCircle className="w-5 h-5" />
                 {t('common.orderWhatsApp')}
               </Button>
@@ -69,36 +62,13 @@ const HeroSection = () => {
 
           {/* Professional showcase */}
           <div className="relative">
-            <div className="bg-white border border-border professional-shadow p-8">
-              <div className="aspect-square bg-gradient-to-br from-muted to-secondary flex items-center justify-center mb-6">
-                <div className="text-6xl">🦷</div>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200">
-                  <span className="text-sm font-medium text-professional">Kit Composite Premium</span>
-                  <span className="text-primary font-bold text-professional">En Stock</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200">
-                  <span className="text-sm font-medium text-professional">Instruments Chirurgicaux</span>
-                  <span className="text-primary font-bold text-professional">Livraison Rapide</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200">
-                  <span className="text-sm font-medium text-professional">Gants Jetables (Bulk)</span>
-                  <span className="text-primary font-bold text-professional">Prix Dégressif</span>
-                </div>
-              </div>
-            </div>
+            
             
             {/* Professional testimonial */}
-            <Card className="absolute -bottom-4 -left-4 p-4 bg-white professional-shadow max-w-xs border-border">
-              <p className="text-sm italic text-professional">"Enfin des fournitures de qualité qui arrivent à temps dans notre clinique !"</p>
-              <p className="text-xs text-muted-foreground mt-2 text-professional">- Dr. Amina K., Dentiste</p>
-            </Card>
+            
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HeroSection;

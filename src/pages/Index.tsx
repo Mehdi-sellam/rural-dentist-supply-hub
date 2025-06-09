@@ -3,7 +3,7 @@ import React from 'react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import CategoryGrid from '@/components/CategoryGrid';
-import InfoSection from '@/components/FeaturedProducts';
+import InfoSection from '@/components/InfoSection';
 import BundleOffers from '@/components/BundleOffers';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import Footer from '@/components/Footer';

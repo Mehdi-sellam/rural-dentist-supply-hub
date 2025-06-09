@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, ShoppingCart, Menu, X, Phone } from 'lucide-react';
+import { Search, User, ShoppingCart, Menu, X, Phone, MessageCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -38,7 +38,8 @@ const Header = () => {
       const results = products.filter(product =>
         product.name.toLowerCase().includes(value.toLowerCase()) ||
         product.nameFr.toLowerCase().includes(value.toLowerCase()) ||
-        product.productId.includes(value)
+        product.productId.includes(value) ||
+        product.productCode.includes(value)
       ).slice(0, 5);
       setSearchResults(results);
       setShowResults(true);
@@ -53,6 +54,14 @@ const Header = () => {
     navigate(`/shop?search=${product.name}`);
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      setShowResults(false);
+      navigate(`/shop?search=${searchTerm}`);
+    }
+  };
+
   return (
     <header className="bg-white sharp-shadow border-b sticky top-0 z-50">
       {/* Top bar */}
@@ -60,8 +69,28 @@ const Header = () => {
         <div className="container mx-auto flex justify-between items-center text-sm">
           <p className="text-professional">{t('common.fastShipping')} • {t('common.bestPrices')} • {t('common.customerSupport')}</p>
           <div className="flex items-center gap-4">
-            <Phone className="w-4 h-4" />
-            <span>WhatsApp: +213 XXX XXX XXX</span>
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              <span>+213 XXX XXX XXX</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-1 h-auto text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={() => window.open('https://wa.me/213XXXXXXXXX', '_blank')}
+              >
+                <MessageCircle className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-1 h-auto text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={() => window.open('https://t.me/+213XXXXXXXXX', '_blank')}
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -83,7 +112,7 @@ const Header = () => {
 
           {/* Search Bar */}
           <div className="hidden md:flex relative flex-1 max-w-md mx-8">
-            <div className="relative w-full">
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder={t('nav.search')}
@@ -102,15 +131,15 @@ const Header = () => {
                       <div className="flex items-center gap-3">
                         <img src={product.image} alt={product.name} className="w-8 h-8 object-cover" />
                         <div>
-                          <p className="text-sm font-medium text-professional">{product.name}</p>
-                          <p className="text-xs text-muted-foreground">ID: {product.productId}</p>
+                          <p className="text-sm font-medium text-professional">{language === 'fr' ? product.nameFr : product.name}</p>
+                          <p className="text-xs text-muted-foreground">ID: {product.productCode}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </form>
           </div>
 
           {/* Desktop Navigation */}
@@ -137,7 +166,7 @@ const Header = () => {
               to="/catalog" 
               className={`transition-colors text-professional ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              Catalog
+              {t('nav.catalog')}
             </Link>
             <Link 
               to="/about" 
@@ -199,7 +228,7 @@ const Header = () => {
           <nav className="md:hidden mt-4 pb-4 border-t pt-4">
             <div className="flex flex-col space-y-3">
               {/* Mobile Search */}
-              <div className="relative">
+              <form onSubmit={handleSearchSubmit} className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder={t('nav.search')}
@@ -207,7 +236,7 @@ const Header = () => {
                   onChange={(e) => handleSearch(e.target.value)}
                   className="pl-10 border-border"
                 />
-              </div>
+              </form>
               
               {/* Navigation Links */}
               <Link 
@@ -236,7 +265,7 @@ const Header = () => {
                 className={`transition-colors py-2 text-professional ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Catalog
+                {t('nav.catalog')}
               </Link>
               <Link 
                 to="/about" 

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const Catalog = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const downloadCatalog = () => {
     // Generate CSV content
@@ -18,8 +19,8 @@ const Catalog = () => {
       ...products.map(product => [
         product.id,
         product.productCode,
-        language === 'fr' ? product.nameFr : product.name,
-        language === 'fr' ? product.descriptionFr : product.description,
+        product.nameFr,
+        product.descriptionFr,
         product.price,
         product.category,
         product.inStock ? 'Oui' : 'Non'
@@ -123,10 +124,10 @@ const Catalog = () => {
                 <CardContent className="p-6 text-center">
                   <div className="text-4xl mb-4">{category.icon}</div>
                   <h3 className="font-bold text-lg mb-2 heading-professional text-foreground">
-                    {language === 'fr' ? category.nameFr : category.name}
+                    {category.nameFr}
                   </h3>
                   <p className="text-sm text-muted-foreground text-professional">
-                    {language === 'fr' ? category.descriptionFr : category.description}
+                    {category.descriptionFr}
                   </p>
                 </CardContent>
               </Card>
@@ -151,7 +152,7 @@ const Catalog = () => {
                     />
                   </div>
                   <h3 className="font-medium text-sm mb-1 text-foreground heading-professional">
-                    {language === 'fr' ? product.nameFr : product.name}
+                    {product.nameFr}
                   </h3>
                   <p className="text-xs text-muted-foreground mb-2 text-professional">
                     Code: {product.productCode}

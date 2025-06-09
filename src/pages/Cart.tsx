@@ -1,17 +1,19 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Minus, Plus, Trash2, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const Cart = () => {
   const { items, bundles, totalAmount, itemCount, updateQuantity, updateBundleQuantity, removeItem, removeBundle, clearCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const generateWhatsAppOrder = () => {
     let message = "Hello! I'd like to place an order:\n\n";
@@ -24,6 +26,14 @@ const Cart = () => {
     });
     message += `\nTotal: ${totalAmount.toLocaleString()} DZD\n\nPlease confirm availability and delivery details.`;
     return `https://wa.me/213XXXXXXXXX?text=${encodeURIComponent(message)}`;
+  };
+
+  const handleCheckout = () => {
+    if (isAuthenticated) {
+      navigate('/checkout');
+    } else {
+      navigate('/login');
+    }
   };
 
   if (items.length === 0 && bundles.length === 0) {
@@ -212,8 +222,8 @@ const Cart = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <Button className="w-full" size="lg">
-                    Proceed to Checkout
+                  <Button className="w-full" size="lg" onClick={handleCheckout}>
+                    {isAuthenticated ? 'Proceed to Checkout' : 'Login to Checkout'}
                   </Button>
                   <Button 
                     variant="outline" 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -55,41 +54,41 @@ const HeroSection = () => {
               </div>
             </div>
 
-            {/* Professional pillars - Updated with proper grid and spacing */}
-            <div className="grid grid-cols-2 gap-4 mt-8">
-              <Card className="p-6 text-center border-border bg-white/90 professional-shadow">
-                <DollarSign className="w-10 h-10 text-primary mx-auto mb-3" />
-                <p className="text-base font-semibold heading-professional text-foreground mb-1">
+            {/* Professional benefits cards - Updated with full width grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+              <Card className="p-4 text-center border-border bg-white/90 professional-shadow flex-1">
+                <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-semibold heading-professional text-foreground mb-1">
                   {t('hero.pillars.bestPrices')}
                 </p>
-                <p className="text-sm text-muted-foreground text-professional">
+                <p className="text-xs text-muted-foreground text-professional">
                   {t('hero.pillars.pricesDesc')}
                 </p>
               </Card>
-              <Card className="p-6 text-center border-border bg-white/90 professional-shadow">
-                <CreditCard className="w-10 h-10 text-primary mx-auto mb-3" />
-                <p className="text-base font-semibold heading-professional text-foreground mb-1">
+              <Card className="p-4 text-center border-border bg-white/90 professional-shadow flex-1">
+                <CreditCard className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-semibold heading-professional text-foreground mb-1">
                   {t('hero.pillars.paymentPlans')}
                 </p>
-                <p className="text-sm text-muted-foreground text-professional">
+                <p className="text-xs text-muted-foreground text-professional">
                   {t('hero.pillars.paymentDesc')}
                 </p>
               </Card>
-              <Card className="p-6 text-center border-border bg-white/90 professional-shadow">
-                <Headphones className="w-10 h-10 text-primary mx-auto mb-3" />
-                <p className="text-base font-semibold heading-professional text-foreground mb-1">
+              <Card className="p-4 text-center border-border bg-white/90 professional-shadow flex-1">
+                <Headphones className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-semibold heading-professional text-foreground mb-1">
                   {t('hero.pillars.support')}
                 </p>
-                <p className="text-sm text-muted-foreground text-professional">
+                <p className="text-xs text-muted-foreground text-professional">
                   {t('hero.pillars.supportDesc')}
                 </p>
               </Card>
-              <Card className="p-6 text-center border-border bg-white/90 professional-shadow">
-                <Globe className="w-10 h-10 text-primary mx-auto mb-3" />
-                <p className="text-base font-semibold heading-professional text-foreground mb-1">
+              <Card className="p-4 text-center border-border bg-white/90 professional-shadow flex-1">
+                <Globe className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-semibold heading-professional text-foreground mb-1">
                   {t('hero.pillars.sourced')}
                 </p>
-                <p className="text-sm text-muted-foreground text-professional">
+                <p className="text-xs text-muted-foreground text-professional">
                   {t('hero.pillars.sourcedDesc')}
                 </p>
               </Card>

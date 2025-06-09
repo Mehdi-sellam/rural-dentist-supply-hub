@@ -1,11 +1,12 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, ShoppingCart, Menu, X, Phone, MessageCircle, Send } from 'lucide-react';
+import { Search, User, ShoppingCart, Menu, X, Phone, MessageCircle, Send, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/hooks/useLanguage';
 import { products } from '@/data/products';
 
@@ -17,6 +18,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { itemCount } = useCart();
+  const { user, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
 
   const toggleLanguage = () => {
@@ -62,8 +64,13 @@ const Header = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
-    <header className="bg-white sharp-shadow border-b sticky top-0 z-50">
+    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
       {/* Top bar */}
       <div className="bg-primary text-primary-foreground py-2 px-4">
         <div className="container mx-auto flex justify-between items-center text-sm">
@@ -206,10 +213,37 @@ const Header = () => {
               </Button>
             </Link>
 
-            {/* Account */}
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
-              <User className="w-4 h-4" />
-            </Button>
+            {/* User Menu */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    <span className="hidden sm:inline">{user.fullName.split(' ')[0]}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                    Mes commandes
+                  </DropdownMenuItem>
+                  {user.isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      Administration
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Déconnexion
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline" size="sm" className="hidden sm:flex">
+                  Connexion
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile menu toggle */}
             <Button
@@ -281,6 +315,45 @@ const Header = () => {
               >
                 {t('nav.contact')}
               </Link>
+              
+              {user ? (
+                <>
+                  <Link 
+                    to="/dashboard" 
+                    className="transition-colors py-2 text-professional text-foreground hover:text-primary"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Mes commandes
+                  </Link>
+                  {user.isAdmin && (
+                    <Link 
+                      to="/admin" 
+                      className="transition-colors py-2 text-professional text-foreground hover:text-primary"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Administration
+                    </Link>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="text-left justify-start"
+                  >
+                    Déconnexion
+                  </Button>
+                </>
+              ) : (
+                <Link 
+                  to="/login" 
+                  className="transition-colors py-2 text-professional text-foreground hover:text-primary"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Connexion
+                </Link>
+              )}
               
               <div className="flex items-center justify-between pt-2 border-t">
                 <Button variant="outline" size="sm" onClick={toggleLanguage} className="border-border">

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/AuthContext';
-import { products, categories } from '@/data/products';
+import { products, categories, bundles } from '@/data/products';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
@@ -34,19 +34,19 @@ const AdminDashboard = () => {
     );
   }
 
-  const savedOrders = JSON.parse(localStorage.getItem('dentgo_orders') || '[]');
+  const [savedOrders, setSavedOrders] = useState(JSON.parse(localStorage.getItem('dentgo_orders') || '[]'));
   const savedUsers = JSON.parse(localStorage.getItem('dentgo_users') || '[]');
   const [savedProducts, setSavedProducts] = useState(JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products)));
   const [savedCategories, setSavedCategories] = useState(JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories)));
-  const [savedBundles, setSavedBundles] = useState(JSON.parse(localStorage.getItem('dentgo_bundles') || '[]'));
+  const [savedBundles, setSavedBundles] = useState(JSON.parse(localStorage.getItem('dentgo_bundles') || JSON.stringify(bundles)));
 
   const updateOrderStatus = (orderId: string, status: string) => {
     const orders = savedOrders.map((order: any) => 
       order.id === orderId ? { ...order, status } : order
     );
     localStorage.setItem('dentgo_orders', JSON.stringify(orders));
+    setSavedOrders(orders);
     toast.success('Statut mis à jour');
-    window.location.reload();
   };
 
   const updatePaymentStatus = (orderId: string, paymentStatus: string) => {
@@ -54,8 +54,8 @@ const AdminDashboard = () => {
       order.id === orderId ? { ...order, paymentStatus } : order
     );
     localStorage.setItem('dentgo_orders', JSON.stringify(orders));
+    setSavedOrders(orders);
     toast.success('Statut de paiement mis à jour');
-    window.location.reload();
   };
 
   const updatePartialPayment = (orderId: string, amountPaid: number) => {
@@ -75,9 +75,18 @@ const AdminDashboard = () => {
       return order;
     });
     localStorage.setItem('dentgo_orders', JSON.stringify(orders));
+    setSavedOrders(orders);
     toast.success('Paiement partiel enregistré');
     setPartialPayments(prev => ({ ...prev, [orderId]: '' }));
-    window.location.reload();
+  };
+
+  const deleteOrder = (orderId: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette commande ?')) {
+      const orders = savedOrders.filter((order: any) => order.id !== orderId);
+      localStorage.setItem('dentgo_orders', JSON.stringify(orders));
+      setSavedOrders(orders);
+      toast.success('Commande supprimée avec succès');
+    }
   };
 
   const saveProduct = (productData: any) => {
@@ -101,7 +110,9 @@ const AdminDashboard = () => {
         image: productData.image || '/placeholder.svg',
         inStock: true,
         name: productData.nameFr, // English fallback
-        description: productData.descriptionFr
+        description: productData.descriptionFr,
+        rating: 4.5,
+        reviews: 12
       };
       updatedProducts.push(newProduct);
     }
@@ -162,7 +173,11 @@ const AdminDashboard = () => {
       // Edit existing bundle
       const index = updatedBundles.findIndex(b => b.id === editingBundle.id);
       if (index !== -1) {
-        updatedBundles[index] = { ...editingBundle, ...bundleData };
+        updatedBundles[index] = { 
+          ...editingBundle, 
+          ...bundleData,
+          items: bundleData.items || editingBundle.items
+        };
       }
     } else {
       // Add new bundle
@@ -172,8 +187,10 @@ const AdminDashboard = () => {
         description: bundleData.description,
         bundlePrice: bundleData.bundlePrice,
         originalPrice: bundleData.originalPrice,
-        items: bundleData.selectedProducts || [],
-        category: bundleData.category
+        savings: bundleData.savings,
+        items: bundleData.items || [],
+        procedures: bundleData.procedures || '10+',
+        popular: bundleData.popular || false
       };
       updatedBundles.push(newBundle);
     }
@@ -277,6 +294,15 @@ const AdminDashboard = () => {
                                 Restant: {remainingBalance.toLocaleString()} DZD
                               </p>
                             </div>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => deleteOrder(order.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Supprimer
+                            </Button>
                           </div>
                         </div>
 
@@ -353,7 +379,7 @@ const AdminDashboard = () => {
                               <span>{(item.price * item.quantity).toLocaleString()} DZD</span>
                             </div>
                           ))}
-                          {order.bundles.map((bundle: any) => (
+                          {order.bundles?.map((bundle: any) => (
                             <div key={bundle.id} className="text-sm flex justify-between">
                               <span>{bundle.name} x{bundle.quantity}</span>
                               <span>{(parseInt(bundle.bundlePrice.replace(/[^0-9]/g, '')) * bundle.quantity).toLocaleString()} DZD</span>
@@ -605,7 +631,7 @@ const AdminDashboard = () => {
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
                 Gestion des kits
-                <Button onClick={() => setEditingBundle({ selectedProducts: [] })}>
+                <Button onClick={() => setEditingBundle({ items: [] })}>
                   <Plus className="w-4 h-4 mr-2" />
                   Ajouter kit
                 </Button>
@@ -626,36 +652,45 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div>
-                      <Label>Prix du kit (DZD)</Label>
+                      <Label>Prix du kit</Label>
                       <Input
                         value={editingBundle.bundlePrice || ''}
                         onChange={(e) => setEditingBundle({...editingBundle, bundlePrice: e.target.value})}
+                        placeholder="18,900 DZD"
                       />
                     </div>
                     <div>
-                      <Label>Prix original (DZD)</Label>
+                      <Label>Prix original</Label>
                       <Input
                         value={editingBundle.originalPrice || ''}
                         onChange={(e) => setEditingBundle({...editingBundle, originalPrice: e.target.value})}
+                        placeholder="24,500 DZD"
                       />
                     </div>
                     <div>
-                      <Label>Catégorie</Label>
-                      <Select
-                        value={editingBundle.category || ''}
-                        onValueChange={(value) => setEditingBundle({...editingBundle, category: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une catégorie" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {savedCategories.map((cat: any) => (
-                            <SelectItem key={cat.id} value={cat.id}>
-                              {cat.nameFr}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Économies</Label>
+                      <Input
+                        value={editingBundle.savings || ''}
+                        onChange={(e) => setEditingBundle({...editingBundle, savings: e.target.value})}
+                        placeholder="5,600 DZD"
+                      />
+                    </div>
+                    <div>
+                      <Label>Procédures</Label>
+                      <Input
+                        value={editingBundle.procedures || ''}
+                        onChange={(e) => setEditingBundle({...editingBundle, procedures: e.target.value})}
+                        placeholder="20+ procedures"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="popular"
+                        checked={editingBundle.popular || false}
+                        onChange={(e) => setEditingBundle({...editingBundle, popular: e.target.checked})}
+                      />
+                      <Label htmlFor="popular">Kit populaire</Label>
                     </div>
                     <div className="md:col-span-2">
                       <Label>Description</Label>
@@ -665,32 +700,13 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <Label>Produits inclus</Label>
-                      <div className="border rounded p-2 max-h-40 overflow-y-auto">
-                        {savedProducts.map((product: any) => (
-                          <div key={product.id} className="flex items-center space-x-2 p-1">
-                            <input
-                              type="checkbox"
-                              checked={editingBundle.selectedProducts?.includes(product.id) || false}
-                              onChange={(e) => {
-                                const selected = editingBundle.selectedProducts || [];
-                                if (e.target.checked) {
-                                  setEditingBundle({
-                                    ...editingBundle, 
-                                    selectedProducts: [...selected, product.id]
-                                  });
-                                } else {
-                                  setEditingBundle({
-                                    ...editingBundle, 
-                                    selectedProducts: selected.filter((id: string) => id !== product.id)
-                                  });
-                                }
-                              }}
-                            />
-                            <span className="text-sm">{product.nameFr}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <Label>Articles inclus (un par ligne)</Label>
+                      <Textarea
+                        value={editingBundle.items?.join('\n') || ''}
+                        onChange={(e) => setEditingBundle({...editingBundle, items: e.target.value.split('\n').filter(item => item.trim())})}
+                        placeholder="Composite filling materials (3 shades)&#10;Bonding agent&#10;Etching gel"
+                        rows={6}
+                      />
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
@@ -715,8 +731,9 @@ const AdminDashboard = () => {
                       <div>
                         <h3 className="font-medium">{bundle.name}</h3>
                         <p className="text-sm text-muted-foreground">{bundle.description}</p>
-                        <p className="text-sm">Prix: {bundle.bundlePrice} DZD</p>
-                        <p className="text-xs text-muted-foreground">{bundle.items?.length || 0} produit(s) inclus</p>
+                        <p className="text-sm">Prix: {bundle.bundlePrice}</p>
+                        <p className="text-xs text-muted-foreground">{bundle.items?.length || 0} article(s) inclus</p>
+                        {bundle.popular && <Badge className="mt-1">Populaire</Badge>}
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" variant="outline" onClick={() => setEditingBundle(bundle)}>

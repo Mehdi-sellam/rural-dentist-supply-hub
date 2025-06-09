@@ -21,10 +21,17 @@ const Shop = () => {
   const { addItem } = useCart();
   const { t } = useLanguage();
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.productId.includes(searchTerm);
+  // Get saved products and categories from localStorage or use defaults
+  const savedProducts = JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products));
+  const savedCategories = JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories));
+
+  const filteredProducts = savedProducts.filter((product: any) => {
+    const matchesSearch = product.nameFr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.descriptionFr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.productCode?.includes(searchTerm) ||
+                         product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.productId?.includes(searchTerm);
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -40,12 +47,12 @@ const Shop = () => {
   };
 
   const generateWhatsAppMessage = (product: any) => {
-    const message = `Bonjour! Je suis intéressé par:\n${product.name} (ID: ${product.productId})\nPrix: ${product.price.toLocaleString()} DZD\n\nMerci de me fournir plus d'informations.`;
+    const message = `Bonjour! Je suis intéressé par:\n${product.nameFr || product.name} (Code: ${product.productCode || product.productId})\nPrix: ${product.price.toLocaleString()} DZD\n\nMerci de me fournir plus d'informations.`;
     return `https://wa.me/213XXXXXXXXX?text=${encodeURIComponent(message)}`;
   };
 
   const generateTelegramMessage = (product: any) => {
-    const message = `Bonjour! Je suis intéressé par:\n${product.name} (ID: ${product.productId})\nPrix: ${product.price.toLocaleString()} DZD\n\nMerci de me fournir plus d'informations.`;
+    const message = `Bonjour! Je suis intéressé par:\n${product.nameFr || product.name} (Code: ${product.productCode || product.productId})\nPrix: ${product.price.toLocaleString()} DZD\n\nMerci de me fournir plus d'informations.`;
     return `https://t.me/+213XXXXXXXXX?text=${encodeURIComponent(message)}`;
   };
 
@@ -83,7 +90,7 @@ const Shop = () => {
 
           {/* Category Filter */}
           <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
+            {savedCategories.map((category: any) => (
               <Button
                 key={category.id}
                 variant={selectedCategory === category.id ? 'default' : 'outline'}
@@ -91,7 +98,7 @@ const Shop = () => {
                 onClick={() => setSelectedCategory(selectedCategory === category.id ? '' : category.id)}
                 className="border-border"
               >
-                {category.icon} {category.name}
+                {category.icon} {category.nameFr || category.name}
               </Button>
             ))}
           </div>
@@ -99,14 +106,14 @@ const Shop = () => {
 
         {/* Products Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
+          {filteredProducts.map((product: any) => (
             <Card key={product.id} className="product-card">
               <CardContent className="p-0">
                 {/* Product Image Area */}
                 <div className="relative aspect-square bg-muted flex items-center justify-center overflow-hidden">
                   <img 
                     src={product.image} 
-                    alt={product.name}
+                    alt={product.nameFr || product.name}
                     className="w-full h-full object-cover"
                   />
                   
@@ -119,7 +126,7 @@ const Shop = () => {
                   
                   {/* Product ID */}
                   <Badge className="absolute top-3 right-3 bg-white/90 text-foreground border border-border">
-                    #{product.productId}
+                    #{product.productCode || product.productId}
                   </Badge>
                   
                   {/* Quick actions on hover */}
@@ -140,20 +147,20 @@ const Shop = () => {
                         <Star
                           key={i}
                           className={`w-3 h-3 ${
-                            i < Math.floor(product.rating) 
+                            i < Math.floor(product.rating || 4) 
                               ? 'fill-yellow-400 text-yellow-400' 
                               : 'text-gray-300'
                           }`}
                         />
                       ))}
                     </div>
-                    <span className="text-muted-foreground">({product.reviews})</span>
+                    <span className="text-muted-foreground">({product.reviews || 12})</span>
                   </div>
 
                   {/* Product Name */}
                   <div>
-                    <h3 className="font-bold text-foreground mb-1 heading-professional text-sm">{product.name}</h3>
-                    <p className="text-xs text-muted-foreground text-professional">{product.description}</p>
+                    <h3 className="font-bold text-foreground mb-1 heading-professional text-sm">{product.nameFr || product.name}</h3>
+                    <p className="text-xs text-muted-foreground text-professional">{product.descriptionFr || product.description}</p>
                   </div>
 
                   {/* Price */}

@@ -1,4 +1,3 @@
-
 import { Product, Bundle } from '@/types/product';
 
 export const products: Product[] = [
@@ -519,6 +518,7 @@ export const categories = [
     nameAr: 'الحشوات والترميم',
     nameFr: 'Obturations et restaurations',
     description: 'Composites, cements, bonding agents',
+    descriptionFr: 'Composites, ciments, agents de liaison',
     icon: '🦷',
     color: 'from-blue-100 to-blue-200'
   },
@@ -528,6 +528,7 @@ export const categories = [
     nameAr: 'الأدوات الجراحية',
     nameFr: 'Instruments chirurgicaux',
     description: 'Forceps, elevators, scissors, sutures',
+    descriptionFr: 'Forceps, élévateurs, ciseaux, sutures',
     icon: '⚕️',
     color: 'from-green-100 to-green-200'
   },
@@ -537,6 +538,7 @@ export const categories = [
     nameAr: 'المعدات السنية',
     nameFr: 'Équipement dentaire',
     description: 'Lights, compressors, scalers, X-ray',
+    descriptionFr: 'Éclairages, compresseurs, détartreurs, rayons X',
     icon: '🔧',
     color: 'from-orange-100 to-orange-200'
   },
@@ -546,6 +548,7 @@ export const categories = [
     nameAr: 'المستهلكات ومعدات الحماية',
     nameFr: 'Jetables et EPI',
     description: 'Gloves, masks, syringes, cotton',
+    descriptionFr: 'Gants, masques, seringues, coton',
     icon: '🧤',
     color: 'from-purple-100 to-purple-200'
   },
@@ -555,6 +558,7 @@ export const categories = [
     nameAr: 'علاج الجذور',
     nameFr: 'Endodontie',
     description: 'Files, sealers, irrigants, gutta percha',
+    descriptionFr: 'Limes, obturateurs, irrigants, gutta percha',
     icon: '🔍',
     color: 'from-pink-100 to-pink-200'
   },
@@ -564,6 +568,7 @@ export const categories = [
     nameAr: 'تقويم الأسنان',
     nameFr: 'Orthodontie',
     description: 'Brackets, wires, elastics, adhesives',
+    descriptionFr: 'Brackets, fils, élastiques, adhésifs',
     icon: '🦾',
     color: 'from-teal-100 to-teal-200'
   },
@@ -573,6 +578,7 @@ export const categories = [
     nameAr: 'التعقيم',
     nameFr: 'Stérilisation',
     description: 'Autoclaves, pouches, indicators',
+    descriptionFr: 'Autoclaves, sachets, indicateurs',
     icon: '🧼',
     color: 'from-cyan-100 to-cyan-200'
   }

@@ -16,6 +16,8 @@ export interface Product {
   inStock: boolean;
   badge?: string;
   specifications?: string[];
+  productId: string;
+  productCode: string;
 }
 
 export interface CartItem extends Product {

@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,12 +12,16 @@ import Footer from '@/components/Footer';
 const Catalog = () => {
   const { t } = useLanguage();
 
+  // Get saved products and categories from localStorage or use defaults
+  const savedProducts = JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products));
+  const savedCategories = JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories));
+
   const downloadCatalog = () => {
     // Generate CSV content
     const headers = ['ID', 'Code', 'Nom', 'Description', 'Prix (DZD)', 'Catégorie', 'En stock'];
     const csvContent = [
       headers.join(','),
-      ...products.map(product => [
+      ...savedProducts.map((product: any) => [
         product.id,
         product.productCode,
         product.nameFr,
@@ -37,6 +42,12 @@ const Catalog = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // Group products by category
+  const productsByCategory = savedCategories.map((category: any) => ({
+    ...category,
+    products: savedProducts.filter((product: any) => product.category === category.id)
+  }));
 
   // Scroll to top when component mounts
   React.useEffect(() => {
@@ -119,8 +130,8 @@ const Catalog = () => {
             Nos Catégories
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.map((category) => (
-              <Card key={category.id} className={`border-border bg-gradient-to-br ${category.color}`}>
+            {savedCategories.map((category: any) => (
+              <Card key={category.id} className={`border-border bg-gradient-to-br ${category.color || 'from-blue-50 to-indigo-100'}`}>
                 <CardContent className="p-6 text-center">
                   <div className="text-4xl mb-4">{category.icon}</div>
                   <h3 className="font-bold text-lg mb-2 heading-professional text-foreground">
@@ -135,39 +146,49 @@ const Catalog = () => {
           </div>
         </div>
 
-        {/* Product Showcase */}
-        <div className="mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center heading-professional">
-            Exemples de Produits
-          </h2>
-          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.slice(0, 8).map((product) => (
-              <Card key={product.id} className="border-border">
-                <CardContent className="p-4">
-                  <div className="aspect-square bg-muted rounded mb-3 flex items-center justify-center">
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-full h-full object-cover rounded"
-                    />
-                  </div>
-                  <h3 className="font-medium text-sm mb-1 text-foreground heading-professional">
-                    {product.nameFr}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mb-2 text-professional">
-                    Code: {product.productCode}
-                  </p>
-                  <p className="font-bold text-primary heading-professional">
-                    {product.price.toLocaleString()} DZD
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        {/* Products by Category */}
+        <div className="space-y-12">
+          {productsByCategory.map((category: any) => (
+            category.products.length > 0 && (
+              <div key={category.id}>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center heading-professional flex items-center justify-center gap-3">
+                  <span className="text-4xl">{category.icon}</span>
+                  {category.nameFr}
+                </h2>
+                <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {category.products.map((product: any) => (
+                    <Card key={product.id} className="border-border">
+                      <CardContent className="p-4">
+                        <div className="aspect-square bg-muted rounded mb-3 flex items-center justify-center">
+                          <img 
+                            src={product.image} 
+                            alt={product.nameFr}
+                            className="w-full h-full object-cover rounded"
+                          />
+                        </div>
+                        <h3 className="font-medium text-sm mb-1 text-foreground heading-professional">
+                          {product.nameFr}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mb-2 text-professional">
+                          Code: {product.productCode}
+                        </p>
+                        <p className="font-bold text-primary heading-professional">
+                          {product.price.toLocaleString()} DZD
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2 text-professional line-clamp-3">
+                          {product.descriptionFr}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )
+          ))}
         </div>
 
         {/* Contact Information */}
-        <Card className="text-center border-border">
+        <Card className="text-center border-border mt-12">
           <CardContent className="p-8">
             <h2 className="text-2xl font-bold text-foreground mb-4 heading-professional">
               Besoin d'aide pour passer commande ?

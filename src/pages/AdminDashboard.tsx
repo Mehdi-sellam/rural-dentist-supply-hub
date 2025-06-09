@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,15 +5,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/AuthContext';
+import { products, categories } from '@/data/products';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('orders');
   const [partialPayments, setPartialPayments] = useState<{[key: string]: string}>({});
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [editingBundle, setEditingBundle] = useState<any>(null);
 
   if (!user || !user.isAdmin) {
     return (
@@ -31,6 +36,9 @@ const AdminDashboard = () => {
 
   const savedOrders = JSON.parse(localStorage.getItem('dentgo_orders') || '[]');
   const savedUsers = JSON.parse(localStorage.getItem('dentgo_users') || '[]');
+  const savedProducts = JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products));
+  const savedCategories = JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories));
+  const savedBundles = JSON.parse(localStorage.getItem('dentgo_bundles') || '[]');
 
   const updateOrderStatus = (orderId: string, status: string) => {
     const orders = savedOrders.map((order: any) => 
@@ -72,6 +80,58 @@ const AdminDashboard = () => {
     window.location.reload();
   };
 
+  const saveProduct = (productData: any) => {
+    const products = [...savedProducts];
+    if (editingProduct) {
+      const index = products.findIndex(p => p.id === editingProduct.id);
+      products[index] = { ...editingProduct, ...productData };
+    } else {
+      const newProduct = {
+        id: Date.now().toString(),
+        productId: `PROD${Date.now()}`,
+        productCode: productData.productCode,
+        ...productData
+      };
+      products.push(newProduct);
+    }
+    localStorage.setItem('dentgo_products', JSON.stringify(products));
+    setEditingProduct(null);
+    toast.success('Produit sauvegardé');
+    window.location.reload();
+  };
+
+  const deleteProduct = (productId: string) => {
+    const products = savedProducts.filter((p: any) => p.id !== productId);
+    localStorage.setItem('dentgo_products', JSON.stringify(products));
+    toast.success('Produit supprimé');
+    window.location.reload();
+  };
+
+  const saveCategory = (categoryData: any) => {
+    const categories = [...savedCategories];
+    if (editingCategory) {
+      const index = categories.findIndex(c => c.id === editingCategory.id);
+      categories[index] = { ...editingCategory, ...categoryData };
+    } else {
+      const newCategory = {
+        id: Date.now().toString(),
+        ...categoryData
+      };
+      categories.push(newCategory);
+    }
+    localStorage.setItem('dentgo_categories', JSON.stringify(categories));
+    setEditingCategory(null);
+    toast.success('Catégorie sauvegardée');
+    window.location.reload();
+  };
+
+  const deleteCategory = (categoryId: string) => {
+    const categories = savedCategories.filter((c: any) => c.id !== categoryId);
+    localStorage.setItem('dentgo_categories', JSON.stringify(categories));
+    toast.success('Catégorie supprimée');
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -80,7 +140,7 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Administration</h1>
 
         {/* Navigation */}
-        <div className="flex space-x-4 mb-8">
+        <div className="flex space-x-4 mb-8 flex-wrap">
           <Button 
             variant={activeTab === 'orders' ? 'default' : 'outline'}
             onClick={() => setActiveTab('orders')}
@@ -92,6 +152,24 @@ const AdminDashboard = () => {
             onClick={() => setActiveTab('clients')}
           >
             Clients
+          </Button>
+          <Button 
+            variant={activeTab === 'products' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('products')}
+          >
+            Produits
+          </Button>
+          <Button 
+            variant={activeTab === 'categories' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('categories')}
+          >
+            Catégories
+          </Button>
+          <Button 
+            variant={activeTab === 'bundles' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('bundles')}
+          >
+            Kits
           </Button>
         </div>
 
@@ -135,7 +213,7 @@ const AdminDashboard = () => {
                               <p className="text-sm text-green-600">
                                 Payé: {amountPaid.toLocaleString()} DZD ({paymentPercentage.toFixed(1)}%)
                               </p>
-                              <p className="text-sm text-red-600">
+                              <p className="text-sm text-muted-foreground">
                                 Restant: {remainingBalance.toLocaleString()} DZD
                               </p>
                             </div>
@@ -261,7 +339,7 @@ const AdminDashboard = () => {
                           <div className="text-right">
                             <p className="text-sm"><strong>Commandes:</strong> {clientOrders.length}</p>
                             <p className="text-sm text-green-600"><strong>Total payé:</strong> {totalSpent.toLocaleString()} DZD</p>
-                            <p className="text-sm text-red-600"><strong>Total restant:</strong> {totalRemaining.toLocaleString()} DZD</p>
+                            <p className="text-sm text-muted-foreground"><strong>Total restant:</strong> {totalRemaining.toLocaleString()} DZD</p>
                             <p className="text-sm"><strong>Total commandé:</strong> {totalOrdered.toLocaleString()} DZD</p>
                           </div>
                         </div>
@@ -270,6 +348,203 @@ const AdminDashboard = () => {
                   })}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Products Tab */}
+        {activeTab === 'products' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                Gestion des produits
+                <Button onClick={() => setEditingProduct({})}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Ajouter produit
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {editingProduct && (
+                <div className="border rounded p-4 mb-6">
+                  <h3 className="font-medium mb-4">
+                    {editingProduct.id ? 'Modifier produit' : 'Nouveau produit'}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Nom français</Label>
+                      <Input
+                        value={editingProduct.nameFr || ''}
+                        onChange={(e) => setEditingProduct({...editingProduct, nameFr: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Code produit</Label>
+                      <Input
+                        value={editingProduct.productCode || ''}
+                        onChange={(e) => setEditingProduct({...editingProduct, productCode: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Prix (DZD)</Label>
+                      <Input
+                        type="number"
+                        value={editingProduct.price || ''}
+                        onChange={(e) => setEditingProduct({...editingProduct, price: parseInt(e.target.value)})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Catégorie</Label>
+                      <Select
+                        value={editingProduct.category || ''}
+                        onValueChange={(value) => setEditingProduct({...editingProduct, category: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {savedCategories.map((cat: any) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.nameFr}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Description française</Label>
+                      <Textarea
+                        value={editingProduct.descriptionFr || ''}
+                        onChange={(e) => setEditingProduct({...editingProduct, descriptionFr: e.target.value})}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>URL de l'image</Label>
+                      <Input
+                        value={editingProduct.image || ''}
+                        onChange={(e) => setEditingProduct({...editingProduct, image: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button onClick={() => saveProduct(editingProduct)}>
+                      Sauvegarder
+                    </Button>
+                    <Button variant="outline" onClick={() => setEditingProduct(null)}>
+                      Annuler
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {savedProducts.map((product: any) => (
+                  <div key={product.id} className="border rounded p-4 flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">{product.nameFr}</h3>
+                      <p className="text-sm text-muted-foreground">Code: {product.productCode}</p>
+                      <p className="text-sm">{product.price.toLocaleString()} DZD</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setEditingProduct(product)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => deleteProduct(product.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Categories Tab */}
+        {activeTab === 'categories' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                Gestion des catégories
+                <Button onClick={() => setEditingCategory({})}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Ajouter catégorie
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {editingCategory && (
+                <div className="border rounded p-4 mb-6">
+                  <h3 className="font-medium mb-4">
+                    {editingCategory.id ? 'Modifier catégorie' : 'Nouvelle catégorie'}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Nom français</Label>
+                      <Input
+                        value={editingCategory.nameFr || ''}
+                        onChange={(e) => setEditingCategory({...editingCategory, nameFr: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Icône (emoji)</Label>
+                      <Input
+                        value={editingCategory.icon || ''}
+                        onChange={(e) => setEditingCategory({...editingCategory, icon: e.target.value})}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Description française</Label>
+                      <Textarea
+                        value={editingCategory.descriptionFr || ''}
+                        onChange={(e) => setEditingCategory({...editingCategory, descriptionFr: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button onClick={() => saveCategory(editingCategory)}>
+                      Sauvegarder
+                    </Button>
+                    <Button variant="outline" onClick={() => setEditingCategory(null)}>
+                      Annuler
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {savedCategories.map((category: any) => (
+                  <div key={category.id} className="border rounded p-4 flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium flex items-center gap-2">
+                        <span className="text-2xl">{category.icon}</span>
+                        {category.nameFr}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{category.descriptionFr}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setEditingCategory(category)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => deleteCategory(category.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Bundles Tab */}
+        {activeTab === 'bundles' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestion des kits</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Fonctionnalité de gestion des kits à implémenter.</p>
             </CardContent>
           </Card>
         )}

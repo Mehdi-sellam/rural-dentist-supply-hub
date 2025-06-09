@@ -11,7 +11,7 @@ const HeroSection = () => {
       <div className="container mx-auto">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Text content */}
-          <div className="space-y-6">
+          <div className="space-y-6 text-center md:text-left">
             <div className="space-y-4">
               <h1 className="text-4xl text-foreground leading-tight heading-professional md:text-5xl font-bold my-0 mx-0 py-0 px-0">
                 Fournitures Dentaires Professionnelles
@@ -24,7 +24,7 @@ const HeroSection = () => {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
               <Link to="/shop">
                 <Button size="lg" className="text-lg px-8 py-6 btn-professional">
                   Découvrir nos produits
@@ -41,9 +41,11 @@ const HeroSection = () => {
                 </Button>
               </div>
             </div>
+          </div>
 
-            {/* Expanded professional benefits cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+          {/* Professional benefits cards - centered properly */}
+          <div className="flex justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
               <Card className="p-6 text-center border-border bg-white/95 professional-shadow hover:shadow-lg transition-all duration-300 flex-1 min-h-[160px] flex flex-col justify-center">
                 <DollarSign className="w-12 h-12 text-primary mx-auto mb-4" />
                 <p className="text-base font-bold heading-professional text-foreground mb-2">
@@ -81,11 +83,6 @@ const HeroSection = () => {
                 </p>
               </Card>
             </div>
-          </div>
-
-          {/* Professional showcase - improved layout */}
-          <div className="relative flex items-center justify-center">
-            
           </div>
         </div>
       </div>

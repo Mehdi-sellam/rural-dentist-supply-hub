@@ -24,37 +24,6 @@ const Dashboard = () => {
   const totalRemaining = totalOrdered - totalPaid;
   const paymentPercentage = totalOrdered > 0 ? (totalPaid / totalOrdered) * 100 : 0;
 
-  // Product statistics
-  const productStats: {[key: string]: {quantity: number, totalSpent: number, totalPaid: number}} = {};
-  
-  userOrders.forEach((order: any) => {
-    order.items.forEach((item: any) => {
-      if (!productStats[item.name]) {
-        productStats[item.name] = { quantity: 0, totalSpent: 0, totalPaid: 0 };
-      }
-      const itemTotal = item.price * item.quantity;
-      const orderPaymentRatio = (order.amountPaid || 0) / order.totalAmount;
-      const itemPaid = itemTotal * orderPaymentRatio;
-      
-      productStats[item.name].quantity += item.quantity;
-      productStats[item.name].totalSpent += itemTotal;
-      productStats[item.name].totalPaid += itemPaid;
-    });
-    
-    order.bundles.forEach((bundle: any) => {
-      if (!productStats[bundle.name]) {
-        productStats[bundle.name] = { quantity: 0, totalSpent: 0, totalPaid: 0 };
-      }
-      const bundleTotal = parseInt(bundle.bundlePrice.replace(/[^0-9]/g, '')) * bundle.quantity;
-      const orderPaymentRatio = (order.amountPaid || 0) / order.totalAmount;
-      const bundlePaid = bundleTotal * orderPaymentRatio;
-      
-      productStats[bundle.name].quantity += bundle.quantity;
-      productStats[bundle.name].totalSpent += bundleTotal;
-      productStats[bundle.name].totalPaid += bundlePaid;
-    });
-  });
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending': return <Badge variant="outline">En attente</Badge>;
@@ -80,6 +49,27 @@ const Dashboard = () => {
       
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Tableau de bord</h1>
+
+        {/* User Info - Moved to top */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Informations du compte</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p><strong>Nom:</strong> {user.fullName}</p>
+                <p><strong>Cabinet:</strong> {user.dentalOfficeName}</p>
+                <p><strong>Email:</strong> {user.email}</p>
+              </div>
+              <div>
+                <p><strong>Téléphone:</strong> {user.phone}</p>
+                <p><strong>Wilaya:</strong> {user.wilaya}</p>
+                <p><strong>Adresse:</strong> {user.address}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Payment Statistics */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -108,73 +98,10 @@ const Dashboard = () => {
               <CardTitle className="text-lg">Restant à Payer</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-red-600">{totalRemaining.toLocaleString()} DZD</p>
+              <p className="text-2xl font-bold text-muted-foreground">{totalRemaining.toLocaleString()} DZD</p>
             </CardContent>
           </Card>
         </div>
-
-        {/* Product Statistics */}
-        {Object.keys(productStats).length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Statistiques par Produit</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Object.entries(productStats).map(([productName, stats]) => {
-                  const productPaymentPercentage = (stats.totalPaid / stats.totalSpent) * 100;
-                  const productRemaining = stats.totalSpent - stats.totalPaid;
-                  
-                  return (
-                    <div key={productName} className="border rounded p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium">{productName}</h4>
-                        <span className="text-sm text-muted-foreground">Qté: {stats.quantity}</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Total</p>
-                          <p className="font-medium">{stats.totalSpent.toLocaleString()} DZD</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Payé</p>
-                          <p className="font-medium text-green-600">{stats.totalPaid.toLocaleString()} DZD</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Restant</p>
-                          <p className="font-medium text-red-600">{productRemaining.toLocaleString()} DZD</p>
-                        </div>
-                      </div>
-                      <Progress value={productPaymentPercentage} className="mt-2" />
-                      <p className="text-xs text-muted-foreground mt-1">{productPaymentPercentage.toFixed(1)}% payé</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* User Info */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Informations du compte</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p><strong>Nom:</strong> {user.fullName}</p>
-                <p><strong>Cabinet:</strong> {user.dentalOfficeName}</p>
-                <p><strong>Email:</strong> {user.email}</p>
-              </div>
-              <div>
-                <p><strong>Téléphone:</strong> {user.phone}</p>
-                <p><strong>Wilaya:</strong> {user.wilaya}</p>
-                <p><strong>Adresse:</strong> {user.address}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Orders */}
         <Card>
@@ -219,7 +146,7 @@ const Dashboard = () => {
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Restant</p>
-                          <p className="font-medium text-red-600">{orderRemaining.toLocaleString()} DZD</p>
+                          <p className="font-medium text-muted-foreground">{orderRemaining.toLocaleString()} DZD</p>
                         </div>
                       </div>
                       

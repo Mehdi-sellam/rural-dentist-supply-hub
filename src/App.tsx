@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +23,7 @@ import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +65,7 @@ const App = () => {
                     <Route path="/order-confirmation" element={<OrderConfirmation />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/account" element={<Account />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <WhatsAppFloat />

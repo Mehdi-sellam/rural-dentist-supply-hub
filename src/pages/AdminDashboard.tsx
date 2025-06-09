@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('orders');
+  const [partialPayments, setPartialPayments] = useState<{[key: string]: string}>({});
 
   if (!user || !user.isAdmin) {
     return (
@@ -46,6 +47,28 @@ const AdminDashboard = () => {
     );
     localStorage.setItem('dentgo_orders', JSON.stringify(orders));
     toast.success('Statut de paiement mis à jour');
+    window.location.reload();
+  };
+
+  const updatePartialPayment = (orderId: string, amountPaid: number) => {
+    const orders = savedOrders.map((order: any) => {
+      if (order.id === orderId) {
+        const existingPaid = order.amountPaid || 0;
+        const newAmountPaid = existingPaid + amountPaid;
+        const remainingBalance = order.totalAmount - newAmountPaid;
+        
+        return { 
+          ...order, 
+          amountPaid: newAmountPaid,
+          remainingBalance: remainingBalance,
+          paymentStatus: remainingBalance <= 0 ? 'paid' : 'partial'
+        };
+      }
+      return order;
+    });
+    localStorage.setItem('dentgo_orders', JSON.stringify(orders));
+    toast.success('Paiement partiel enregistré');
+    setPartialPayments(prev => ({ ...prev, [orderId]: '' }));
     window.location.reload();
   };
 
@@ -85,8 +108,12 @@ const AdminDashboard = () => {
                 <div className="space-y-6">
                   {savedOrders.map((order: any) => {
                     const customer = savedUsers.find((u: any) => u.id === order.userId);
+                    const amountPaid = order.amountPaid || 0;
+                    const remainingBalance = order.totalAmount - amountPaid;
+                    const paymentPercentage = (amountPaid / order.totalAmount) * 100;
+                    
                     return (
-                      <div key={order.id} className="border rounded p-4">
+                      <div key={order.id} className="border rounded p-6 space-y-4">
                         <div className="grid md:grid-cols-2 gap-4 mb-4">
                           <div>
                             <h3 className="font-medium">Commande #{order.id}</h3>
@@ -104,10 +131,18 @@ const AdminDashboard = () => {
                             <p className="font-bold text-lg">
                               {order.totalAmount.toLocaleString()} DZD
                             </p>
+                            <div className="mt-2 space-y-1">
+                              <p className="text-sm text-green-600">
+                                Payé: {amountPaid.toLocaleString()} DZD ({paymentPercentage.toFixed(1)}%)
+                              </p>
+                              <p className="text-sm text-red-600">
+                                Restant: {remainingBalance.toLocaleString()} DZD
+                              </p>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-4 mb-4">
+                        <div className="grid md:grid-cols-3 gap-4 mb-4">
                           <div>
                             <Label>Statut de la commande</Label>
                             <Select 
@@ -125,6 +160,7 @@ const AdminDashboard = () => {
                               </SelectContent>
                             </Select>
                           </div>
+                          
                           <div>
                             <Label>Statut du paiement</Label>
                             <Select 
@@ -141,6 +177,34 @@ const AdminDashboard = () => {
                               </SelectContent>
                             </Select>
                           </div>
+
+                          {order.paymentStatus === 'partial' && (
+                            <div>
+                              <Label>Ajouter paiement (DZD)</Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  type="number"
+                                  placeholder="Montant"
+                                  value={partialPayments[order.id] || ''}
+                                  onChange={(e) => setPartialPayments(prev => ({ 
+                                    ...prev, 
+                                    [order.id]: e.target.value 
+                                  }))}
+                                />
+                                <Button 
+                                  size="sm"
+                                  onClick={() => {
+                                    const amount = parseFloat(partialPayments[order.id] || '0');
+                                    if (amount > 0) {
+                                      updatePartialPayment(order.id, amount);
+                                    }
+                                  }}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         <div className="space-y-1">
@@ -178,22 +242,32 @@ const AdminDashboard = () => {
                 <p className="text-muted-foreground">Aucun client enregistré.</p>
               ) : (
                 <div className="space-y-4">
-                  {savedUsers.map((client: any) => (
-                    <div key={client.id} className="border rounded p-4">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <h3 className="font-medium">{client.fullName}</h3>
-                          <p className="text-sm text-muted-foreground">{client.dentalOfficeName}</p>
-                          <p className="text-sm">{client.email}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm">{client.phone}</p>
-                          <p className="text-sm">{client.wilaya}</p>
-                          <p className="text-sm">{client.address}</p>
+                  {savedUsers.map((client: any) => {
+                    const clientOrders = savedOrders.filter((order: any) => order.userId === client.id);
+                    const totalSpent = clientOrders.reduce((sum: number, order: any) => sum + (order.amountPaid || 0), 0);
+                    const totalOrdered = clientOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+                    const totalRemaining = totalOrdered - totalSpent;
+                    
+                    return (
+                      <div key={client.id} className="border rounded p-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <h3 className="font-medium">{client.fullName}</h3>
+                            <p className="text-sm text-muted-foreground">{client.dentalOfficeName}</p>
+                            <p className="text-sm">{client.email}</p>
+                            <p className="text-sm">{client.phone}</p>
+                            <p className="text-sm">{client.wilaya}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm"><strong>Commandes:</strong> {clientOrders.length}</p>
+                            <p className="text-sm text-green-600"><strong>Total payé:</strong> {totalSpent.toLocaleString()} DZD</p>
+                            <p className="text-sm text-red-600"><strong>Total restant:</strong> {totalRemaining.toLocaleString()} DZD</p>
+                            <p className="text-sm"><strong>Total commandé:</strong> {totalOrdered.toLocaleString()} DZD</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

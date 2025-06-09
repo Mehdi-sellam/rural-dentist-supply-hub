@@ -1,13 +1,13 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, ShoppingCart, Menu, X, Phone, MessageCircle, Send, LogOut } from 'lucide-react';
+import { Search, User, ShoppingCart, Menu, X, Phone, MessageCircle, Send, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/hooks/useLanguage';
 import { products } from '@/data/products';
 
 const Header = () => {
@@ -19,16 +19,6 @@ const Header = () => {
   const navigate = useNavigate();
   const { itemCount } = useCart();
   const { user, logout } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
-
-  const toggleLanguage = () => {
-    const newLanguage = language === 'fr' ? 'en' : 'fr';
-    setLanguage(newLanguage);
-  };
-
-  const getLanguageLabel = () => {
-    return language === 'fr' ? t('lang.french') : t('lang.english');
-  };
 
   const isActivePage = (path: string) => {
     return location.pathname === path;
@@ -74,7 +64,7 @@ const Header = () => {
       {/* Top bar */}
       <div className="bg-primary text-primary-foreground py-2 px-4">
         <div className="container mx-auto flex justify-between items-center text-sm">
-          <p className="text-professional">{t('common.fastShipping')} • {t('common.bestPrices')} • {t('common.customerSupport')}</p>
+          <p className="text-professional">Livraison Rapide • Meilleurs Prix • Support Client</p>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4" />
@@ -113,7 +103,7 @@ const Header = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-primary heading-professional">DentGo</h1>
-              <p className="text-xs text-muted-foreground text-professional">Professional Dental Supplies</p>
+              <p className="text-xs text-muted-foreground text-professional">Fournitures Dentaires Professionnelles</p>
             </div>
           </Link>
 
@@ -122,7 +112,7 @@ const Header = () => {
             <form onSubmit={handleSearchSubmit} className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                placeholder={t('nav.search')}
+                placeholder="Rechercher produit ou code..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10 border-border"
@@ -138,7 +128,7 @@ const Header = () => {
                       <div className="flex items-center gap-3">
                         <img src={product.image} alt={product.name} className="w-8 h-8 object-cover" />
                         <div>
-                          <p className="text-sm font-medium text-professional">{language === 'fr' ? product.nameFr : product.name}</p>
+                          <p className="text-sm font-medium text-professional">{product.nameFr}</p>
                           <p className="text-xs text-muted-foreground">ID: {product.productCode}</p>
                         </div>
                       </div>
@@ -155,63 +145,55 @@ const Header = () => {
               to="/" 
               className={`transition-colors text-professional ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              {t('nav.home')}
+              Accueil
             </Link>
             <Link 
               to="/shop" 
               className={`transition-colors text-professional ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              {t('nav.shop')}
+              Boutique
             </Link>
             <Link 
               to="/bundles" 
               className={`transition-colors text-professional ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              {t('nav.bundles')}
+              Kits
             </Link>
             <Link 
               to="/catalog" 
               className={`transition-colors text-professional ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              {t('nav.catalog')}
+              Catalogue
             </Link>
             <Link 
               to="/about" 
               className={`transition-colors text-professional ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              {t('nav.about')}
+              À propos
             </Link>
             <Link 
               to="/contact" 
               className={`transition-colors text-professional ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
             >
-              {t('nav.contact')}
+              Contact
             </Link>
           </nav>
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4">
-            {/* Language toggle */}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={toggleLanguage}
-              className="hidden sm:flex text-professional border-border"
-            >
-              {getLanguageLabel()}
-            </Button>
-
-            {/* Cart */}
-            <Link to="/cart">
-              <Button variant="ghost" size="sm" className="relative">
-                <ShoppingCart className="w-4 h-4" />
-                {itemCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs bg-primary">
-                    {itemCount}
-                  </Badge>
-                )}
-              </Button>
-            </Link>
+            {/* Cart - Only show for non-admin users */}
+            {user && !user.isAdmin && (
+              <Link to="/cart">
+                <Button variant="ghost" size="sm" className="relative">
+                  <ShoppingCart className="w-4 h-4" />
+                  {itemCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs bg-primary">
+                      {itemCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )}
 
             {/* User Menu */}
             {user ? (
@@ -223,9 +205,17 @@ const Header = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                    Mes commandes
-                  </DropdownMenuItem>
+                  {!user.isAdmin && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                        Mes commandes
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/account')}>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Informations de compte
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   {user.isAdmin && (
                     <DropdownMenuItem onClick={() => navigate('/admin')}>
                       Administration
@@ -265,7 +255,7 @@ const Header = () => {
               <form onSubmit={handleSearchSubmit} className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  placeholder={t('nav.search')}
+                  placeholder="Rechercher produit ou code..."
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   className="pl-10 border-border"
@@ -278,53 +268,64 @@ const Header = () => {
                 className={`transition-colors py-2 text-professional ${isActivePage('/') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t('nav.home')}
+                Accueil
               </Link>
               <Link 
                 to="/shop" 
                 className={`transition-colors py-2 text-professional ${isActivePage('/shop') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t('nav.shop')}
+                Boutique
               </Link>
               <Link 
                 to="/bundles" 
                 className={`transition-colors py-2 text-professional ${isActivePage('/bundles') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t('nav.bundles')}
+                Kits
               </Link>
               <Link 
                 to="/catalog" 
                 className={`transition-colors py-2 text-professional ${isActivePage('/catalog') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t('nav.catalog')}
+                Catalogue
               </Link>
               <Link 
                 to="/about" 
                 className={`transition-colors py-2 text-professional ${isActivePage('/about') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t('nav.about')}
+                À propos
               </Link>
               <Link 
                 to="/contact" 
                 className={`transition-colors py-2 text-professional ${isActivePage('/contact') ? 'text-primary font-medium' : 'text-foreground hover:text-primary'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t('nav.contact')}
+                Contact
               </Link>
               
               {user ? (
                 <>
-                  <Link 
-                    to="/dashboard" 
-                    className="transition-colors py-2 text-professional text-foreground hover:text-primary"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Mes commandes
-                  </Link>
+                  {!user.isAdmin && (
+                    <>
+                      <Link 
+                        to="/dashboard" 
+                        className="transition-colors py-2 text-professional text-foreground hover:text-primary"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Mes commandes
+                      </Link>
+                      <Link 
+                        to="/account" 
+                        className="transition-colors py-2 text-professional text-foreground hover:text-primary"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Informations de compte
+                      </Link>
+                    </>
+                  )}
                   {user.isAdmin && (
                     <Link 
                       to="/admin" 
@@ -354,12 +355,6 @@ const Header = () => {
                   Connexion
                 </Link>
               )}
-              
-              <div className="flex items-center justify-between pt-2 border-t">
-                <Button variant="outline" size="sm" onClick={toggleLanguage} className="border-border">
-                  {getLanguageLabel()}
-                </Button>
-              </div>
             </div>
           </nav>
         )}

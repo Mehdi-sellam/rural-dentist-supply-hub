@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/hooks/useLanguage';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
@@ -16,7 +15,6 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,10 +22,14 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         toast.success('Connexion réussie');
-        navigate('/checkout');
+        if (result.redirectTo) {
+          navigate(result.redirectTo);
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         toast.error('Email ou mot de passe incorrect');
       }

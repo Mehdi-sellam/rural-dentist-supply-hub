@@ -26,6 +26,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import TestSuite from "./pages/TestSuite";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const App = () => (
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/test" element={<TestSuite />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <WhatsAppFloat />

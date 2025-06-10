@@ -456,7 +456,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      ensure_admin_profile: {
+        Args: { admin_user_id: string; admin_email: string }
+        Returns: undefined
+      }
     }
     Enums: {
       order_status:

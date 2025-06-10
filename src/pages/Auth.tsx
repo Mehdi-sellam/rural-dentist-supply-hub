@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const WILAYAS = ['Alger', 'Blida', 'Tipaza', 'Boumerdès'];
 
@@ -18,6 +19,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({
     email: '',
@@ -36,25 +38,56 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  const getErrorMessage = (error: any) => {
+    if (!error) return null;
+    
+    switch (error.message) {
+      case 'Invalid login credentials':
+        return 'Email ou mot de passe incorrect. Vérifiez vos identifiants.';
+      case 'Email not confirmed':
+        return 'Email non confirmé. Vérifiez votre boîte mail ou contactez l\'administrateur.';
+      case 'User already registered':
+        return 'Un compte avec cet email existe déjà. Essayez de vous connecter.';
+      case 'Signup not allowed for this instance':
+        return 'L\'inscription n\'est pas autorisée. Contactez l\'administrateur.';
+      default:
+        return error.message || 'Une erreur est survenue. Veuillez réessayer.';
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAuthError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Attempting login with:', loginForm.email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
       });
 
+      console.log('Login response:', { data, error });
+
       if (error) {
-        toast.error(error.message);
+        console.error('Login error:', error);
+        const errorMsg = getErrorMessage(error);
+        setAuthError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
-      toast.success('Connexion réussie');
-      navigate('/');
+      if (data.user) {
+        console.log('Login successful for user:', data.user.id);
+        toast.success('Connexion réussie');
+        navigate('/');
+      }
     } catch (error: any) {
-      toast.error('Erreur lors de la connexion');
+      console.error('Login exception:', error);
+      const errorMsg = 'Erreur de connexion. Vérifiez votre connexion internet.';
+      setAuthError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -62,16 +95,28 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError(null);
     
     if (signupForm.password !== signupForm.confirmPassword) {
-      toast.error('Les mots de passe ne correspondent pas');
+      const errorMsg = 'Les mots de passe ne correspondent pas';
+      setAuthError(errorMsg);
+      toast.error(errorMsg);
+      return;
+    }
+
+    if (signupForm.password.length < 6) {
+      const errorMsg = 'Le mot de passe doit contenir au moins 6 caractères';
+      setAuthError(errorMsg);
+      toast.error(errorMsg);
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log('Attempting signup with:', signupForm.email);
+      
+      const { data, error } = await supabase.auth.signUp({
         email: signupForm.email,
         password: signupForm.password,
         options: {
@@ -86,14 +131,50 @@ const Auth = () => {
         }
       });
 
+      console.log('Signup response:', { data, error });
+
       if (error) {
-        toast.error(error.message);
+        console.error('Signup error:', error);
+        const errorMsg = getErrorMessage(error);
+        setAuthError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
-      toast.success('Compte créé avec succès! Vérifiez votre email.');
+      if (data.user) {
+        console.log('Signup successful for user:', data.user.id);
+        
+        // Special handling for admin account
+        if (signupForm.email === 'admin@dentgo.dz') {
+          console.log('Admin account created, ensuring admin privileges');
+          try {
+            const { error: adminError } = await supabase.rpc('ensure_admin_profile', {
+              admin_user_id: data.user.id,
+              admin_email: signupForm.email
+            });
+            
+            if (adminError) {
+              console.error('Error setting admin privileges:', adminError);
+            } else {
+              console.log('Admin privileges set successfully');
+            }
+          } catch (adminErr) {
+            console.error('Exception setting admin privileges:', adminErr);
+          }
+        }
+
+        if (data.user.email_confirmed_at) {
+          toast.success('Compte créé avec succès! Vous êtes maintenant connecté.');
+          navigate('/');
+        } else {
+          toast.success('Compte créé avec succès! Vérifiez votre email pour confirmer votre compte.');
+        }
+      }
     } catch (error: any) {
-      toast.error('Erreur lors de la création du compte');
+      console.error('Signup exception:', error);
+      const errorMsg = 'Erreur lors de la création du compte. Vérifiez votre connexion internet.';
+      setAuthError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -101,10 +182,12 @@ const Auth = () => {
 
   const handleLoginChange = (field: string, value: string) => {
     setLoginForm(prev => ({ ...prev, [field]: value }));
+    if (authError) setAuthError(null);
   };
 
   const handleSignupChange = (field: string, value: string) => {
     setSignupForm(prev => ({ ...prev, [field]: value }));
+    if (authError) setAuthError(null);
   };
 
   return (
@@ -116,6 +199,15 @@ const Auth = () => {
             <p className="text-muted-foreground">Votre partenaire dentaire de confiance</p>
           </CardHeader>
           <CardContent>
+            {authError && (
+              <Alert className="mb-4 border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  {authError}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Connexion</TabsTrigger>
@@ -132,6 +224,7 @@ const Auth = () => {
                       value={loginForm.email}
                       onChange={(e) => handleLoginChange('email', e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div>
@@ -142,6 +235,7 @@ const Auth = () => {
                       value={loginForm.password}
                       onChange={(e) => handleLoginChange('password', e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
@@ -149,6 +243,15 @@ const Auth = () => {
                     Se connecter
                   </Button>
                 </form>
+                
+                <div className="mt-4 p-3 bg-blue-50 rounded-md text-sm">
+                  <p className="font-medium text-blue-900 mb-1">Compte administrateur:</p>
+                  <p className="text-blue-800">Email: admin@dentgo.dz</p>
+                  <p className="text-blue-800">Mot de passe: admin123</p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Si ce compte n'existe pas, créez-le via l'inscription avec ces identifiants.
+                  </p>
+                </div>
               </TabsContent>
               
               <TabsContent value="signup">
@@ -161,6 +264,7 @@ const Auth = () => {
                         value={signupForm.full_name}
                         onChange={(e) => handleSignupChange('full_name', e.target.value)}
                         required
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
@@ -170,6 +274,7 @@ const Auth = () => {
                         value={signupForm.dental_office_name}
                         onChange={(e) => handleSignupChange('dental_office_name', e.target.value)}
                         required
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
@@ -182,6 +287,7 @@ const Auth = () => {
                       value={signupForm.email}
                       onChange={(e) => handleSignupChange('email', e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   
@@ -194,6 +300,8 @@ const Auth = () => {
                         value={signupForm.password}
                         onChange={(e) => handleSignupChange('password', e.target.value)}
                         required
+                        disabled={isLoading}
+                        minLength={6}
                       />
                     </div>
                     <div>
@@ -204,6 +312,8 @@ const Auth = () => {
                         value={signupForm.confirmPassword}
                         onChange={(e) => handleSignupChange('confirmPassword', e.target.value)}
                         required
+                        disabled={isLoading}
+                        minLength={6}
                       />
                     </div>
                   </div>
@@ -217,11 +327,16 @@ const Auth = () => {
                         value={signupForm.phone}
                         onChange={(e) => handleSignupChange('phone', e.target.value)}
                         required
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
                       <Label htmlFor="signup-wilaya">Wilaya *</Label>
-                      <Select value={signupForm.wilaya} onValueChange={(value) => handleSignupChange('wilaya', value)}>
+                      <Select 
+                        value={signupForm.wilaya} 
+                        onValueChange={(value) => handleSignupChange('wilaya', value)}
+                        disabled={isLoading}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Choisir" />
                         </SelectTrigger>
@@ -243,6 +358,7 @@ const Auth = () => {
                       value={signupForm.address}
                       onChange={(e) => handleSignupChange('address', e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   

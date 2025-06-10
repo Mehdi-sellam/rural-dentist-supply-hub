@@ -1,37 +1,104 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, CheckCircle, Star, Send } from 'lucide-react';
-import { bundles } from '@/data/products';
+import { MessageCircle, CheckCircle, Star, Send, Loader2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+interface Bundle {
+  id: string;
+  name: string;
+  description: string;
+  items: string[];
+  original_price: string;
+  bundle_price: string;
+  savings?: string;
+  procedures?: string;
+  popular?: boolean;
+}
 
 const Bundles = () => {
   const { addBundle } = useCart();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get saved bundles from localStorage or use defaults
-  const savedBundles = JSON.parse(localStorage.getItem('dentgo_bundles') || JSON.stringify(bundles));
+  useEffect(() => {
+    fetchBundles();
+    window.scrollTo(0, 0);
+  }, []);
 
-  const generateWhatsAppBundle = (bundle: any) => {
-    const message = `Bonjour! Je suis intéressé par le kit ${bundle.name} au prix de ${bundle.bundlePrice}. Merci de me fournir plus d'informations sur la disponibilité et la livraison.`;
+  const fetchBundles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bundles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching bundles:', error);
+        toast.error('Erreur lors du chargement des kits');
+        return;
+      }
+
+      setBundles(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Erreur lors du chargement des kits');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateWhatsAppBundle = (bundle: Bundle) => {
+    const message = `Bonjour! Je suis intéressé par le kit ${bundle.name} au prix de ${bundle.bundle_price}. Merci de me fournir plus d'informations sur la disponibilité et la livraison.`;
     return `https://wa.me/213XXXXXXXXX?text=${encodeURIComponent(message)}`;
   };
 
-  const generateTelegramBundle = (bundle: any) => {
-    const message = `Bonjour! Je suis intéressé par le kit ${bundle.name} au prix de ${bundle.bundlePrice}. Merci de me fournir plus d'informations sur la disponibilité et la livraison.`;
+  const generateTelegramBundle = (bundle: Bundle) => {
+    const message = `Bonjour! Je suis intéressé par le kit ${bundle.name} au prix de ${bundle.bundle_price}. Merci de me fournir plus d'informations sur la disponibilité et la livraison.`;
     return `https://t.me/+213XXXXXXXXX?text=${encodeURIComponent(message)}`;
   };
 
-  // Scroll to top when component mounts
-  React.useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  const handleAddToCart = async (bundle: Bundle) => {
+    if (!user) {
+      toast.error('Veuillez vous connecter pour ajouter des articles au panier');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('cart_bundles')
+        .upsert({
+          user_id: user.id,
+          bundle_id: bundle.id,
+          quantity: 1
+        }, {
+          onConflict: 'user_id,bundle_id'
+        });
+
+      if (error) {
+        console.error('Error adding to cart:', error);
+        toast.error('Erreur lors de l\'ajout au panier');
+        return;
+      }
+
+      addBundle(bundle);
+      toast.success('Kit ajouté au panier');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Erreur lors de l\'ajout au panier');
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -50,13 +117,18 @@ const Bundles = () => {
       </section>
 
       <div className="container mx-auto px-4 py-16">
-        {savedBundles.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin" />
+            <span className="ml-2">Chargement des kits...</span>
+          </div>
+        ) : bundles.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground text-lg text-professional">Aucun kit disponible pour le moment.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {savedBundles.map((bundle: any) => (
+            {bundles.map((bundle) => (
               <Card key={bundle.id} className="overflow-hidden product-card">
                 <CardContent className="p-0">
                   {/* Bundle Header */}
@@ -71,11 +143,11 @@ const Bundles = () => {
                       <p className="text-muted-foreground mb-4 text-professional">{bundle.description}</p>
                       <div className="text-center mb-4">
                         <div className="text-3xl font-bold text-primary heading-professional">
-                          {typeof bundle.bundlePrice === 'string' ? bundle.bundlePrice : `${bundle.bundlePrice} DZD`}
+                          {bundle.bundle_price}
                         </div>
-                        {bundle.originalPrice && (
+                        {bundle.original_price && (
                           <div className="text-lg text-muted-foreground line-through">
-                            {typeof bundle.originalPrice === 'string' ? bundle.originalPrice : `${bundle.originalPrice} DZD`}
+                            {bundle.original_price}
                           </div>
                         )}
                         {bundle.savings && (
@@ -123,7 +195,7 @@ const Bundles = () => {
                       <Button 
                         className="w-full btn-professional" 
                         size="lg"
-                        onClick={() => addBundle(bundle)}
+                        onClick={() => handleAddToCart(bundle)}
                       >
                         {t('common.addToCart')}
                       </Button>

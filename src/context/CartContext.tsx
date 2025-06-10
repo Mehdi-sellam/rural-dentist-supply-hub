@@ -1,13 +1,14 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Product, CartItem, Bundle } from '@/types/product';
+import { Product, CartItem } from '@/types/product';
 
-interface BundleCartItem {
+interface Bundle {
   id: string;
   name: string;
-  nameAr: string;
-  nameFr: string;
+  nameAr?: string;
+  nameFr?: string;
   bundlePrice: string;
+  originalPrice: string;
   items: string[];
   quantity: number;
   type: 'bundle';
@@ -15,7 +16,7 @@ interface BundleCartItem {
 
 interface CartContextType {
   items: CartItem[];
-  bundles: BundleCartItem[];
+  bundles: Bundle[];
   addItem: (product: Product) => void;
   addBundle: (bundle: Bundle) => void;
   removeItem: (id: string) => void;
@@ -31,7 +32,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [bundles, setBundles] = useState<BundleCartItem[]>([]);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
 
   // Load cart from localStorage on mount
   useEffect(() => {

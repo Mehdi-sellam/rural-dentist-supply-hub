@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,7 +33,7 @@ const Cart = () => {
     if (isAuthenticated) {
       navigate('/checkout');
     } else {
-      navigate('/login');
+      navigate('/auth');
     }
   };
 

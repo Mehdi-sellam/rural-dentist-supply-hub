@@ -1,22 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, CheckCircle, Star, Send, Loader2 } from 'lucide-react';
+import { ShoppingCart, Package, Check, Crown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { useLanguage } from '@/hooks/useLanguage';
-import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { toast } from 'sonner';
 
 interface Bundle {
   id: string;
   name: string;
-  description: string;
+  name_ar?: string;
+  name_fr?: string;
+  description?: string;
+  description_ar?: string;
+  description_fr?: string;
   items: string[];
   original_price: string;
   bundle_price: string;
@@ -27,14 +28,11 @@ interface Bundle {
 
 const Bundles = () => {
   const { addBundle } = useCart();
-  const { t } = useLanguage();
-  const { user } = useAuth();
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchBundles();
-    window.scrollTo(0, 0);
   }, []);
 
   const fetchBundles = async () => {
@@ -42,232 +40,142 @@ const Bundles = () => {
       const { data, error } = await supabase
         .from('bundles')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('popular', { ascending: false });
 
       if (error) {
         console.error('Error fetching bundles:', error);
-        toast.error('Erreur lors du chargement des kits');
+        toast.error('Erreur lors du chargement des bundles');
         return;
       }
 
       setBundles(data || []);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Erreur lors du chargement des kits');
+      toast.error('Erreur lors du chargement des bundles');
     } finally {
       setLoading(false);
     }
   };
 
-  const generateWhatsAppBundle = (bundle: Bundle) => {
-    const message = `Bonjour! Je suis intéressé par le kit ${bundle.name} au prix de ${bundle.bundle_price}. Merci de me fournir plus d'informations sur la disponibilité et la livraison.`;
-    return `https://wa.me/213XXXXXXXXX?text=${encodeURIComponent(message)}`;
+  const handleAddBundle = (bundle: Bundle) => {
+    const cartBundle = {
+      id: bundle.id,
+      name: bundle.name,
+      nameAr: bundle.name_ar || '',
+      nameFr: bundle.name_fr || '',
+      bundlePrice: bundle.bundle_price,
+      originalPrice: bundle.original_price,
+      items: bundle.items,
+      quantity: 1,
+      type: 'bundle' as const
+    };
+    
+    addBundle(cartBundle);
+    toast.success(`${bundle.name} ajouté au panier`);
   };
 
-  const generateTelegramBundle = (bundle: Bundle) => {
-    const message = `Bonjour! Je suis intéressé par le kit ${bundle.name} au prix de ${bundle.bundle_price}. Merci de me fournir plus d'informations sur la disponibilité et la livraison.`;
-    return `https://t.me/+213XXXXXXXXX?text=${encodeURIComponent(message)}`;
-  };
-
-  const handleAddToCart = async (bundle: Bundle) => {
-    if (!user) {
-      toast.error('Veuillez vous connecter pour ajouter des articles au panier');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('cart_bundles')
-        .upsert({
-          user_id: user.id,
-          bundle_id: bundle.id,
-          quantity: 1
-        }, {
-          onConflict: 'user_id,bundle_id'
-        });
-
-      if (error) {
-        console.error('Error adding to cart:', error);
-        toast.error('Erreur lors de l\'ajout au panier');
-        return;
-      }
-
-      addBundle(bundle);
-      toast.success('Kit ajouté au panier');
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Erreur lors de l\'ajout au panier');
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <p>Chargement des bundles...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
       <Header />
       
-      {/* Hero Section */}
-      <section className="dental-gradient py-16 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 heading-professional">
-            {t('bundles.title')}
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-professional">
-            Kits complets pour procédures spécifiques. Économisez et assurez-vous d'avoir tout le nécessaire.
-          </p>
-        </div>
-      </section>
+      <section className="py-16 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Bundles Exclusifs
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Économisez plus avec nos bundles soigneusement sélectionnés pour votre pratique dentaire
+            </p>
+          </div>
 
-      <div className="container mx-auto px-4 py-16">
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin" />
-            <span className="ml-2">Chargement des kits...</span>
-          </div>
-        ) : bundles.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg text-professional">Aucun kit disponible pour le moment.</p>
-          </div>
-        ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {bundles.map((bundle) => (
-              <Card key={bundle.id} className="overflow-hidden product-card">
-                <CardContent className="p-0">
-                  {/* Bundle Header */}
-                  <div className="premium-gradient p-6 relative">
-                    {bundle.popular && (
-                      <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground">
-                        Plus Populaire
-                      </Badge>
-                    )}
-                    <div className="text-center">
-                      <h3 className="text-2xl font-bold text-foreground mb-2 heading-professional">{bundle.name}</h3>
-                      <p className="text-muted-foreground mb-4 text-professional">{bundle.description}</p>
-                      <div className="text-center mb-4">
-                        <div className="text-3xl font-bold text-primary heading-professional">
-                          {bundle.bundle_price}
-                        </div>
-                        {bundle.original_price && (
-                          <div className="text-lg text-muted-foreground line-through">
-                            {bundle.original_price}
-                          </div>
-                        )}
-                        {bundle.savings && (
-                          <div className="text-green-600 font-bold text-professional">{t('bundles.save')} {bundle.savings}</div>
-                        )}
-                      </div>
-                    </div>
+              <Card key={bundle.id} className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${bundle.popular ? 'ring-2 ring-primary' : ''}`}>
+                {bundle.popular && (
+                  <div className="absolute top-0 right-0 bg-primary text-white px-4 py-2 rounded-bl-lg">
+                    <Crown className="w-4 h-4 inline mr-1" />
+                    Populaire
                   </div>
-
-                  {/* Bundle Contents */}
-                  <div className="p-6">
-                    <div className="mb-6">
-                      <h4 className="font-bold mb-3 flex items-center gap-2 heading-professional">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                        {t('bundles.includes')}
-                      </h4>
-                      <ul className="space-y-2">
-                        {(bundle.items || []).map((item: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-professional">
-                            <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Bundle Stats */}
-                    <div className="flex justify-between items-center mb-6 text-sm">
-                      <div className="text-center">
-                        <div className="font-bold text-primary heading-professional">{bundle.procedures || '10+'}</div>
-                        <div className="text-muted-foreground text-professional">Procédures</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          ))}
-                        </div>
-                        <div className="text-muted-foreground text-professional">Évalué</div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-3">
-                      <Button 
-                        className="w-full btn-professional" 
-                        size="lg"
-                        onClick={() => handleAddToCart(bundle)}
-                      >
-                        {t('common.addToCart')}
-                      </Button>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          className="flex-1 gap-2 border-border text-sm"
-                          onClick={() => window.open(generateWhatsAppBundle(bundle), '_blank')}
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          WhatsApp
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="flex-1 gap-2 border-border text-sm"
-                          onClick={() => window.open(generateTelegramBundle(bundle), '_blank')}
-                        >
-                          <Send className="w-4 h-4" />
-                          Telegram
-                        </Button>
-                      </div>
-                    </div>
+                )}
+                
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="w-6 h-6 text-primary" />
+                    <CardTitle className="text-xl">{bundle.name}</CardTitle>
                   </div>
+                  
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-primary">{bundle.bundle_price}</span>
+                    <span className="text-lg text-gray-400 line-through">{bundle.original_price}</span>
+                  </div>
+                  
+                  {bundle.savings && (
+                    <Badge variant="secondary" className="w-fit">
+                      Économie: {bundle.savings}
+                    </Badge>
+                  )}
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {bundle.description && (
+                    <p className="text-gray-600">{bundle.description}</p>
+                  )}
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">Inclus dans ce bundle:</h4>
+                    <ul className="space-y-1">
+                      {bundle.items.map((item, index) => (
+                        <li key={index} className="flex items-center gap-2 text-sm">
+                          <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {bundle.procedures && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <span className="text-sm text-gray-600">
+                        Idéal pour {bundle.procedures} procédures
+                      </span>
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={() => handleAddBundle(bundle)}
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Ajouter au Panier
+                  </Button>
                 </CardContent>
               </Card>
             ))}
           </div>
-        )}
-
-        {/* Why Choose Bundles Section */}
-        <section className="mt-16 premium-gradient border border-border p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4 heading-professional">Pourquoi Choisir Nos Kits ?</h2>
-            <p className="text-muted-foreground text-professional">Conçus spécifiquement pour les cabinets dentaires professionnels</p>
-          </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="text-center p-4">
-              <div className="w-12 h-12 bg-green-100 border border-green-200 flex items-center justify-center mx-auto mb-3">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <h3 className="font-bold mb-2 heading-professional">Économique</h3>
-              <p className="text-sm text-muted-foreground text-professional">Économisez jusqu'à 25% par rapport aux achats individuels</p>
+          {bundles.length === 0 && (
+            <div className="text-center py-16">
+              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">Aucun bundle disponible</h3>
+              <p className="text-gray-500">Les bundles seront bientôt disponibles.</p>
             </div>
-            
-            <div className="text-center p-4">
-              <div className="w-12 h-12 bg-blue-100 border border-blue-200 flex items-center justify-center mx-auto mb-3">
-                <Star className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="font-bold mb-2 heading-professional">Qualité Assurée</h3>
-              <p className="text-sm text-muted-foreground text-professional">Tous les articles testés et approuvés par des professionnels dentaires</p>
-            </div>
-            
-            <div className="text-center p-4">
-              <div className="w-12 h-12 bg-purple-100 border border-purple-200 flex items-center justify-center mx-auto mb-3">
-                <MessageCircle className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="font-bold mb-2 heading-professional">Solutions Complètes</h3>
-              <p className="text-sm text-muted-foreground text-professional">Tout ce dont vous avez besoin pour des procédures spécifiques en un seul package</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Link to catalog */}
-        <div className="text-center mt-12">
-          <Link to="/catalog">
-            <Button variant="outline" size="lg" className="px-8 border-border">
-              {t('common.viewAll')} les Kits dans le Catalogue
-            </Button>
-          </Link>
+          )}
         </div>
-      </div>
+      </section>
 
       <Footer />
     </div>

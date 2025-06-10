@@ -28,7 +28,7 @@ const PAYMENT_METHODS = [
 
 const Checkout = () => {
   const { items, bundles, totalAmount, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
@@ -39,7 +39,7 @@ const Checkout = () => {
     return null;
   }
 
-  const selectedWilaya = WILAYAS.find(w => w.name === user.wilaya);
+  const selectedWilaya = WILAYAS.find(w => w.name === profile?.wilaya);
 
   const handlePlaceOrder = async () => {
     if (!paymentMethod) {
@@ -139,27 +139,27 @@ const Checkout = () => {
               <CardContent className="space-y-4">
                 <div>
                   <Label>Nom complet</Label>
-                  <Input value={user.fullName} disabled />
+                  <Input value={profile?.full_name || ''} disabled />
                 </div>
                 <div>
                   <Label>Cabinet dentaire</Label>
-                  <Input value={user.dentalOfficeName} disabled />
+                  <Input value={profile?.dental_office_name || ''} disabled />
                 </div>
                 <div>
                   <Label>Téléphone</Label>
-                  <Input value={user.phone} disabled />
+                  <Input value={profile?.phone || ''} disabled />
                 </div>
                 <div>
                   <Label>Email</Label>
-                  <Input value={user.email} disabled />
+                  <Input value={profile?.email || user.email || ''} disabled />
                 </div>
                 <div>
                   <Label>Wilaya</Label>
-                  <Input value={user.wilaya} disabled />
+                  <Input value={profile?.wilaya || ''} disabled />
                 </div>
                 <div>
                   <Label>Adresse de livraison</Label>
-                  <Input value={user.address} disabled />
+                  <Input value={profile?.address || ''} disabled />
                 </div>
               </CardContent>
             </Card>

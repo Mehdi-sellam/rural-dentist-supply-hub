@@ -14,14 +14,14 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [activeTab, setActiveTab] = useState('orders');
   const [partialPayments, setPartialPayments] = useState<{[key: string]: string}>({});
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editingBundle, setEditingBundle] = useState<any>(null);
 
-  if (!user || !user.isAdmin) {
+  if (!user || !profile?.is_admin) {
     return (
       <div className="min-h-screen">
         <Header />
@@ -758,3 +758,5 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+}

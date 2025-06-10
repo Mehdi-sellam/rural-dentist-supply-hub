@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, ShoppingCart, Menu, X, Phone, MessageCircle, Send, LogOut, Settings } from 'lucide-react';
@@ -17,7 +18,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { itemCount } = useCart();
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
 
   const isActivePage = (path: string) => {
     return location.pathname === path;
@@ -198,11 +199,11 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center gap-2">
                     <User className="w-4 h-4" />
-                    <span className="hidden sm:inline">{user.fullName.split(' ')[0]}</span>
+                    <span className="hidden sm:inline">{profile?.full_name?.split(' ')[0] || 'User'}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {!user.isAdmin && (
+                  {!profile?.is_admin && (
                     <>
                       <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                         Mes commandes
@@ -213,7 +214,7 @@ const Header = () => {
                       </DropdownMenuItem>
                     </>
                   )}
-                  {user.isAdmin && (
+                  {profile?.is_admin && (
                     <DropdownMenuItem onClick={() => navigate('/admin')}>
                       Administration
                     </DropdownMenuItem>
@@ -305,7 +306,7 @@ const Header = () => {
               
               {user ? (
                 <>
-                  {!user.isAdmin && (
+                  {!profile?.is_admin && (
                     <>
                       <Link 
                         to="/dashboard" 
@@ -323,7 +324,7 @@ const Header = () => {
                       </Link>
                     </>
                   )}
-                  {user.isAdmin && (
+                  {profile?.is_admin && (
                     <Link 
                       to="/admin" 
                       className="transition-colors py-2 text-professional text-foreground hover:text-primary"

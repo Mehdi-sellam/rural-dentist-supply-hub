@@ -45,9 +45,15 @@ const Register = () => {
 
     try {
       const { confirmPassword, ...userData } = formData;
-      const success = await register(userData);
+      const { error } = await register(formData.email, formData.password, {
+        full_name: formData.fullName,
+        dental_office_name: formData.dentalOfficeName,
+        phone: formData.phone,
+        wilaya: formData.wilaya,
+        address: formData.address
+      });
       
-      if (success) {
+      if (!error) {
         toast.success('Inscription réussie');
         navigate('/checkout');
       } else {

@@ -22,14 +22,10 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const result = await login(email, password);
-      if (result.success) {
+      const { error } = await login(email, password);
+      if (!error) {
         toast.success('Connexion réussie');
-        if (result.redirectTo) {
-          navigate(result.redirectTo);
-        } else {
-          navigate('/dashboard');
-        }
+        navigate('/dashboard');
       } else {
         toast.error('Email ou mot de passe incorrect');
       }

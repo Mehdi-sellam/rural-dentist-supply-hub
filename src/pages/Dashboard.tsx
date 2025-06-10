@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   if (!user) {
     return null;
@@ -58,14 +58,14 @@ const Dashboard = () => {
           <CardContent>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <p><strong>Nom:</strong> {user.fullName}</p>
-                <p><strong>Cabinet:</strong> {user.dentalOfficeName}</p>
-                <p><strong>Email:</strong> {user.email}</p>
+                <p><strong>Nom:</strong> {profile?.full_name || 'Non défini'}</p>
+                <p><strong>Cabinet:</strong> {profile?.dental_office_name || 'Non défini'}</p>
+                <p><strong>Email:</strong> {profile?.email || user.email}</p>
               </div>
               <div>
-                <p><strong>Téléphone:</strong> {user.phone}</p>
-                <p><strong>Wilaya:</strong> {user.wilaya}</p>
-                <p><strong>Adresse:</strong> {user.address}</p>
+                <p><strong>Téléphone:</strong> {profile?.phone || 'Non défini'}</p>
+                <p><strong>Wilaya:</strong> {profile?.wilaya || 'Non défini'}</p>
+                <p><strong>Adresse:</strong> {profile?.address || 'Non défini'}</p>
               </div>
             </div>
           </CardContent>

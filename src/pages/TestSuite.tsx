@@ -8,7 +8,9 @@ const TestSuite = () => {
   return (
     <div className="min-h-screen">
       <Header />
-      <TestDashboard />
+      <main className="container mx-auto px-4 py-8">
+        <TestDashboard />
+      </main>
       <Footer />
     </div>
   );

@@ -31,6 +31,12 @@ const TestDashboard = () => {
       setHasRun(true);
     } catch (error) {
       console.error('Test execution failed:', error);
+      setResults([{
+        functionality: 'Test Suite',
+        status: 'failed',
+        message: `Test execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        details: error
+      }]);
     } finally {
       setIsRunning(false);
     }
@@ -68,15 +74,20 @@ const TestDashboard = () => {
   const warnings = results.filter(r => r.status === 'warning').length;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Website Functionality Test Suite</h1>
+        <p className="text-gray-600">Comprehensive testing of all website functionalities with backend service</p>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Play className="w-5 h-5" />
-            Website Functionality Test Dashboard
+            Test Dashboard
           </CardTitle>
           <p className="text-muted-foreground">
-            Comprehensive testing of all website functionalities with the backend service
+            Run comprehensive tests to verify all website functionalities are working correctly
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -86,6 +97,7 @@ const TestDashboard = () => {
               onClick={runTests} 
               disabled={isRunning}
               className="flex items-center gap-2"
+              size="lg"
             >
               {isRunning ? (
                 <>
@@ -102,13 +114,13 @@ const TestDashboard = () => {
             
             {hasRun && (
               <div className="flex items-center gap-4">
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-green-700">
                   ✅ Passed: {passed}
                 </Badge>
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-red-700">
                   ❌ Failed: {failed}
                 </Badge>
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-yellow-700">
                   ⚠️ Warnings: {warnings}
                 </Badge>
               </div>
@@ -136,10 +148,10 @@ const TestDashboard = () => {
                             </p>
                             {result.details && (
                               <details className="mt-2">
-                                <summary className="text-xs text-blue-600 cursor-pointer">
+                                <summary className="text-xs text-blue-600 cursor-pointer hover:text-blue-800">
                                   Show Details
                                 </summary>
-                                <pre className="mt-1 text-xs bg-gray-100 p-2 rounded overflow-auto">
+                                <pre className="mt-1 text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
                                   {JSON.stringify(result.details, null, 2)}
                                 </pre>
                               </details>
@@ -159,10 +171,11 @@ const TestDashboard = () => {
             <h4 className="font-medium text-blue-900 mb-2">Test Information</h4>
             <div className="text-sm text-blue-800 space-y-1">
               <p>• This test suite will create sample data in your database</p>
-              <p>• Authentication tests require you to be logged in</p>
+              <p>• Authentication tests require you to be logged in first at <code>/auth</code></p>
               <p>• Cart and order tests require authentication</p>
-              <p>• Test data will be automatically cleaned up and recreated</p>
-              <p>• Check the browser console for detailed logs</p>
+              <p>• Test data will be cleaned up and recreated automatically</p>
+              <p>• Check the browser console for detailed logs during testing</p>
+              <p>• Tests include: Authentication, Database Operations, Cart Functions, Orders</p>
             </div>
           </div>
         </CardContent>

@@ -16,12 +16,20 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user, profile } = useAuth();
+  
+  // ALL useState hooks MUST be called before any conditional returns
   const [activeTab, setActiveTab] = useState('database');
   const [partialPayments, setPartialPayments] = useState<{[key: string]: string}>({});
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editingBundle, setEditingBundle] = useState<any>(null);
+  const [savedOrders, setSavedOrders] = useState(JSON.parse(localStorage.getItem('dentgo_orders') || '[]'));
+  const savedUsers = JSON.parse(localStorage.getItem('dentgo_users') || '[]');
+  const [savedProducts, setSavedProducts] = useState(JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products)));
+  const [savedCategories, setSavedCategories] = useState(JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories)));
+  const [savedBundles, setSavedBundles] = useState(JSON.parse(localStorage.getItem('dentgo_bundles') || JSON.stringify(bundles)));
 
+  // NOW we can have conditional returns after ALL hooks are called
   if (!user || !profile?.is_admin) {
     return (
       <div className="min-h-screen">
@@ -34,12 +42,6 @@ const AdminDashboard = () => {
       </div>
     );
   }
-
-  const [savedOrders, setSavedOrders] = useState(JSON.parse(localStorage.getItem('dentgo_orders') || '[]'));
-  const savedUsers = JSON.parse(localStorage.getItem('dentgo_users') || '[]');
-  const [savedProducts, setSavedProducts] = useState(JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products)));
-  const [savedCategories, setSavedCategories] = useState(JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories)));
-  const [savedBundles, setSavedBundles] = useState(JSON.parse(localStorage.getItem('dentgo_bundles') || JSON.stringify(bundles)));
 
   const updateOrderStatus = (orderId: string, status: string) => {
     const orders = savedOrders.map((order: any) => 

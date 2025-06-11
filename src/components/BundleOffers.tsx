@@ -4,67 +4,69 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Package, CheckCircle, MessageCircle, Percent } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const BundleOffers = () => {
-  const bundles = [
-    {
-      id: 1,
-      name: 'Complete Cavity Kit',
-      nameAr: 'مجموعة علاج التسوس الكاملة',
-      nameFr: 'Kit carie complet',
-      description: 'Everything needed for cavity treatment',
-      items: [
-        'Composite filling materials (3 shades)',
-        'Bonding agent',
-        'Etching gel',
-        'Disposable brushes',
-        'Curing light tips'
-      ],
-      originalPrice: '24,500 DZD',
-      bundlePrice: '18,900 DZD',
-      savings: '5,600 DZD',
-      procedures: '20+ procedures',
-      popular: true
-    },
-    {
-      id: 2,
-      name: 'Surgical Starter Pack',
-      nameAr: 'حزمة الجراحة للمبتدئين',
-      nameFr: 'Pack chirurgie débutant',
-      description: 'Essential tools for minor oral surgery',
-      items: [
-        'Extraction forceps set',
-        'Surgical scissors',
-        'Tissue forceps',
-        'Suture materials',
-        'Sterile gloves (50 pairs)'
-      ],
-      originalPrice: '19,800 DZD',
-      bundlePrice: '15,200 DZD',
-      savings: '4,600 DZD',
-      procedures: '15+ procedures',
-      popular: false
-    },
-    {
-      id: 3,
-      name: 'Monthly Essentials',
-      nameAr: 'الأساسيات الشهرية',
-      nameFr: 'Essentiels mensuels',
-      description: 'Monthly supply of consumables',
-      items: [
-        'Disposable gloves (500 pieces)',
-        'Face masks (100 pieces)',
-        'Surface disinfectant',
-        'Impression materials',
-        'Cotton rolls & pellets'
-      ],
-      originalPrice: '8,900 DZD',
-      bundlePrice: '7,200 DZD',
-      savings: '1,700 DZD',
-      procedures: 'Month supply',
-      popular: false
+  const { data: bundles = [], isLoading, error } = useQuery({
+    queryKey: ['bundles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bundles')
+        .select('*')
+        .order('popular', { ascending: false });
+      
+      if (error) throw error;
+      return data;
     }
-  ];
+  });
+
+  if (isLoading) {
+    return (
+      <section className="py-16 px-4 bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Package className="w-8 h-8 text-primary" />
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+                Procedure Bundles
+              </h2>
+            </div>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Save time and money with our curated procedure kits
+            </p>
+          </div>
+          <div className="grid lg:grid-cols-3 gap-8">
+            {[...Array(3)].map((_, index) => (
+              <Card key={index} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-32 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 px-4 bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="container mx-auto text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Unable to load bundles
+          </h2>
+          <p className="text-gray-600">Please try again later.</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Show only first 3 bundles for homepage
+  const displayBundles = bundles.slice(0, 3);
 
   return (
     <section className="py-16 px-4 bg-gradient-to-br from-green-50 to-blue-50">
@@ -82,7 +84,7 @@ const BundleOffers = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {bundles.map((bundle) => (
+          {displayBundles.map((bundle) => (
             <Card 
               key={bundle.id} 
               className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
@@ -98,20 +100,20 @@ const BundleOffers = () => {
               <CardContent className={`p-6 ${bundle.popular ? 'pt-14' : ''}`}>
                 {/* Bundle Header */}
                 <div className="text-center mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{bundle.name}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{bundle.description}</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{bundle.name_fr || bundle.name}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{bundle.description_fr || bundle.description}</p>
                   
                   {/* Multilingual names */}
                   <div className="text-xs text-gray-500 space-y-1 mb-4">
-                    <p className="rtl">{bundle.nameAr}</p>
-                    <p className="italic">{bundle.nameFr}</p>
+                    {bundle.name_ar && <p className="rtl">{bundle.name_ar}</p>}
+                    {bundle.name && bundle.name !== bundle.name_fr && <p className="italic">{bundle.name}</p>}
                   </div>
 
                   {/* Pricing */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="text-2xl font-bold text-primary">{bundle.bundlePrice}</span>
-                      <span className="text-lg text-gray-400 line-through">{bundle.originalPrice}</span>
+                      <span className="text-2xl font-bold text-primary">{bundle.bundle_price}</span>
+                      <span className="text-lg text-gray-400 line-through">{bundle.original_price}</span>
                     </div>
                     <Badge className="bg-green-100 text-green-800 border-green-200">
                       <Percent className="w-3 h-3 mr-1" />
@@ -125,7 +127,7 @@ const BundleOffers = () => {
                 <div className="space-y-3 mb-6">
                   <h4 className="font-medium text-gray-900 text-sm">Includes:</h4>
                   <ul className="space-y-2">
-                    {bundle.items.map((item, index) => (
+                    {bundle.items.map((item: string, index: number) => (
                       <li key={index} className="flex items-start gap-2 text-sm">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-gray-700">{item}</span>

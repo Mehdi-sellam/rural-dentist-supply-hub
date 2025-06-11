@@ -1,73 +1,66 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const CategoryGrid = () => {
-  const categories = [
-    {
-      id: 'restoratives',
-      name: 'Restoratives',
-      nameAr: 'مواد الترميم',
-      nameFr: 'Matériaux de restauration',
-      description: 'Composites, amalgams, cements',
-      icon: '🦷',
-      itemCount: '150+ items',
-      color: 'from-blue-100 to-blue-200'
-    },
-    {
-      id: 'surgical',
-      name: 'Surgical Tools',
-      nameAr: 'أدوات الجراحة',
-      nameFr: 'Instruments chirurgicaux',
-      description: 'Forceps, elevators, scissors',
-      icon: '⚕️',
-      itemCount: '80+ items',
-      color: 'from-green-100 to-green-200'
-    },
-    {
-      id: 'disposables',
-      name: 'Disposables',
-      nameAr: 'المواد المستهلكة',
-      nameFr: 'Matériel jetable',
-      description: 'Gloves, masks, syringes',
-      icon: '🧤',
-      itemCount: '200+ items',
-      color: 'from-purple-100 to-purple-200'
-    },
-    {
-      id: 'equipment',
-      name: 'Equipment',
-      nameAr: 'المعدات',
-      nameFr: 'Équipement',
-      description: 'Units, compressors, lights',
-      icon: '🔧',
-      itemCount: '45+ items',
-      color: 'from-orange-100 to-orange-200'
-    },
-    {
-      id: 'orthodontics',
-      name: 'Orthodontics',
-      nameAr: 'تقويم الأسنان',
-      nameFr: 'Orthodontie',
-      description: 'Brackets, wires, bands',
-      icon: '🦾',
-      itemCount: '120+ items',
-      color: 'from-teal-100 to-teal-200'
-    },
-    {
-      id: 'endodontics',
-      name: 'Endodontics',
-      nameAr: 'علاج الجذور',
-      nameFr: 'Endodontie',
-      description: 'Files, sealers, irrigants',
-      icon: '🔍',
-      itemCount: '90+ items',
-      color: 'from-pink-100 to-pink-200'
+  const { data: categories = [], isLoading, error } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name_fr');
+      
+      if (error) throw error;
+      return data;
     }
-  ];
+  });
+
+  if (isLoading) {
+    return (
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Shop by Category
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Find exactly what you need from our comprehensive collection of dental supplies
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, index) => (
+              <Card key={index} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-20 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="container mx-auto text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Unable to load categories
+          </h2>
+          <p className="text-gray-600">Please try again later.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 px-4 bg-gray-50">
@@ -82,24 +75,28 @@ const CategoryGrid = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category, index) => (
-            <Card key={index} className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 bg-white">
+          {categories.map((category) => (
+            <Card key={category.id} className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 bg-white">
               <CardContent className="p-0">
                 <div className={`bg-gradient-to-br ${category.color} p-6 rounded-t-lg`}>
                   <div className="text-4xl mb-3">{category.icon}</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{category.name}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{category.description}</p>
-                  <p className="text-xs text-primary font-medium">{category.itemCount}</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">{category.name_fr}</h3>
+                  <p className="text-sm text-gray-600 mb-2">{category.description_fr}</p>
+                  <p className="text-xs text-primary font-medium">Items available</p>
                 </div>
                 
                 <div className="p-6">
                   <div className="space-y-2 mb-4">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">العربية:</span> {category.nameAr}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Français:</span> {category.nameFr}
-                    </p>
+                    {category.name_ar && (
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">العربية:</span> {category.name_ar}
+                      </p>
+                    )}
+                    {category.name && (
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">English:</span> {category.name}
+                      </p>
+                    )}
                   </div>
                   
                   <Link to={`/shop?category=${category.id}`}>

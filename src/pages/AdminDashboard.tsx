@@ -10,12 +10,13 @@ import { useAuth } from '@/context/AuthContext';
 import { products, categories, bundles } from '@/data/products';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import DatabaseSeeder from '@/components/DatabaseSeeder';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user, profile } = useAuth();
-  const [activeTab, setActiveTab] = useState('orders');
+  const [activeTab, setActiveTab] = useState('database');
   const [partialPayments, setPartialPayments] = useState<{[key: string]: string}>({});
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -219,6 +220,12 @@ const AdminDashboard = () => {
         {/* Navigation */}
         <div className="flex space-x-4 mb-8 flex-wrap">
           <Button 
+            variant={activeTab === 'database' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('database')}
+          >
+            Base de données
+          </Button>
+          <Button 
             variant={activeTab === 'orders' ? 'default' : 'outline'}
             onClick={() => setActiveTab('orders')}
           >
@@ -249,6 +256,9 @@ const AdminDashboard = () => {
             Kits
           </Button>
         </div>
+
+        {/* Database Tab */}
+        {activeTab === 'database' && <DatabaseSeeder />}
 
         {/* Orders Tab */}
         {activeTab === 'orders' && (
@@ -758,3 +768,5 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+</initial_code>

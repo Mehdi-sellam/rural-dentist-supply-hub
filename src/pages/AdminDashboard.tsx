@@ -768,5 +768,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-</initial_code>

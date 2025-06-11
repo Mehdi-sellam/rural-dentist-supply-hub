@@ -460,6 +460,10 @@ export type Database = {
         Args: { admin_user_id: string; admin_email: string }
         Returns: undefined
       }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       order_status:

@@ -55,7 +55,6 @@ const AdminDashboard = () => {
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editingBundle, setEditingBundle] = useState<any>(null);
   const [partialPaymentAmount, setPartialPaymentAmount] = useState<{[key: string]: string}>({});
-  const [orderPaymentStatuses, setOrderPaymentStatuses] = useState<{[key: string]: PaymentStatus}>({});
   
   // File upload states
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
@@ -143,13 +142,6 @@ const AdminDashboard = () => {
       setOrders(ordersRes.data || []);
       setClients(clientsRes.data || []);
 
-      // Initialize payment status state
-      const paymentStatusState: {[key: string]: PaymentStatus} = {};
-      (ordersRes.data || []).forEach(order => {
-        paymentStatusState[order.id] = order.payment_status;
-      });
-      setOrderPaymentStatuses(paymentStatusState);
-
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erreur lors du chargement des données');
@@ -184,6 +176,8 @@ const AdminDashboard = () => {
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     try {
+      console.log('Updating order status:', orderId, status);
+      
       const { error } = await supabase
         .from('orders')
         .update({ status })
@@ -191,16 +185,18 @@ const AdminDashboard = () => {
 
       if (error) throw error;
       
-      fetchData();
+      await fetchData();
       toast.success('Statut de commande mis à jour');
     } catch (error) {
       console.error('Error updating order status:', error);
-      toast.error('Erreur lors de la mise à jour');
+      toast.error('Erreur lors de la mise à jour du statut de commande');
     }
   };
 
   const updatePaymentStatus = async (orderId: string, paymentStatus: PaymentStatus, partialAmount?: number) => {
     try {
+      console.log('Updating payment status:', orderId, paymentStatus, partialAmount);
+      
       const updateData: any = { payment_status: paymentStatus };
       
       if (paymentStatus === 'partial' && partialAmount) {
@@ -219,23 +215,27 @@ const AdminDashboard = () => {
 
       if (error) throw error;
       
-      setPartialPaymentAmount(prev => ({ ...prev, [orderId]: '' }));
-      fetchData();
+      // Clear partial payment amount for this order
+      setPartialPaymentAmount(prev => {
+        const newState = { ...prev };
+        delete newState[orderId];
+        return newState;
+      });
+      
+      await fetchData();
       toast.success('Statut de paiement mis à jour');
     } catch (error) {
       console.error('Error updating payment status:', error);
-      toast.error('Erreur lors de la mise à jour');
+      toast.error('Erreur lors de la mise à jour du statut de paiement');
     }
   };
 
-  const handlePaymentStatusChange = (orderId: string, newStatus: PaymentStatus) => {
-    setOrderPaymentStatuses(prev => ({
-      ...prev,
-      [orderId]: newStatus
-    }));
-
-    if (newStatus !== 'partial') {
-      updatePaymentStatus(orderId, newStatus);
+  const handlePartialPaymentSubmit = (orderId: string) => {
+    const amount = parseFloat(partialPaymentAmount[orderId] || '0');
+    if (amount > 0) {
+      updatePaymentStatus(orderId, 'partial', amount);
+    } else {
+      toast.error('Veuillez entrer un montant valide');
     }
   };
 
@@ -374,7 +374,7 @@ const AdminDashboard = () => {
           description_ar: newBundle.description_ar,
           bundle_price: newBundle.bundle_price,
           original_price: newBundle.original_price,
-          items: newBundle.selectedProducts, // Store product IDs instead of text
+          items: newBundle.selectedProducts,
           procedures: newBundle.procedures,
           savings,
           popular: newBundle.popular,
@@ -1014,7 +1014,7 @@ const AdminDashboard = () => {
                               <p className="text-sm text-orange-600">Solde restant: {order.remaining_balance.toLocaleString()} DZD</p>
                             )}
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-2 min-w-[250px]">
                             <div>
                               <Label>Statut de la commande</Label>
                               <Select 
@@ -1036,8 +1036,17 @@ const AdminDashboard = () => {
                             <div>
                               <Label>Statut du paiement</Label>
                               <Select 
-                                value={orderPaymentStatuses[order.id] || order.payment_status} 
-                                onValueChange={(value: PaymentStatus) => handlePaymentStatusChange(order.id, value)}
+                                value={order.payment_status} 
+                                onValueChange={(value: PaymentStatus) => {
+                                  if (value !== 'partial') {
+                                    updatePaymentStatus(order.id, value);
+                                  } else {
+                                    // Just update the local state to show the partial payment form
+                                    setOrders(prev => prev.map(o => 
+                                      o.id === order.id ? { ...o, payment_status: value } : o
+                                    ));
+                                  }
+                                }}
                               >
                                 <SelectTrigger>
                                   <SelectValue />
@@ -1050,9 +1059,10 @@ const AdminDashboard = () => {
                                 </SelectContent>
                               </Select>
                             </div>
-                            {/* Conditional partial payment section */}
-                            {orderPaymentStatuses[order.id] === 'partial' && (
-                              <div className="space-y-2">
+                            
+                            {/* Show partial payment section only when payment status is partial */}
+                            {order.payment_status === 'partial' && (
+                              <div className="space-y-2 border-t pt-2">
                                 <Label>Montant du paiement partiel</Label>
                                 <div className="flex gap-2">
                                   <Input
@@ -1066,12 +1076,7 @@ const AdminDashboard = () => {
                                   />
                                   <Button
                                     size="sm"
-                                    onClick={() => {
-                                      const amount = parseFloat(partialPaymentAmount[order.id] || '0');
-                                      if (amount > 0) {
-                                        updatePaymentStatus(order.id, 'partial', amount);
-                                      }
-                                    }}
+                                    onClick={() => handlePartialPaymentSubmit(order.id)}
                                     disabled={!partialPaymentAmount[order.id] || parseFloat(partialPaymentAmount[order.id]) <= 0}
                                   >
                                     Appliquer
@@ -1081,6 +1086,7 @@ const AdminDashboard = () => {
                             )}
                           </div>
                         </div>
+                        
                         {/* Show if order is completed */}
                         {order.status === 'delivered' && order.payment_status === 'paid' && (
                           <Badge variant="secondary" className="bg-green-100 text-green-800">

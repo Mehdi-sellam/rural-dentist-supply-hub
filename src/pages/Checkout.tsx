@@ -127,11 +127,20 @@ const Checkout = () => {
         }
       }
 
+      // Prepare order data for confirmation page
+      const orderConfirmationData = {
+        ...order,
+        items: items,
+        bundles: bundles,
+        totalAmount: totalAmount,
+        paymentMethod: paymentMethod
+      };
+
       // Clear cart after successful order
       await clearCart();
 
       toast.success('Commande passée avec succès !');
-      navigate('/order-confirmation', { state: { order } });
+      navigate('/order-confirmation', { state: { order: orderConfirmationData } });
     } catch (error) {
       console.error('Error placing order:', error);
       toast.error('Erreur lors de la commande: ' + (error as any)?.message || 'Erreur inconnue');

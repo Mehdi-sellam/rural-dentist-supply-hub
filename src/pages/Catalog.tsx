@@ -2,32 +2,82 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, MessageCircle, Send, FileText, Users, Phone } from 'lucide-react';
+import { Download, MessageCircle, Send, FileText, Users, Phone, ShoppingCart } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
-import { products, categories } from '@/data/products';
+import { useCart } from '@/context/CartContext';
+import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { toast } from 'sonner';
 
 const Catalog = () => {
   const { t } = useLanguage();
+  const { addItem } = useCart();
+  const [products, setProducts] = React.useState<any[]>([]);
+  const [categories, setCategories] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  // Get saved products and categories from localStorage or use defaults
-  const savedProducts = JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products));
-  const savedCategories = JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories));
+  // Fetch data from Supabase
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch categories
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('categories')
+          .select('*');
+
+        if (categoriesError) {
+          console.error('Error fetching categories:', categoriesError);
+          toast.error('Erreur lors du chargement des catégories');
+        } else {
+          setCategories(categoriesData || []);
+        }
+
+        // Fetch products with category information
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select(`
+            *,
+            categories (
+              id,
+              name_fr,
+              icon
+            )
+          `);
+
+        if (productsError) {
+          console.error('Error fetching products:', productsError);
+          toast.error('Erreur lors du chargement des produits');
+        } else {
+          setProducts(productsData || []);
+        }
+
+      } catch (error) {
+        console.error('Exception fetching data:', error);
+        toast.error('Erreur de connexion');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const downloadCatalog = () => {
-    // Generate CSV content
+    // Generate CSV content with fresh data
     const headers = ['ID', 'Code', 'Nom', 'Description', 'Prix (DZD)', 'Catégorie', 'En stock'];
     const csvContent = [
       headers.join(','),
-      ...savedProducts.map((product: any) => [
+      ...products.map((product: any) => [
         product.id,
-        product.productCode,
-        product.nameFr,
-        product.descriptionFr,
+        product.product_code,
+        product.name_fr,
+        product.description_fr,
         product.price,
-        product.category,
-        product.inStock ? 'Oui' : 'Non'
+        product.categories?.name_fr || 'Non catégorisé',
+        product.in_stock ? 'Oui' : 'Non'
       ].join(','))
     ].join('\n');
 
@@ -40,12 +90,31 @@ const Catalog = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    toast.success('Catalogue téléchargé avec succès');
   };
 
   // Scroll to top when component mounts
   React.useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">{t('common.loading')}</p>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -123,8 +192,8 @@ const Catalog = () => {
             Nos Catégories et Produits
           </h2>
           
-          {savedCategories.map((category: any) => {
-            const categoryProducts = savedProducts.filter((product: any) => product.category === category.id);
+          {categories.map((category: any) => {
+            const categoryProducts = products.filter((product: any) => product.category_id === category.id);
             
             return (
               <div key={category.id} className="space-y-6">
@@ -133,10 +202,10 @@ const Catalog = () => {
                   <CardContent className="p-6 text-center">
                     <div className="text-4xl mb-4">{category.icon}</div>
                     <h3 className="font-bold text-2xl mb-2 heading-professional text-foreground">
-                      {category.nameFr}
+                      {category.name_fr}
                     </h3>
                     <p className="text-muted-foreground text-professional">
-                      {category.descriptionFr}
+                      {category.description_fr}
                     </p>
                     <p className="text-sm text-primary font-medium mt-2">
                       {categoryProducts.length} produit(s) disponible(s)
@@ -153,22 +222,44 @@ const Catalog = () => {
                           <div className="aspect-square bg-muted rounded mb-3 flex items-center justify-center">
                             <img 
                               src={product.image} 
-                              alt={product.nameFr}
+                              alt={product.name_fr}
                               className="w-full h-full object-cover rounded"
                             />
                           </div>
                           <h4 className="font-medium text-sm mb-1 text-foreground heading-professional">
-                            {product.nameFr}
+                            {product.name_fr}
                           </h4>
                           <p className="text-xs text-muted-foreground mb-2 text-professional">
-                            Code: {product.productCode}
+                            Code: {product.product_code}
                           </p>
                           <p className="font-bold text-primary heading-professional">
                             {product.price.toLocaleString()} DZD
                           </p>
                           <p className="text-xs text-muted-foreground mt-2 text-professional line-clamp-3">
-                            {product.descriptionFr}
+                            {product.description_fr}
                           </p>
+                          
+                          {/* Add to Cart Button */}
+                          <div className="mt-3">
+                            <Button
+                              className="w-full text-xs btn-professional"
+                              onClick={() => {
+                                addItem({
+                                  id: product.id,
+                                  name: product.name_fr,
+                                  price: product.price,
+                                  image: product.image,
+                                  description: product.description_fr,
+                                  inStock: product.in_stock
+                                });
+                                toast.success('Produit ajouté au panier');
+                              }}
+                              disabled={!product.in_stock}
+                            >
+                              <ShoppingCart className="w-3 h-3 mr-1" />
+                              {t('common.addToCart')}
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     ))}

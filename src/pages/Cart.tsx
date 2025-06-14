@@ -8,24 +8,26 @@ import { Label } from '@/components/ui/label';
 import { Minus, Plus, Trash2, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/hooks/useLanguage';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const Cart = () => {
   const { items, bundles, totalAmount, itemCount, updateQuantity, updateBundleQuantity, removeItem, removeBundle, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const generateWhatsAppOrder = () => {
-    let message = "Hello! I'd like to place an order:\n\n";
+    let message = "Bonjour! J'aimerais passer une commande:\n\n";
     items.forEach(item => {
-      message += `${item.name} - Qty: ${item.quantity} - ${(item.price * item.quantity).toLocaleString()} DZD\n`;
+      message += `${item.name} - Quantité: ${item.quantity} - ${(item.price * item.quantity).toLocaleString()} DZD\n`;
     });
     bundles.forEach(bundle => {
       const price = parseInt(bundle.bundlePrice.replace(/[^0-9]/g, ''));
-      message += `${bundle.name} (Bundle) - Qty: ${bundle.quantity} - ${(price * bundle.quantity).toLocaleString()} DZD\n`;
+      message += `${bundle.name} (Kit) - Quantité: ${bundle.quantity} - ${(price * bundle.quantity).toLocaleString()} DZD\n`;
     });
-    message += `\nTotal: ${totalAmount.toLocaleString()} DZD\n\nPlease confirm availability and delivery details.`;
+    message += `\nTotal: ${totalAmount.toLocaleString()} DZD\n\nMerci de confirmer la disponibilité et les détails de livraison.`;
     return `https://wa.me/213XXXXXXXXX?text=${encodeURIComponent(message)}`;
   };
 
@@ -44,11 +46,11 @@ const Cart = () => {
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <ShoppingBag className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Your Cart is Empty</h1>
-            <p className="text-gray-600 mb-8">Start shopping to add items to your cart</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{t('cart.empty')}</h1>
+            <p className="text-gray-600 mb-8">Commencez vos achats pour ajouter des articles à votre panier</p>
             <Link to="/shop">
               <Button size="lg">
-                Continue Shopping
+                {t('cart.continueShopping')}
               </Button>
             </Link>
           </div>
@@ -64,8 +66,8 @@ const Cart = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
-          <p className="text-gray-600">{itemCount} items in your cart</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t('cart.title')}</h1>
+          <p className="text-gray-600">{itemCount} articles dans votre panier</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -77,7 +79,11 @@ const Cart = () => {
                   <div className="flex items-center gap-4">
                     {/* Product Image */}
                     <div className="w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl">{item.image}</span>
+                      <img 
+                        src={item.image} 
+                        alt={item.name}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
                     </div>
 
                     {/* Product Details */}
@@ -144,7 +150,7 @@ const Cart = () => {
                     {/* Bundle Details */}
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 mb-1">{bundle.name}</h3>
-                      <p className="text-sm text-gray-600 mb-2">Bundle ({bundle.items.length} items)</p>
+                      <p className="text-sm text-gray-600 mb-2">Kit ({bundle.items.length} articles)</p>
                       <div className="flex items-center gap-4">
                         <span className="font-bold text-primary">{bundle.bundlePrice}</span>
                       </div>
@@ -190,11 +196,11 @@ const Cart = () => {
 
             <div className="flex justify-between items-center pt-4">
               <Button variant="outline" onClick={clearCart}>
-                Clear Cart
+                Vider le panier
               </Button>
               <Link to="/shop">
                 <Button variant="outline">
-                  Continue Shopping
+                  {t('cart.continueShopping')}
                 </Button>
               </Link>
             </div>
@@ -204,16 +210,16 @@ const Cart = () => {
           <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardContent className="p-6">
-                <h3 className="font-bold text-lg mb-4">Order Summary</h3>
+                <h3 className="font-bold text-lg mb-4">{t('cart.orderSummary')}</h3>
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
-                    <span>Subtotal ({itemCount} items)</span>
+                    <span>{t('cart.subtotal')} ({itemCount} articles)</span>
                     <span>{totalAmount.toLocaleString()} DZD</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Shipping</span>
-                    <span className="text-green-600">Free</span>
+                    <span>Livraison</span>
+                    <span className="text-green-600">{t('cart.free')}</span>
                   </div>
                   <hr />
                   <div className="flex justify-between font-bold text-lg">
@@ -224,7 +230,7 @@ const Cart = () => {
 
                 <div className="space-y-3">
                   <Button className="w-full" size="lg" onClick={handleCheckout}>
-                    {isAuthenticated ? 'Proceed to Checkout' : 'Login to Checkout'}
+                    {isAuthenticated ? t('cart.proceedCheckout') : t('cart.loginCheckout')}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -232,17 +238,17 @@ const Cart = () => {
                     onClick={() => window.open(generateWhatsAppOrder(), '_blank')}
                   >
                     <MessageCircle className="w-4 h-4" />
-                    Order via WhatsApp
+                    {t('cart.orderViaWhatsApp')}
                   </Button>
                 </div>
 
                 <div className="mt-6 p-4 bg-green-50 rounded-lg">
                   <p className="text-sm text-green-800">
-                    🚚 Free delivery to rural areas
+                    🚚 {t('cart.freeDelivery')}
                     <br />
-                    📞 24/7 Support available
+                    📞 {t('cart.support247')}
                     <br />
-                    ✅ Quality guaranteed
+                    ✅ {t('cart.qualityGuaranteed')}
                   </p>
                 </div>
               </CardContent>

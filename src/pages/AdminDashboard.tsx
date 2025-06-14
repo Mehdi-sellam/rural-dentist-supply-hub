@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,15 +8,17 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/AuthContext';
-import { products, categories, bundles } from '@/data/products';
+import { useLanguage } from '@/hooks/useLanguage';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import DatabaseSeeder from '@/components/DatabaseSeeder';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, RotateCcw } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user, profile } = useAuth();
+  const { t } = useLanguage();
   
   // ALL useState hooks MUST be called before any conditional returns
   const [activeTab, setActiveTab] = useState('database');
@@ -23,11 +26,12 @@ const AdminDashboard = () => {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editingBundle, setEditingBundle] = useState<any>(null);
-  const [savedOrders, setSavedOrders] = useState(JSON.parse(localStorage.getItem('dentgo_orders') || '[]'));
-  const savedUsers = JSON.parse(localStorage.getItem('dentgo_users') || '[]');
-  const [savedProducts, setSavedProducts] = useState(JSON.parse(localStorage.getItem('dentgo_products') || JSON.stringify(products)));
-  const [savedCategories, setSavedCategories] = useState(JSON.parse(localStorage.getItem('dentgo_categories') || JSON.stringify(categories)));
-  const [savedBundles, setSavedBundles] = useState(JSON.parse(localStorage.getItem('dentgo_bundles') || JSON.stringify(bundles)));
+  const [orders, setOrders] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [bundles, setBundles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // NOW we can have conditional returns after ALL hooks are called
   if (!user || !profile?.is_admin) {
@@ -43,172 +47,407 @@ const AdminDashboard = () => {
     );
   }
 
-  const updateOrderStatus = (orderId: string, status: string) => {
-    const orders = savedOrders.map((order: any) => 
-      order.id === orderId ? { ...order, status } : order
-    );
-    localStorage.setItem('dentgo_orders', JSON.stringify(orders));
-    setSavedOrders(orders);
-    toast.success('Statut mis à jour');
+  // Fetch data from Supabase
+  const fetchOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (*),
+          order_bundles (*)
+        `);
+      
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      toast.error('Erreur lors du chargement des commandes');
+    }
   };
 
-  const updatePaymentStatus = (orderId: string, paymentStatus: string) => {
-    const orders = savedOrders.map((order: any) => 
-      order.id === orderId ? { ...order, paymentStatus } : order
-    );
-    localStorage.setItem('dentgo_orders', JSON.stringify(orders));
-    setSavedOrders(orders);
-    toast.success('Statut de paiement mis à jour');
+  const fetchClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('is_admin', false);
+      
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      toast.error('Erreur lors du chargement des clients');
+    }
   };
 
-  const updatePartialPayment = (orderId: string, amountPaid: number) => {
-    const orders = savedOrders.map((order: any) => {
-      if (order.id === orderId) {
-        const existingPaid = order.amountPaid || 0;
-        const newAmountPaid = existingPaid + amountPaid;
-        const remainingBalance = order.totalAmount - newAmountPaid;
-        
-        return { 
-          ...order, 
-          amountPaid: newAmountPaid,
-          remainingBalance: remainingBalance,
-          paymentStatus: remainingBalance <= 0 ? 'paid' : 'partial'
-        };
-      }
-      return order;
-    });
-    localStorage.setItem('dentgo_orders', JSON.stringify(orders));
-    setSavedOrders(orders);
-    toast.success('Paiement partiel enregistré');
-    setPartialPayments(prev => ({ ...prev, [orderId]: '' }));
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories (
+            id,
+            name_fr,
+            icon
+          )
+        `);
+      
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Erreur lors du chargement des produits');
+    }
   };
 
-  const deleteOrder = (orderId: string) => {
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*');
+      
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast.error('Erreur lors du chargement des catégories');
+    }
+  };
+
+  const fetchBundles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bundles')
+        .select('*');
+      
+      if (error) throw error;
+      setBundles(data || []);
+    } catch (error) {
+      console.error('Error fetching bundles:', error);
+      toast.error('Erreur lors du chargement des kits');
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      fetchOrders();
+    } else if (activeTab === 'clients') {
+      fetchClients();
+    } else if (activeTab === 'products') {
+      fetchProducts();
+    } else if (activeTab === 'categories') {
+      fetchCategories();
+    } else if (activeTab === 'bundles') {
+      fetchBundles();
+    }
+  }, [activeTab]);
+
+  const updateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('id', orderId);
+      
+      if (error) throw error;
+      await fetchOrders();
+      toast.success('Statut mis à jour');
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
+  const updatePaymentStatus = async (orderId: string, paymentStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ payment_status: paymentStatus })
+        .eq('id', orderId);
+      
+      if (error) throw error;
+      await fetchOrders();
+      toast.success('Statut de paiement mis à jour');
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
+  const updatePartialPayment = async (orderId: string, amountPaid: number) => {
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const newAmountPaid = (order.amount_paid || 0) + amountPaid;
+      const remainingBalance = order.total_amount - newAmountPaid;
+      
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          amount_paid: newAmountPaid,
+          remaining_balance: remainingBalance,
+          payment_status: remainingBalance <= 0 ? 'paid' : 'partial'
+        })
+        .eq('id', orderId);
+      
+      if (error) throw error;
+      await fetchOrders();
+      toast.success('Paiement partiel enregistré');
+      setPartialPayments(prev => ({ ...prev, [orderId]: '' }));
+    } catch (error) {
+      console.error('Error updating partial payment:', error);
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette commande ?')) {
-      const orders = savedOrders.filter((order: any) => order.id !== orderId);
-      localStorage.setItem('dentgo_orders', JSON.stringify(orders));
-      setSavedOrders(orders);
-      toast.success('Commande supprimée avec succès');
-    }
-  };
-
-  const saveProduct = (productData: any) => {
-    let updatedProducts = [...savedProducts];
-    if (editingProduct && editingProduct.id) {
-      // Edit existing product
-      const index = updatedProducts.findIndex(p => p.id === editingProduct.id);
-      if (index !== -1) {
-        updatedProducts[index] = { ...editingProduct, ...productData };
+      try {
+        const { error } = await supabase
+          .from('orders')
+          .delete()
+          .eq('id', orderId);
+        
+        if (error) throw error;
+        await fetchOrders();
+        toast.success('Commande supprimée avec succès');
+      } catch (error) {
+        console.error('Error deleting order:', error);
+        toast.error('Erreur lors de la suppression');
       }
-    } else {
-      // Add new product
-      const newProduct = {
-        id: Date.now().toString(),
-        productId: `PROD${Date.now()}`,
-        productCode: productData.productCode || `PC${Date.now()}`,
-        nameFr: productData.nameFr,
-        descriptionFr: productData.descriptionFr,
-        price: parseInt(productData.price) || 0,
-        category: productData.category,
-        image: productData.image || '/placeholder.svg',
-        inStock: true,
-        name: productData.nameFr, // English fallback
-        description: productData.descriptionFr,
-        rating: 4.5,
-        reviews: 12
-      };
-      updatedProducts.push(newProduct);
     }
-    localStorage.setItem('dentgo_products', JSON.stringify(updatedProducts));
-    setSavedProducts(updatedProducts);
-    setEditingProduct(null);
-    toast.success('Produit sauvegardé avec succès');
   };
 
-  const deleteProduct = (productId: string) => {
+  const saveProduct = async (productData: any) => {
+    try {
+      if (editingProduct && editingProduct.id) {
+        // Edit existing product
+        const { error } = await supabase
+          .from('products')
+          .update({
+            name_fr: productData.nameFr,
+            description_fr: productData.descriptionFr,
+            price: parseInt(productData.price) || 0,
+            category_id: productData.category,
+            image: productData.image || '/placeholder.svg',
+            product_code: productData.productCode
+          })
+          .eq('id', editingProduct.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new product
+        const { error } = await supabase
+          .from('products')
+          .insert({
+            name_fr: productData.nameFr,
+            name: productData.nameFr,
+            description_fr: productData.descriptionFr,
+            description: productData.descriptionFr,
+            price: parseInt(productData.price) || 0,
+            category_id: productData.category,
+            image: productData.image || '/placeholder.svg',
+            product_code: productData.productCode || `PC${Date.now()}`,
+            product_id: `PROD${Date.now()}`,
+            in_stock: true
+          });
+        
+        if (error) throw error;
+      }
+      
+      await fetchProducts();
+      setEditingProduct(null);
+      toast.success('Produit sauvegardé avec succès');
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
+
+  const deleteProduct = async (productId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
-      const updatedProducts = savedProducts.filter((p: any) => p.id !== productId);
-      localStorage.setItem('dentgo_products', JSON.stringify(updatedProducts));
-      setSavedProducts(updatedProducts);
-      toast.success('Produit supprimé avec succès');
-    }
-  };
-
-  const saveCategory = (categoryData: any) => {
-    let updatedCategories = [...savedCategories];
-    if (editingCategory && editingCategory.id) {
-      // Edit existing category
-      const index = updatedCategories.findIndex(c => c.id === editingCategory.id);
-      if (index !== -1) {
-        updatedCategories[index] = { ...editingCategory, ...categoryData };
+      try {
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', productId);
+        
+        if (error) throw error;
+        await fetchProducts();
+        toast.success('Produit supprimé avec succès');
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        toast.error('Erreur lors de la suppression');
       }
-    } else {
-      // Add new category
-      const newCategory = {
-        id: Date.now().toString(),
-        nameFr: categoryData.nameFr,
-        descriptionFr: categoryData.descriptionFr,
-        icon: categoryData.icon || '📦',
-        color: categoryData.color || 'from-blue-50 to-indigo-100',
-        name: categoryData.nameFr, // English fallback
-        description: categoryData.descriptionFr
-      };
-      updatedCategories.push(newCategory);
     }
-    localStorage.setItem('dentgo_categories', JSON.stringify(updatedCategories));
-    setSavedCategories(updatedCategories);
-    setEditingCategory(null);
-    toast.success('Catégorie sauvegardée avec succès');
   };
 
-  const deleteCategory = (categoryId: string) => {
+  const saveCategory = async (categoryData: any) => {
+    try {
+      if (editingCategory && editingCategory.id) {
+        // Edit existing category
+        const { error } = await supabase
+          .from('categories')
+          .update({
+            name_fr: categoryData.nameFr,
+            name: categoryData.nameFr,
+            description_fr: categoryData.descriptionFr,
+            description: categoryData.descriptionFr,
+            icon: categoryData.icon || '📦'
+          })
+          .eq('id', editingCategory.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new category
+        const { error } = await supabase
+          .from('categories')
+          .insert({
+            name_fr: categoryData.nameFr,
+            name: categoryData.nameFr,
+            description_fr: categoryData.descriptionFr,
+            description: categoryData.descriptionFr,
+            icon: categoryData.icon || '📦'
+          });
+        
+        if (error) throw error;
+      }
+      
+      await fetchCategories();
+      setEditingCategory(null);
+      toast.success('Catégorie sauvegardée avec succès');
+    } catch (error) {
+      console.error('Error saving category:', error);
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
+
+  const deleteCategory = async (categoryId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
-      const updatedCategories = savedCategories.filter((c: any) => c.id !== categoryId);
-      localStorage.setItem('dentgo_categories', JSON.stringify(updatedCategories));
-      setSavedCategories(updatedCategories);
-      toast.success('Catégorie supprimée avec succès');
-    }
-  };
-
-  const saveBundle = (bundleData: any) => {
-    let updatedBundles = [...savedBundles];
-    if (editingBundle && editingBundle.id) {
-      // Edit existing bundle
-      const index = updatedBundles.findIndex(b => b.id === editingBundle.id);
-      if (index !== -1) {
-        updatedBundles[index] = { 
-          ...editingBundle, 
-          ...bundleData,
-          items: bundleData.items || editingBundle.items
-        };
+      try {
+        const { error } = await supabase
+          .from('categories')
+          .delete()
+          .eq('id', categoryId);
+        
+        if (error) throw error;
+        await fetchCategories();
+        toast.success('Catégorie supprimée avec succès');
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        toast.error('Erreur lors de la suppression');
       }
-    } else {
-      // Add new bundle
-      const newBundle = {
-        id: Date.now().toString(),
-        name: bundleData.name,
-        description: bundleData.description,
-        bundlePrice: bundleData.bundlePrice,
-        originalPrice: bundleData.originalPrice,
-        savings: bundleData.savings,
-        items: bundleData.items || [],
-        procedures: bundleData.procedures || '10+',
-        popular: bundleData.popular || false
-      };
-      updatedBundles.push(newBundle);
     }
-    localStorage.setItem('dentgo_bundles', JSON.stringify(updatedBundles));
-    setSavedBundles(updatedBundles);
-    setEditingBundle(null);
-    toast.success('Kit sauvegardé avec succès');
   };
 
-  const deleteBundle = (bundleId: string) => {
+  const saveBundle = async (bundleData: any) => {
+    try {
+      if (editingBundle && editingBundle.id) {
+        // Edit existing bundle
+        const { error } = await supabase
+          .from('bundles')
+          .update({
+            name: bundleData.name,
+            name_fr: bundleData.name,
+            description: bundleData.description,
+            description_fr: bundleData.description,
+            bundle_price: bundleData.bundlePrice,
+            original_price: bundleData.originalPrice,
+            savings: bundleData.savings,
+            items: bundleData.items || [],
+            procedures: bundleData.procedures || '10+',
+            popular: bundleData.popular || false
+          })
+          .eq('id', editingBundle.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new bundle
+        const { error } = await supabase
+          .from('bundles')
+          .insert({
+            name: bundleData.name,
+            name_fr: bundleData.name,
+            description: bundleData.description,
+            description_fr: bundleData.description,
+            bundle_price: bundleData.bundlePrice,
+            original_price: bundleData.originalPrice,
+            savings: bundleData.savings,
+            items: bundleData.items || [],
+            procedures: bundleData.procedures || '10+',
+            popular: bundleData.popular || false
+          });
+        
+        if (error) throw error;
+      }
+      
+      await fetchBundles();
+      setEditingBundle(null);
+      toast.success('Kit sauvegardé avec succès');
+    } catch (error) {
+      console.error('Error saving bundle:', error);
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
+
+  const deleteBundle = async (bundleId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce kit ?')) {
-      const updatedBundles = savedBundles.filter((b: any) => b.id !== bundleId);
-      localStorage.setItem('dentgo_bundles', JSON.stringify(updatedBundles));
-      setSavedBundles(updatedBundles);
-      toast.success('Kit supprimé avec succès');
+      try {
+        const { error } = await supabase
+          .from('bundles')
+          .delete()
+          .eq('id', bundleId);
+        
+        if (error) throw error;
+        await fetchBundles();
+        toast.success('Kit supprimé avec succès');
+      } catch (error) {
+        console.error('Error deleting bundle:', error);
+        toast.error('Erreur lors de la suppression');
+      }
+    }
+  };
+
+  const downloadData = async (type: 'orders' | 'clients') => {
+    try {
+      let data, filename;
+      
+      if (type === 'orders') {
+        data = orders;
+        filename = 'commandes-dentgo.csv';
+      } else {
+        data = clients;
+        filename = 'clients-dentgo.csv';
+      }
+
+      if (data.length === 0) {
+        toast.error('Aucune donnée à télécharger');
+        return;
+      }
+
+      const headers = Object.keys(data[0]).join(',');
+      const csvContent = [
+        headers,
+        ...data.map(item => Object.values(item).map(val => `"${val}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Données téléchargées avec succès');
+    } catch (error) {
+      console.error('Error downloading data:', error);
+      toast.error('Erreur lors du téléchargement');
     }
   };
 
@@ -217,7 +456,7 @@ const AdminDashboard = () => {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Administration</h1>
+        <h1 className="text-3xl font-bold mb-8">{t('admin.title')}</h1>
 
         {/* Navigation */}
         <div className="flex space-x-4 mb-8 flex-wrap">
@@ -225,78 +464,107 @@ const AdminDashboard = () => {
             variant={activeTab === 'database' ? 'default' : 'outline'}
             onClick={() => setActiveTab('database')}
           >
-            Base de données
+            {t('admin.database')}
           </Button>
           <Button 
             variant={activeTab === 'orders' ? 'default' : 'outline'}
             onClick={() => setActiveTab('orders')}
           >
-            Commandes
+            {t('admin.orders')}
           </Button>
           <Button 
             variant={activeTab === 'clients' ? 'default' : 'outline'}
             onClick={() => setActiveTab('clients')}
           >
-            Clients
+            {t('admin.clients')}
           </Button>
           <Button 
             variant={activeTab === 'products' ? 'default' : 'outline'}
             onClick={() => setActiveTab('products')}
           >
-            Produits
+            {t('admin.products')}
           </Button>
           <Button 
             variant={activeTab === 'categories' ? 'default' : 'outline'}
             onClick={() => setActiveTab('categories')}
           >
-            Catégories
+            {t('admin.categories')}
           </Button>
           <Button 
             variant={activeTab === 'bundles' ? 'default' : 'outline'}
             onClick={() => setActiveTab('bundles')}
           >
-            Kits
+            {t('admin.bundles')}
           </Button>
         </div>
 
         {/* Database Tab */}
-        {activeTab === 'database' && <DatabaseSeeder />}
+        {activeTab === 'database' && (
+          <div className="space-y-6">
+            <DatabaseSeeder />
+            
+            {/* Data Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Gestion des données</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-4 flex-wrap">
+                  <Button 
+                    onClick={() => downloadData('orders')}
+                    className="gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Télécharger les commandes
+                  </Button>
+                  <Button 
+                    onClick={() => downloadData('clients')}
+                    className="gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Télécharger les clients
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Orders Tab */}
         {activeTab === 'orders' && (
           <Card>
             <CardHeader>
-              <CardTitle>Gestion des commandes</CardTitle>
+              <CardTitle>{t('admin.orderManagement')}</CardTitle>
             </CardHeader>
             <CardContent>
-              {savedOrders.length === 0 ? (
-                <p className="text-muted-foreground">Aucune commande trouvée.</p>
+              {orders.length === 0 ? (
+                <p className="text-muted-foreground">{t('admin.noOrders')}</p>
               ) : (
                 <div className="space-y-6">
-                  {savedOrders.map((order: any) => {
-                    const customer = savedUsers.find((u: any) => u.id === order.userId);
-                    const amountPaid = order.amountPaid || 0;
-                    const remainingBalance = order.totalAmount - amountPaid;
-                    const paymentPercentage = (amountPaid / order.totalAmount) * 100;
+                  {orders.map((order: any) => {
+                    const client = clients.find((c: any) => c.id === order.user_id);
+                    const amountPaid = order.amount_paid || 0;
+                    const remainingBalance = order.total_amount - amountPaid;
+                    const paymentPercentage = (amountPaid / order.total_amount) * 100;
                     
                     return (
                       <div key={order.id} className="border rounded p-6 space-y-4">
                         <div className="grid md:grid-cols-2 gap-4 mb-4">
                           <div>
-                            <h3 className="font-medium">Commande #{order.id}</h3>
+                            <h3 className="font-medium">Commande #{order.id.slice(0, 8)}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {new Date(order.createdAt).toLocaleDateString('fr-FR')}
+                              {new Date(order.created_at).toLocaleDateString('fr-FR')}
                             </p>
                             <p className="text-sm">
-                              Client: {customer?.fullName || 'Client introuvable'}
+                              Client: {client?.full_name || 'Client introuvable'}
                             </p>
                             <p className="text-sm">
-                              Cabinet: {customer?.dentalOfficeName}
+                              Cabinet: {client?.dental_office_name}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="font-bold text-lg">
-                              {order.totalAmount.toLocaleString()} DZD
+                              {order.total_amount.toLocaleString()} DZD
                             </p>
                             <div className="mt-2 space-y-1">
                               <p className="text-sm text-green-600">
@@ -340,7 +608,7 @@ const AdminDashboard = () => {
                           <div>
                             <Label>Statut du paiement</Label>
                             <Select 
-                              value={order.paymentStatus} 
+                              value={order.payment_status} 
                               onValueChange={(value) => updatePaymentStatus(order.id, value)}
                             >
                               <SelectTrigger>
@@ -354,7 +622,7 @@ const AdminDashboard = () => {
                             </Select>
                           </div>
 
-                          {order.paymentStatus === 'partial' && (
+                          {order.payment_status === 'partial' && (
                             <div>
                               <Label>Ajouter paiement (DZD)</Label>
                               <div className="flex gap-2">
@@ -385,16 +653,16 @@ const AdminDashboard = () => {
 
                         <div className="space-y-1">
                           <h4 className="font-medium">Produits:</h4>
-                          {order.items.map((item: any) => (
+                          {order.order_items?.map((item: any) => (
                             <div key={item.id} className="text-sm flex justify-between">
-                              <span>{item.name} x{item.quantity}</span>
-                              <span>{(item.price * item.quantity).toLocaleString()} DZD</span>
+                              <span>{item.product_name} x{item.quantity}</span>
+                              <span>{(item.product_price * item.quantity).toLocaleString()} DZD</span>
                             </div>
                           ))}
-                          {order.bundles?.map((bundle: any) => (
+                          {order.order_bundles?.map((bundle: any) => (
                             <div key={bundle.id} className="text-sm flex justify-between">
-                              <span>{bundle.name} x{bundle.quantity}</span>
-                              <span>{(parseInt(bundle.bundlePrice.replace(/[^0-9]/g, '')) * bundle.quantity).toLocaleString()} DZD</span>
+                              <span>{bundle.bundle_name} x{bundle.quantity}</span>
+                              <span>{(parseInt(bundle.bundle_price.replace(/[^0-9]/g, '')) * bundle.quantity).toLocaleString()} DZD</span>
                             </div>
                           ))}
                         </div>
@@ -411,25 +679,25 @@ const AdminDashboard = () => {
         {activeTab === 'clients' && (
           <Card>
             <CardHeader>
-              <CardTitle>Clients enregistrés</CardTitle>
+              <CardTitle>{t('admin.clientsRegistered')}</CardTitle>
             </CardHeader>
             <CardContent>
-              {savedUsers.length === 0 ? (
-                <p className="text-muted-foreground">Aucun client enregistré.</p>
+              {clients.length === 0 ? (
+                <p className="text-muted-foreground">{t('admin.noClients')}</p>
               ) : (
                 <div className="space-y-4">
-                  {savedUsers.map((client: any) => {
-                    const clientOrders = savedOrders.filter((order: any) => order.userId === client.id);
-                    const totalSpent = clientOrders.reduce((sum: number, order: any) => sum + (order.amountPaid || 0), 0);
-                    const totalOrdered = clientOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+                  {clients.map((client: any) => {
+                    const clientOrders = orders.filter((order: any) => order.user_id === client.id);
+                    const totalSpent = clientOrders.reduce((sum: number, order: any) => sum + (order.amount_paid || 0), 0);
+                    const totalOrdered = clientOrders.reduce((sum: number, order: any) => sum + order.total_amount, 0);
                     const totalRemaining = totalOrdered - totalSpent;
                     
                     return (
                       <div key={client.id} className="border rounded p-4">
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
-                            <h3 className="font-medium">{client.fullName}</h3>
-                            <p className="text-sm text-muted-foreground">{client.dentalOfficeName}</p>
+                            <h3 className="font-medium">{client.full_name}</h3>
+                            <p className="text-sm text-muted-foreground">{client.dental_office_name}</p>
                             <p className="text-sm">{client.email}</p>
                             <p className="text-sm">{client.phone}</p>
                             <p className="text-sm">{client.wilaya}</p>
@@ -455,10 +723,10 @@ const AdminDashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
-                Gestion des produits
+                {t('admin.productManagement')}
                 <Button onClick={() => setEditingProduct({})}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Ajouter produit
+                  {t('admin.addProduct')}
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -472,14 +740,14 @@ const AdminDashboard = () => {
                     <div>
                       <Label>Nom français</Label>
                       <Input
-                        value={editingProduct.nameFr || ''}
+                        value={editingProduct.nameFr || editingProduct.name_fr || ''}
                         onChange={(e) => setEditingProduct({...editingProduct, nameFr: e.target.value})}
                       />
                     </div>
                     <div>
                       <Label>Code produit</Label>
                       <Input
-                        value={editingProduct.productCode || ''}
+                        value={editingProduct.productCode || editingProduct.product_code || ''}
                         onChange={(e) => setEditingProduct({...editingProduct, productCode: e.target.value})}
                       />
                     </div>
@@ -494,16 +762,16 @@ const AdminDashboard = () => {
                     <div>
                       <Label>Catégorie</Label>
                       <Select
-                        value={editingProduct.category || ''}
+                        value={editingProduct.category || editingProduct.category_id || ''}
                         onValueChange={(value) => setEditingProduct({...editingProduct, category: value})}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionner une catégorie" />
                         </SelectTrigger>
                         <SelectContent>
-                          {savedCategories.map((cat: any) => (
+                          {categories.map((cat: any) => (
                             <SelectItem key={cat.id} value={cat.id}>
-                              {cat.nameFr}
+                              {cat.name_fr}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -512,7 +780,7 @@ const AdminDashboard = () => {
                     <div className="md:col-span-2">
                       <Label>Description française</Label>
                       <Textarea
-                        value={editingProduct.descriptionFr || ''}
+                        value={editingProduct.descriptionFr || editingProduct.description_fr || ''}
                         onChange={(e) => setEditingProduct({...editingProduct, descriptionFr: e.target.value})}
                       />
                     </div>
@@ -527,21 +795,21 @@ const AdminDashboard = () => {
                   </div>
                   <div className="flex gap-2 mt-4">
                     <Button onClick={() => saveProduct(editingProduct)}>
-                      Sauvegarder
+                      {t('common.save')}
                     </Button>
                     <Button variant="outline" onClick={() => setEditingProduct(null)}>
-                      Annuler
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </div>
               )}
 
               <div className="space-y-4">
-                {savedProducts.map((product: any) => (
+                {products.map((product: any) => (
                   <div key={product.id} className="border rounded p-4 flex justify-between items-center">
                     <div>
-                      <h3 className="font-medium">{product.nameFr}</h3>
-                      <p className="text-sm text-muted-foreground">Code: {product.productCode}</p>
+                      <h3 className="font-medium">{product.name_fr}</h3>
+                      <p className="text-sm text-muted-foreground">Code: {product.product_code}</p>
                       <p className="text-sm">{product.price.toLocaleString()} DZD</p>
                     </div>
                     <div className="flex gap-2">
@@ -564,10 +832,10 @@ const AdminDashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
-                Gestion des catégories
+                {t('admin.categoryManagement')}
                 <Button onClick={() => setEditingCategory({})}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Ajouter catégorie
+                  {t('admin.addCategory')}
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -581,7 +849,7 @@ const AdminDashboard = () => {
                     <div>
                       <Label>Nom français</Label>
                       <Input
-                        value={editingCategory.nameFr || ''}
+                        value={editingCategory.nameFr || editingCategory.name_fr || ''}
                         onChange={(e) => setEditingCategory({...editingCategory, nameFr: e.target.value})}
                       />
                     </div>
@@ -596,31 +864,31 @@ const AdminDashboard = () => {
                     <div className="md:col-span-2">
                       <Label>Description française</Label>
                       <Textarea
-                        value={editingCategory.descriptionFr || ''}
+                        value={editingCategory.descriptionFr || editingCategory.description_fr || ''}
                         onChange={(e) => setEditingCategory({...editingCategory, descriptionFr: e.target.value})}
                       />
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
                     <Button onClick={() => saveCategory(editingCategory)}>
-                      Sauvegarder
+                      {t('common.save')}
                     </Button>
                     <Button variant="outline" onClick={() => setEditingCategory(null)}>
-                      Annuler
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </div>
               )}
 
               <div className="space-y-4">
-                {savedCategories.map((category: any) => (
+                {categories.map((category: any) => (
                   <div key={category.id} className="border rounded p-4 flex justify-between items-center">
                     <div>
                       <h3 className="font-medium flex items-center gap-2">
                         <span className="text-2xl">{category.icon}</span>
-                        {category.nameFr}
+                        {category.name_fr}
                       </h3>
-                      <p className="text-sm text-muted-foreground">{category.descriptionFr}</p>
+                      <p className="text-sm text-muted-foreground">{category.description_fr}</p>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => setEditingCategory(category)}>
@@ -642,10 +910,10 @@ const AdminDashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
-                Gestion des kits
+                {t('admin.bundleManagement')}
                 <Button onClick={() => setEditingBundle({ items: [] })}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Ajouter kit
+                  {t('admin.addBundle')}
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -659,14 +927,14 @@ const AdminDashboard = () => {
                     <div>
                       <Label>Nom du kit</Label>
                       <Input
-                        value={editingBundle.name || ''}
+                        value={editingBundle.name || editingBundle.name_fr || ''}
                         onChange={(e) => setEditingBundle({...editingBundle, name: e.target.value})}
                       />
                     </div>
                     <div>
                       <Label>Prix du kit</Label>
                       <Input
-                        value={editingBundle.bundlePrice || ''}
+                        value={editingBundle.bundlePrice || editingBundle.bundle_price || ''}
                         onChange={(e) => setEditingBundle({...editingBundle, bundlePrice: e.target.value})}
                         placeholder="18,900 DZD"
                       />
@@ -674,7 +942,7 @@ const AdminDashboard = () => {
                     <div>
                       <Label>Prix original</Label>
                       <Input
-                        value={editingBundle.originalPrice || ''}
+                        value={editingBundle.originalPrice || editingBundle.original_price || ''}
                         onChange={(e) => setEditingBundle({...editingBundle, originalPrice: e.target.value})}
                         placeholder="24,500 DZD"
                       />
@@ -707,7 +975,7 @@ const AdminDashboard = () => {
                     <div className="md:col-span-2">
                       <Label>Description</Label>
                       <Textarea
-                        value={editingBundle.description || ''}
+                        value={editingBundle.description || editingBundle.description_fr || ''}
                         onChange={(e) => setEditingBundle({...editingBundle, description: e.target.value})}
                       />
                     </div>
@@ -716,34 +984,34 @@ const AdminDashboard = () => {
                       <Textarea
                         value={editingBundle.items?.join('\n') || ''}
                         onChange={(e) => setEditingBundle({...editingBundle, items: e.target.value.split('\n').filter(item => item.trim())})}
-                        placeholder="Composite filling materials (3 shades)&#10;Bonding agent&#10;Etching gel"
+                        placeholder="Matériaux de restauration composite (3 teintes)&#10;Agent de liaison&#10;Gel de mordançage"
                         rows={6}
                       />
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
                     <Button onClick={() => saveBundle(editingBundle)}>
-                      Sauvegarder
+                      {t('common.save')}
                     </Button>
                     <Button variant="outline" onClick={() => setEditingBundle(null)}>
-                      Annuler
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </div>
               )}
 
               <div className="space-y-4">
-                {savedBundles.length === 0 ? (
+                {bundles.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">
                     Aucun kit créé. Cliquez sur "Ajouter kit" pour commencer.
                   </p>
                 ) : (
-                  savedBundles.map((bundle: any) => (
+                  bundles.map((bundle: any) => (
                     <div key={bundle.id} className="border rounded p-4 flex justify-between items-center">
                       <div>
-                        <h3 className="font-medium">{bundle.name}</h3>
-                        <p className="text-sm text-muted-foreground">{bundle.description}</p>
-                        <p className="text-sm">Prix: {bundle.bundlePrice}</p>
+                        <h3 className="font-medium">{bundle.name_fr || bundle.name}</h3>
+                        <p className="text-sm text-muted-foreground">{bundle.description_fr || bundle.description}</p>
+                        <p className="text-sm">Prix: {bundle.bundle_price}</p>
                         <p className="text-xs text-muted-foreground">{bundle.items?.length || 0} article(s) inclus</p>
                         {bundle.popular && <Badge className="mt-1">Populaire</Badge>}
                       </div>

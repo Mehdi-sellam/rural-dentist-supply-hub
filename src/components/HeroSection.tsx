@@ -12,13 +12,23 @@ const HeroSection = () => {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Text content */}
           <div className="space-y-6 text-center md:text-left">
+            {/* Logo and slogan */}
+            <div className="space-y-2 mb-6">
+              <div className="flex items-center justify-center md:justify-start space-x-3">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-xl">DG</span>
+                </div>
+                <span className="font-bold text-3xl text-primary">DentGo</span>
+              </div>
+              <p className="text-sm text-muted-foreground italic">
+                "Votre partenaire de confiance pour l'excellence dentaire"
+              </p>
+            </div>
+
             <div className="space-y-4">
               <h1 className="text-4xl text-foreground leading-tight heading-professional md:text-5xl font-bold my-0 mx-0 py-0 px-0">
                 Fournitures Dentaires Professionnelles
               </h1>
-              <span className="text-primary text-2xl md:text-3xl font-semibold block heading-professional">
-                Équipements de qualité européenne et asiatique pour votre cabinet dentaire
-              </span>
               <p className="text-muted-foreground leading-relaxed text-professional text-xl px-0">
                 Équipements de qualité européenne et asiatique pour votre cabinet dentaire professionnel.
               </p>

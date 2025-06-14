@@ -5,13 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
+
+type PaymentMethod = Database['public']['Enums']['payment_method'];
 
 const WILAYAS = [
   { name: 'Alger', day: 'Lundi' },
@@ -21,16 +24,16 @@ const WILAYAS = [
 ];
 
 const PAYMENT_METHODS = [
-  { id: 'cod', name: 'Paiement à la livraison', details: 'Payez en espèces lors de la réception' },
-  { id: 'transfer', name: 'Virement bancaire', details: 'IBAN: DZ12 3456 7890 1234 5678 - Bénéficiaire: DentGo SARL' },
-  { id: 'baridimob', name: 'BaridiMob/CCP', details: 'CCP: 1234567890 - Nom: DentGo SARL' }
+  { id: 'cod' as PaymentMethod, name: 'Paiement à la livraison', details: 'Payez en espèces lors de la réception' },
+  { id: 'transfer' as PaymentMethod, name: 'Virement bancaire', details: 'IBAN: DZ12 3456 7890 1234 5678 - Bénéficiaire: DentGo SARL' },
+  { id: 'baridimob' as PaymentMethod, name: 'BaridiMob/CCP', details: 'CCP: 1234567890 - Nom: DentGo SARL' }
 ];
 
 const Checkout = () => {
   const { items, bundles, totalAmount, clearCart } = useCart();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -50,30 +53,64 @@ const Checkout = () => {
     setIsLoading(true);
 
     try {
-      const order = {
-        id: Date.now().toString(),
-        userId: user.id,
-        items,
-        bundles,
-        totalAmount,
-        paymentMethod,
-        deliveryDate,
-        status: 'pending',
-        paymentStatus: 'pending',
-        createdAt: new Date().toISOString()
-      };
+      // Create order in database
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          total_amount: totalAmount,
+          payment_method: paymentMethod,
+          delivery_date: deliveryDate || null,
+          status: 'pending',
+          payment_status: 'pending'
+        })
+        .select()
+        .single();
 
-      // Save order
-      const savedOrders = JSON.parse(localStorage.getItem('dentgo_orders') || '[]');
-      savedOrders.push(order);
-      localStorage.setItem('dentgo_orders', JSON.stringify(savedOrders));
+      if (orderError) throw orderError;
 
-      // Clear cart
-      clearCart();
+      // Insert order items
+      if (items.length > 0) {
+        const orderItems = items.map(item => ({
+          order_id: order.id,
+          product_id: item.id,
+          product_name: item.name,
+          product_price: item.price,
+          quantity: item.quantity,
+          subtotal: item.price * item.quantity
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
+
+        if (itemsError) throw itemsError;
+      }
+
+      // Insert order bundles
+      if (bundles.length > 0) {
+        const orderBundles = bundles.map(bundle => ({
+          order_id: order.id,
+          bundle_id: bundle.id,
+          bundle_name: bundle.name,
+          bundle_price: bundle.bundlePrice,
+          quantity: bundle.quantity
+        }));
+
+        const { error: bundlesError } = await supabase
+          .from('order_bundles')
+          .insert(orderBundles);
+
+        if (bundlesError) throw bundlesError;
+      }
+
+      // Clear cart after successful order
+      await clearCart();
 
       toast.success('Commande passée avec succès !');
       navigate('/order-confirmation', { state: { order } });
     } catch (error) {
+      console.error('Error placing order:', error);
       toast.error('Erreur lors de la commande');
     } finally {
       setIsLoading(false);

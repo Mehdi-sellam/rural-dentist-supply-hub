@@ -4,8 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Menu, Search, ShoppingCart, User, LogOut } from 'lucide-react';
+import { Menu, Search, ShoppingCart, User, LogOut, Settings } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -66,11 +67,6 @@ const Header = () => {
             <Link to="/contact" className="text-sm font-medium hover:text-primary transition-colors">
               {t('nav.contact')}
             </Link>
-            {isAdmin && (
-              <Link to="/admin" className="text-sm font-medium hover:text-primary transition-colors">
-                {t('nav.admin')}
-              </Link>
-            )}
           </nav>
 
           {/* Search Bar */}
@@ -108,17 +104,44 @@ const Header = () => {
 
             {/* User Menu */}
             {user ? (
-              <div className="flex items-center space-x-2">
-                <Link to="/account">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">
                     <User className="w-5 h-5 mr-2" />
                     {profile?.full_name || user.email}
                   </Button>
-                </Link>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {isAdmin ? (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/admin')}>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Administration
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/account')}>
+                        <User className="w-4 h-4 mr-2" />
+                        Informations de compte
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Mes commandes
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/account')}>
+                        <User className="w-4 h-4 mr-2" />
+                        Informations de compte
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Se déconnecter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link to="/auth">
                 <Button variant="outline" size="sm">
@@ -178,15 +201,6 @@ const Header = () => {
                   >
                     {t('nav.contact')}
                   </Link>
-                  {isAdmin && (
-                    <Link 
-                      to="/admin" 
-                      className="text-lg font-medium hover:text-primary transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      {t('nav.admin')}
-                    </Link>
-                  )}
                   
                   {/* Mobile Search */}
                   <div className="pt-4">

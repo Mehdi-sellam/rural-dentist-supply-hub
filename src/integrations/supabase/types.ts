@@ -11,7 +11,9 @@ export type Database = {
     Tables: {
       bundles: {
         Row: {
+          badge: string | null
           bundle_price: string
+          calculated_savings: number | null
           created_at: string | null
           description: string | null
           description_ar: string | null
@@ -25,10 +27,13 @@ export type Database = {
           popular: boolean | null
           procedures: string | null
           savings: string | null
+          sub_description: string | null
           updated_at: string | null
         }
         Insert: {
+          badge?: string | null
           bundle_price: string
+          calculated_savings?: number | null
           created_at?: string | null
           description?: string | null
           description_ar?: string | null
@@ -42,10 +47,13 @@ export type Database = {
           popular?: boolean | null
           procedures?: string | null
           savings?: string | null
+          sub_description?: string | null
           updated_at?: string | null
         }
         Update: {
+          badge?: string | null
           bundle_price?: string
+          calculated_savings?: number | null
           created_at?: string | null
           description?: string | null
           description_ar?: string | null
@@ -59,6 +67,7 @@ export type Database = {
           popular?: boolean | null
           procedures?: string | null
           savings?: string | null
+          sub_description?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -155,6 +164,7 @@ export type Database = {
           description_ar: string | null
           description_fr: string | null
           icon: string | null
+          icon_url: string | null
           id: string
           name: string
           name_ar: string | null
@@ -168,6 +178,7 @@ export type Database = {
           description_ar?: string | null
           description_fr?: string | null
           icon?: string | null
+          icon_url?: string | null
           id?: string
           name: string
           name_ar?: string | null
@@ -181,6 +192,7 @@ export type Database = {
           description_ar?: string | null
           description_fr?: string | null
           icon?: string | null
+          icon_url?: string | null
           id?: string
           name?: string
           name_ar?: string | null
@@ -289,8 +301,10 @@ export type Database = {
           delivery_date: string | null
           id: string
           notes: string | null
+          partial_payment_history: Json | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
           payment_status: Database["public"]["Enums"]["payment_status"] | null
+          preferred_delivery_date: string | null
           remaining_balance: number | null
           status: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
@@ -303,8 +317,10 @@ export type Database = {
           delivery_date?: string | null
           id?: string
           notes?: string | null
+          partial_payment_history?: Json | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          preferred_delivery_date?: string | null
           remaining_balance?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
@@ -317,8 +333,10 @@ export type Database = {
           delivery_date?: string | null
           id?: string
           notes?: string | null
+          partial_payment_history?: Json | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          preferred_delivery_date?: string | null
           remaining_balance?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount?: number
@@ -328,6 +346,67 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_notifications: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          payment_method: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          payment_method: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          payment_method?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_notifications_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_notifications_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -345,6 +424,7 @@ export type Database = {
           description_fr: string | null
           id: string
           image: string | null
+          image_url: string | null
           in_stock: boolean | null
           name: string
           name_ar: string | null
@@ -356,6 +436,7 @@ export type Database = {
           rating: number | null
           reviews: number | null
           specifications: string[] | null
+          stock_status: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -367,6 +448,7 @@ export type Database = {
           description_fr?: string | null
           id?: string
           image?: string | null
+          image_url?: string | null
           in_stock?: boolean | null
           name: string
           name_ar?: string | null
@@ -378,6 +460,7 @@ export type Database = {
           rating?: number | null
           reviews?: number | null
           specifications?: string[] | null
+          stock_status?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -389,6 +472,7 @@ export type Database = {
           description_fr?: string | null
           id?: string
           image?: string | null
+          image_url?: string | null
           in_stock?: boolean | null
           name?: string
           name_ar?: string | null
@@ -400,6 +484,7 @@ export type Database = {
           rating?: number | null
           reviews?: number | null
           specifications?: string[] | null
+          stock_status?: boolean | null
           updated_at?: string | null
         }
         Relationships: [

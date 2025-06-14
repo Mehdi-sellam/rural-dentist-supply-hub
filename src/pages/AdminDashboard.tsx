@@ -249,7 +249,11 @@ const AdminDashboard = () => {
 
       if (error) throw error;
       
-      await fetchData();
+      // Update local state instead of refetching all data
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, status: 'cancelled' } : order
+      ));
+      
       toast.success('Commande annulée avec succès');
     } catch (error) {
       console.error('Error cancelling order:', error);
@@ -294,7 +298,11 @@ const AdminDashboard = () => {
 
       if (error) throw error;
       
-      await fetchData();
+      // Update local state instead of refetching all data
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, status } : order
+      ));
+      
       toast.success('Statut de commande mis à jour');
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -331,7 +339,11 @@ const AdminDashboard = () => {
         return newState;
       });
       
-      await fetchData();
+      // Update local state instead of refetching all data
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, ...updateData } : order
+      ));
+      
       toast.success('Statut de paiement mis à jour');
     } catch (error) {
       console.error('Error updating payment status:', error);

@@ -15,7 +15,7 @@ import Footer from '@/components/Footer';
 import ProductSelector from '@/components/admin/ProductSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Download, Upload, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, Upload, Eye, X } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type OrderStatus = Database['public']['Enums']['order_status'];
@@ -110,6 +110,65 @@ const AdminDashboard = () => {
     sub_description: '',
     selectedProducts: [] as string[]
   });
+
+  // Clear form functions
+  const clearProductForm = () => {
+    setNewProduct({
+      name: '',
+      name_fr: '',
+      name_ar: '',
+      description: '',
+      description_fr: '',
+      description_ar: '',
+      price: '',
+      original_price: '',
+      product_code: '',
+      product_id: '',
+      category_id: '',
+      image: '/placeholder.svg',
+      in_stock: true,
+      badge: '',
+      specifications: []
+    });
+    setProductImageFile(null);
+    setEditingProduct(null);
+  };
+
+  const clearCategoryForm = () => {
+    setNewCategory({
+      name: '',
+      name_fr: '',
+      name_ar: '',
+      description: '',
+      description_fr: '',
+      description_ar: '',
+      icon: '📦',
+      color: ''
+    });
+    setCategoryIconFile(null);
+    setEditingCategory(null);
+  };
+
+  const clearBundleForm = () => {
+    setNewBundle({
+      name: '',
+      name_fr: '',
+      name_ar: '',
+      description: '',
+      description_fr: '',
+      description_ar: '',
+      bundle_price: '',
+      original_price: '',
+      items: [],
+      procedures: '10+',
+      savings: '',
+      popular: false,
+      badge: '',
+      sub_description: '',
+      selectedProducts: []
+    });
+    setEditingBundle(null);
+  };
 
   useEffect(() => {
     if (!user || !profile?.is_admin) {
@@ -907,30 +966,10 @@ const AdminDashboard = () => {
                     <Plus className="w-4 h-4 mr-2" />
                     {uploadingImage ? 'Téléchargement...' : editingProduct ? 'Mettre à jour le produit' : 'Ajouter le produit'}
                   </Button>
-                  {editingProduct && (
-                    <Button variant="outline" onClick={() => {
-                      setEditingProduct(null);
-                      setNewProduct({
-                        name: '',
-                        name_fr: '',
-                        name_ar: '',
-                        description: '',
-                        description_fr: '',
-                        description_ar: '',
-                        price: '',
-                        original_price: '',
-                        product_code: '',
-                        product_id: '',
-                        category_id: '',
-                        image: '/placeholder.svg',
-                        in_stock: true,
-                        badge: '',
-                        specifications: []
-                      });
-                    }}>
-                      Annuler
-                    </Button>
-                  )}
+                  <Button variant="outline" onClick={clearProductForm}>
+                    <X className="w-4 h-4 mr-2" />
+                    Vider les champs
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -1040,23 +1079,10 @@ const AdminDashboard = () => {
                     <Plus className="w-4 h-4 mr-2" />
                     {uploadingImage ? 'Téléchargement...' : editingCategory ? 'Mettre à jour la catégorie' : 'Ajouter la catégorie'}
                   </Button>
-                  {editingCategory && (
-                    <Button variant="outline" onClick={() => {
-                      setEditingCategory(null);
-                      setNewCategory({
-                        name: '',
-                        name_fr: '',
-                        name_ar: '',
-                        description: '',
-                        description_fr: '',
-                        description_ar: '',
-                        icon: '📦',
-                        color: ''
-                      });
-                    }}>
-                      Annuler
-                    </Button>
-                  )}
+                  <Button variant="outline" onClick={clearCategoryForm}>
+                    <X className="w-4 h-4 mr-2" />
+                    Vider les champs
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -1217,30 +1243,10 @@ const AdminDashboard = () => {
                     <Plus className="w-4 h-4 mr-2" />
                     {editingBundle ? 'Mettre à jour le kit' : 'Ajouter le kit'}
                   </Button>
-                  {editingBundle && (
-                    <Button variant="outline" onClick={() => {
-                      setEditingBundle(null);
-                      setNewBundle({
-                        name: '',
-                        name_fr: '',
-                        name_ar: '',
-                        description: '',
-                        description_fr: '',
-                        description_ar: '',
-                        bundle_price: '',
-                        original_price: '',
-                        items: [],
-                        procedures: '10+',
-                        savings: '',
-                        popular: false,
-                        badge: '',
-                        sub_description: '',
-                        selectedProducts: []
-                      });
-                    }}>
-                      Annuler
-                    </Button>
-                  )}
+                  <Button variant="outline" onClick={clearBundleForm}>
+                    <X className="w-4 h-4 mr-2" />
+                    Vider les champs
+                  </Button>
                 </div>
               </CardContent>
             </Card>

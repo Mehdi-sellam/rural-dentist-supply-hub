@@ -188,6 +188,7 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
+      console.log('Fetching data...');
       // Fetch all data
       const [productsRes, categoriesRes, bundlesRes, ordersRes, clientsRes] = await Promise.all([
         supabase.from('products').select('*, categories(name_fr)'),
@@ -197,11 +198,28 @@ const AdminDashboard = () => {
         supabase.from('profiles').select('*').eq('is_admin', false)
       ]);
 
-      if (productsRes.error) throw productsRes.error;
-      if (categoriesRes.error) throw categoriesRes.error;
-      if (bundlesRes.error) throw bundlesRes.error;
-      if (ordersRes.error) throw ordersRes.error;
-      if (clientsRes.error) throw clientsRes.error;
+      console.log('Orders response:', ordersRes);
+
+      if (productsRes.error) {
+        console.error('Products error:', productsRes.error);
+        throw productsRes.error;
+      }
+      if (categoriesRes.error) {
+        console.error('Categories error:', categoriesRes.error);
+        throw categoriesRes.error;
+      }
+      if (bundlesRes.error) {
+        console.error('Bundles error:', bundlesRes.error);
+        throw bundlesRes.error;
+      }
+      if (ordersRes.error) {
+        console.error('Orders error:', ordersRes.error);
+        throw ordersRes.error;
+      }
+      if (clientsRes.error) {
+        console.error('Clients error:', clientsRes.error);
+        throw clientsRes.error;
+      }
 
       setProducts(productsRes.data || []);
       setCategories(categoriesRes.data || []);
@@ -209,39 +227,68 @@ const AdminDashboard = () => {
       setOrders(ordersRes.data || []);
       setClients(clientsRes.data || []);
 
+      console.log('Data fetched successfully:', {
+        products: productsRes.data?.length,
+        categories: categoriesRes.data?.length,
+        bundles: bundlesRes.data?.length,
+        orders: ordersRes.data?.length,
+        clients: clientsRes.data?.length
+      });
+
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erreur lors du chargement des données');
     }
   };
 
-  // Search filter functions
-  const filteredProducts = products.filter(product =>
-    product.name_fr?.toLowerCase().includes(productSearch.toLowerCase()) ||
-    product.product_code?.toLowerCase().includes(productSearch.toLowerCase()) ||
-    product.categories?.name_fr?.toLowerCase().includes(productSearch.toLowerCase())
-  );
+  // Search filter functions with error handling
+  const filteredProducts = products.filter(product => {
+    try {
+      return product.name_fr?.toLowerCase().includes(productSearch.toLowerCase()) ||
+        product.product_code?.toLowerCase().includes(productSearch.toLowerCase()) ||
+        product.categories?.name_fr?.toLowerCase().includes(productSearch.toLowerCase());
+    } catch (error) {
+      console.error('Error filtering products:', error);
+      return true;
+    }
+  });
 
-  const filteredCategories = categories.filter(category =>
-    category.name_fr?.toLowerCase().includes(categorySearch.toLowerCase()) ||
-    category.description_fr?.toLowerCase().includes(categorySearch.toLowerCase())
-  );
+  const filteredCategories = categories.filter(category => {
+    try {
+      return category.name_fr?.toLowerCase().includes(categorySearch.toLowerCase()) ||
+        category.description_fr?.toLowerCase().includes(categorySearch.toLowerCase());
+    } catch (error) {
+      console.error('Error filtering categories:', error);
+      return true;
+    }
+  });
 
-  const filteredBundles = bundles.filter(bundle =>
-    bundle.name_fr?.toLowerCase().includes(bundleSearch.toLowerCase()) ||
-    bundle.name?.toLowerCase().includes(bundleSearch.toLowerCase()) ||
-    bundle.description_fr?.toLowerCase().includes(bundleSearch.toLowerCase())
-  );
+  const filteredBundles = bundles.filter(bundle => {
+    try {
+      return bundle.name_fr?.toLowerCase().includes(bundleSearch.toLowerCase()) ||
+        bundle.name?.toLowerCase().includes(bundleSearch.toLowerCase()) ||
+        bundle.description_fr?.toLowerCase().includes(bundleSearch.toLowerCase());
+    } catch (error) {
+      console.error('Error filtering bundles:', error);
+      return true;
+    }
+  });
 
   const filteredOrders = orders.filter(order => {
-    const matchesText = order.id?.toLowerCase().includes(orderSearch.toLowerCase()) ||
-      order.profiles?.full_name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
-      order.profiles?.dental_office_name?.toLowerCase().includes(orderSearch.toLowerCase());
-    
-    const matchesOrderStatus = !orderStatusFilter || order.status === orderStatusFilter;
-    const matchesPaymentStatus = !paymentStatusFilter || order.payment_status === paymentStatusFilter;
-    
-    return matchesText && matchesOrderStatus && matchesPaymentStatus;
+    try {
+      const matchesText = !orderSearch || 
+        order.id?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+        order.profiles?.full_name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+        order.profiles?.dental_office_name?.toLowerCase().includes(orderSearch.toLowerCase());
+      
+      const matchesOrderStatus = !orderStatusFilter || order.status === orderStatusFilter;
+      const matchesPaymentStatus = !paymentStatusFilter || order.payment_status === paymentStatusFilter;
+      
+      return matchesText && matchesOrderStatus && matchesPaymentStatus;
+    } catch (error) {
+      console.error('Error filtering orders:', error, order);
+      return true;
+    }
   });
 
   // Cancel order function
@@ -747,29 +794,41 @@ const AdminDashboard = () => {
   );
 
   const getOrderStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending': return <Badge variant="outline">En attente</Badge>;
-      case 'confirmed': return <Badge className="bg-blue-500">Confirmée</Badge>;
-      case 'shipped': return <Badge className="bg-orange-500">Expédiée</Badge>;
-      case 'delivered': return <Badge className="bg-green-500">Livrée</Badge>;
-      case 'cancelled': return <Badge variant="destructive">Annulée</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+    try {
+      switch (status) {
+        case 'pending': return <Badge variant="outline">En attente</Badge>;
+        case 'confirmed': return <Badge className="bg-blue-500">Confirmée</Badge>;
+        case 'shipped': return <Badge className="bg-orange-500">Expédiée</Badge>;
+        case 'delivered': return <Badge className="bg-green-500">Livrée</Badge>;
+        case 'cancelled': return <Badge variant="destructive">Annulée</Badge>;
+        default: return <Badge variant="outline">{status}</Badge>;
+      }
+    } catch (error) {
+      console.error('Error creating order status badge:', error);
+      return <Badge variant="outline">-</Badge>;
     }
   };
 
   const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending': return <Badge variant="outline">En attente</Badge>;
-      case 'partial': return <Badge className="bg-orange-500">Partiel</Badge>;
-      case 'paid': return <Badge className="bg-green-500">Payé</Badge>;
-      case 'refunded': return <Badge variant="destructive">Remboursé</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+    try {
+      switch (status) {
+        case 'pending': return <Badge variant="outline">En attente</Badge>;
+        case 'partial': return <Badge className="bg-orange-500">Partiel</Badge>;
+        case 'paid': return <Badge className="bg-green-500">Payé</Badge>;
+        case 'refunded': return <Badge variant="destructive">Remboursé</Badge>;
+        default: return <Badge variant="outline">{status}</Badge>;
+      }
+    } catch (error) {
+      console.error('Error creating payment status badge:', error);
+      return <Badge variant="outline">-</Badge>;
     }
   };
 
   if (!user || !profile?.is_admin) {
     return null;
   }
+
+  console.log('Rendering AdminDashboard, orders count:', orders.length);
 
   return (
     <div className="min-h-screen">
@@ -1326,7 +1385,7 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Enhanced Orders Tab with 2-column Grid and Filters */}
+          {/* Enhanced Orders Tab with Fixes */}
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
@@ -1344,7 +1403,7 @@ const AdminDashboard = () => {
                     </div>
                     <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
                       <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Filtrer par statut commande" />
+                        <SelectValue placeholder="Statut commande" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">Tous les statuts</SelectItem>
@@ -1357,7 +1416,7 @@ const AdminDashboard = () => {
                     </Select>
                     <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
                       <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Filtrer par statut paiement" />
+                        <SelectValue placeholder="Statut paiement" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">Tous les paiements</SelectItem>
@@ -1375,133 +1434,120 @@ const AdminDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filteredOrders.map((order) => {
-                    const remainingAmount = order.total_amount - (order.amount_paid || 0);
-                    
-                    return (
-                      <Card key={order.id} className="border">
-                        <CardContent className="p-4">
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="font-medium">#{order.id.slice(0, 8)}</h3>
-                                <p className="text-sm text-gray-600">{order.profiles?.full_name}</p>
-                                <p className="text-xs text-gray-500">{order.profiles?.dental_office_name}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-medium">{order.total_amount.toLocaleString()} DZD</p>
-                                <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
-                                <div className="flex gap-1 mt-1">
-                                  {getOrderStatusBadge(order.status)}
-                                  {order.status !== 'cancelled' && getPaymentStatusBadge(order.payment_status)}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {order.preferred_delivery_date && (
-                              <p className="text-xs text-gray-500">
-                                Date de livraison préférée: {new Date(order.preferred_delivery_date).toLocaleDateString()}
-                              </p>
-                            )}
-                            
-                            {order.amount_paid > 0 && order.status !== 'cancelled' && (
-                              <div className="space-y-1">
-                                <p className="text-sm text-green-600">Payé: {order.amount_paid.toLocaleString()} DZD</p>
-                                {remainingAmount > 0 && (
-                                  <p className="text-sm text-red-600">Montant restant: {remainingAmount.toLocaleString()} DZD</p>
-                                )}
-                              </div>
-                            )}
-                            
-                            <div className="space-y-2">
-                              <div>
-                                <Label className="text-xs">Statut commande</Label>
-                                <Select 
-                                  value={order.status} 
-                                  onValueChange={(value: OrderStatus) => updateOrderStatus(order.id, value)}
-                                >
-                                  <SelectTrigger className="h-8">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="pending">En attente</SelectItem>
-                                    <SelectItem value="confirmed">Confirmée</SelectItem>
-                                    <SelectItem value="shipped">Expédiée</SelectItem>
-                                    <SelectItem value="delivered">Livrée</SelectItem>
-                                    <SelectItem value="cancelled">Annulée</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              
-                              {order.status !== 'cancelled' && (
-                                <div>
-                                  <Label className="text-xs">Statut paiement</Label>
-                                  <Select 
-                                    value={order.payment_status} 
-                                    onValueChange={(value: PaymentStatus) => {
-                                      if (value !== 'partial') {
-                                        updatePaymentStatus(order.id, value);
-                                      } else {
-                                        setOrders(prev => prev.map(o => 
-                                          o.id === order.id ? { ...o, payment_status: value } : o
-                                        ));
-                                      }
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="pending">En attente</SelectItem>
-                                      <SelectItem value="partial">Partiel</SelectItem>
-                                      <SelectItem value="paid">Payé</SelectItem>
-                                      <SelectItem value="refunded">Remboursé</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              )}
-                              
-                              {order.payment_status === 'partial' && order.status !== 'cancelled' && (
-                                <div className="space-y-1">
-                                  <Label className="text-xs">Montant partiel</Label>
-                                  <div className="flex gap-1">
-                                    <Input
-                                      type="number"
-                                      placeholder="Montant"
-                                      value={partialPaymentAmount[order.id] || ''}
-                                      onChange={(e) => setPartialPaymentAmount(prev => ({
-                                        ...prev,
-                                        [order.id]: e.target.value
-                                      }))}
-                                      className="h-8 text-xs"
-                                    />
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handlePartialPaymentSubmit(order.id)}
-                                      disabled={!partialPaymentAmount[order.id]}
-                                      className="h-8 px-2 text-xs"
-                                    >
-                                      OK
-                                    </Button>
+                {filteredOrders.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Aucune commande trouvée
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {filteredOrders.map((order) => {
+                      try {
+                        const remainingAmount = (order.total_amount || 0) - (order.amount_paid || 0);
+                        
+                        return (
+                          <Card key={order.id} className="border">
+                            <CardContent className="p-4">
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h3 className="font-medium">#{order.id?.slice(0, 8) || 'N/A'}</h3>
+                                    <p className="text-sm text-gray-600">{order.profiles?.full_name || 'N/A'}</p>
+                                    <p className="text-xs text-gray-500">{order.profiles?.dental_office_name || 'N/A'}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-medium">{(order.total_amount || 0).toLocaleString()} DZD</p>
+                                    <p className="text-xs text-gray-500">
+                                      {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                    <div className="flex gap-1 mt-1 flex-wrap">
+                                      {getOrderStatusBadge(order.status || 'pending')}
+                                      {order.status !== 'cancelled' && getPaymentStatusBadge(order.payment_status || 'pending')}
+                                    </div>
                                   </div>
                                 </div>
-                              )}
-                            </div>
-                            
-                            <div className="flex gap-2">
-                              {order.status === 'delivered' && order.payment_status === 'paid' && (
-                                <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                                  Terminée
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+                                
+                                {order.preferred_delivery_date && (
+                                  <p className="text-xs text-gray-500">
+                                    Date de livraison préférée: {new Date(order.preferred_delivery_date).toLocaleDateString()}
+                                  </p>
+                                )}
+                                
+                                {(order.amount_paid || 0) > 0 && order.status !== 'cancelled' && (
+                                  <div className="space-y-1">
+                                    <p className="text-sm text-green-600">Payé: {(order.amount_paid || 0).toLocaleString()} DZD</p>
+                                    {remainingAmount > 0 && (
+                                      <p className="text-sm text-red-600">Montant restant: {remainingAmount.toLocaleString()} DZD</p>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                <div className="space-y-2">
+                                  <div>
+                                    <Label className="text-xs">Statut commande</Label>
+                                    <Select 
+                                      value={order.status || 'pending'} 
+                                      onValueChange={(value: OrderStatus) => updateOrderStatus(order.id, value)}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="pending">En attente</SelectItem>
+                                        <SelectItem value="confirmed">Confirmée</SelectItem>
+                                        <SelectItem value="shipped">Expédiée</SelectItem>
+                                        <SelectItem value="delivered">Livrée</SelectItem>
+                                        <SelectItem value="cancelled">Annulée</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  {order.status !== 'cancelled' && (
+                                    <div>
+                                      <Label className="text-xs">Statut paiement</Label>
+                                      <Select 
+                                        value={order.payment_status || 'pending'} 
+                                        onValueChange={(value: PaymentStatus) => updatePaymentStatus(order.id, value)}
+                                      >
+                                        <SelectTrigger className="h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="pending">En attente</SelectItem>
+                                          <SelectItem value="partial">Partiel</SelectItem>
+                                          <SelectItem value="paid">Payé</SelectItem>
+                                          <SelectItem value="refunded">Remboursé</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="flex gap-2">
+                                  {order.status === 'delivered' && order.payment_status === 'paid' && (
+                                    <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                                      Terminée
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      } catch (error) {
+                        console.error('Error rendering order card:', error, order);
+                        return (
+                          <Card key={order.id || Math.random()} className="border">
+                            <CardContent className="p-4">
+                              <div className="text-red-500">
+                                Erreur lors de l'affichage de cette commande
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      }
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

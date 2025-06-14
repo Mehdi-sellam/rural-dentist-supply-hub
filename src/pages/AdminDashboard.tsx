@@ -15,7 +15,7 @@ import Footer from '@/components/Footer';
 import ProductSelector from '@/components/admin/ProductSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Download, Upload, Eye, X, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, Upload, Eye, X, Search, Calendar } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type OrderStatus = Database['public']['Enums']['order_status'];
@@ -50,6 +50,10 @@ const AdminDashboard = () => {
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
+  
+  // Client search states
+  const [clientSearch, setClientSearch] = useState('');
+  const [clientDateFilter, setClientDateFilter] = useState('');
   
   // State for data
   const [products, setProducts] = useState<any[]>([]);
@@ -287,6 +291,33 @@ const AdminDashboard = () => {
       return matchesText && matchesOrderStatus && matchesPaymentStatus;
     } catch (error) {
       console.error('Error filtering orders:', error, order);
+      return true;
+    }
+  });
+
+  // Enhanced client filtering function
+  const filteredClients = clients.filter(client => {
+    try {
+      // Text search filter
+      const matchesText = !clientSearch || 
+        client.full_name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+        client.dental_office_name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+        client.email?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+        client.phone?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+        client.wilaya?.toLowerCase().includes(clientSearch.toLowerCase());
+      
+      // Date filter
+      const matchesDate = !clientDateFilter || (() => {
+        if (!client.created_at) return false;
+        const clientDate = new Date(client.created_at);
+        const [year, month] = clientDateFilter.split('-');
+        return clientDate.getFullYear().toString() === year && 
+               (clientDate.getMonth() + 1).toString().padStart(2, '0') === month;
+      })();
+      
+      return matchesText && matchesDate;
+    } catch (error) {
+      console.error('Error filtering clients:', error, client);
       return true;
     }
   });
@@ -1552,35 +1583,69 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Clients Tab */}
+          {/* Enhanced Clients Tab with Search Functionality */}
           <TabsContent value="clients" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Clients ({clients.length})
-                  <Button onClick={() => downloadData(clients, 'clients.csv')} variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Télécharger
-                  </Button>
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Clients ({filteredClients.length})</CardTitle>
+                  <div className="flex gap-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        placeholder="Rechercher par nom, cabinet, email, téléphone, wilaya..."
+                        value={clientSearch}
+                        onChange={(e) => setClientSearch(e.target.value)}
+                        className="pl-10 w-80"
+                      />
+                    </div>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        type="month"
+                        placeholder="Filtrer par mois d'inscription"
+                        value={clientDateFilter}
+                        onChange={(e) => setClientDateFilter(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
+                    <Button onClick={() => downloadData(clients, 'clients.csv')} variant="outline">
+                      <Download className="w-4 h-4 mr-2" />
+                      Télécharger
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {clients.map((client) => (
-                    <div key={client.id} className="flex items-center justify-between p-4 border rounded">
-                      <div>
-                        <h3 className="font-medium">{client.full_name}</h3>
-                        <p className="text-sm text-gray-600">Cabinet: {client.dental_office_name}</p>
-                        <p className="text-sm text-gray-600">Email: {client.email}</p>
-                        <p className="text-sm text-gray-600">Téléphone: {client.phone}</p>
-                        <p className="text-sm text-gray-600">Wilaya: {client.wilaya}</p>
+                {filteredClients.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    {clientSearch || clientDateFilter ? 'Aucun client trouvé avec ces critères' : 'Aucun client trouvé'}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredClients.map((client) => (
+                      <div key={client.id} className="flex items-center justify-between p-4 border rounded">
+                        <div>
+                          <h3 className="font-medium">{client.full_name || 'Nom non renseigné'}</h3>
+                          <p className="text-sm text-gray-600">Cabinet: {client.dental_office_name || 'Non renseigné'}</p>
+                          <p className="text-sm text-gray-600">Email: {client.email || 'Non renseigné'}</p>
+                          <p className="text-sm text-gray-600">Téléphone: {client.phone || 'Non renseigné'}</p>
+                          <p className="text-sm text-gray-600">Wilaya: {client.wilaya || 'Non renseigné'}</p>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          <div>Inscrit le:</div>
+                          <div className="font-medium">
+                            {client.created_at ? new Date(client.created_at).toLocaleDateString('fr-FR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            }) : 'Date inconnue'}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Inscrit le: {new Date(client.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

@@ -48,8 +48,8 @@ const AdminDashboard = () => {
   const [categorySearch, setCategorySearch] = useState('');
   const [bundleSearch, setBundleSearch] = useState('');
   const [orderSearch, setOrderSearch] = useState('');
-  const [orderStatusFilter, setOrderStatusFilter] = useState('');
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
   
   // State for data
   const [products, setProducts] = useState<any[]>([]);
@@ -281,8 +281,8 @@ const AdminDashboard = () => {
         order.profiles?.full_name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
         order.profiles?.dental_office_name?.toLowerCase().includes(orderSearch.toLowerCase());
       
-      const matchesOrderStatus = !orderStatusFilter || order.status === orderStatusFilter;
-      const matchesPaymentStatus = !paymentStatusFilter || order.payment_status === paymentStatusFilter;
+      const matchesOrderStatus = orderStatusFilter === 'all' || order.status === orderStatusFilter;
+      const matchesPaymentStatus = paymentStatusFilter === 'all' || order.payment_status === paymentStatusFilter;
       
       return matchesText && matchesOrderStatus && matchesPaymentStatus;
     } catch (error) {
@@ -1406,7 +1406,7 @@ const AdminDashboard = () => {
                         <SelectValue placeholder="Statut commande" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Tous les statuts</SelectItem>
+                        <SelectItem value="all">Tous les statuts</SelectItem>
                         <SelectItem value="pending">En attente</SelectItem>
                         <SelectItem value="confirmed">Confirmée</SelectItem>
                         <SelectItem value="shipped">Expédiée</SelectItem>
@@ -1419,7 +1419,7 @@ const AdminDashboard = () => {
                         <SelectValue placeholder="Statut paiement" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Tous les paiements</SelectItem>
+                        <SelectItem value="all">Tous les paiements</SelectItem>
                         <SelectItem value="pending">En attente</SelectItem>
                         <SelectItem value="partial">Partiel</SelectItem>
                         <SelectItem value="paid">Payé</SelectItem>

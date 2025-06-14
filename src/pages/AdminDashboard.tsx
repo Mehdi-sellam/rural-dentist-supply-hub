@@ -661,6 +661,9 @@ const AdminDashboard = () => {
         imageUrl = await uploadFile(productImageFile, 'product-images', fileName);
       }
 
+      // Generate a unique product_id if not provided
+      const productId = newProduct.product_id || generateUniqueProductId();
+
       const { error } = await supabase
         .from('products')
         .insert({
@@ -669,10 +672,21 @@ const AdminDashboard = () => {
           description: newProduct.description_fr,
           price: parseFloat(newProduct.price),
           original_price: newProduct.original_price ? parseFloat(newProduct.original_price) : null,
-          image: imageUrl
+          image: imageUrl,
+          product_id: productId
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding product:', error);
+        if (error.code === '23505' && error.message.includes('product_id_key')) {
+          toast.error('Cet ID produit existe déjà. Veuillez en choisir un autre ou laisser vide pour génération automatique.');
+        } else if (error.code === '23505' && error.message.includes('product_code_key')) {
+          toast.error('Ce code produit existe déjà. Veuillez en choisir un autre.');
+        } else {
+          toast.error('Erreur lors de l\'ajout du produit: ' + (error.message || 'Erreur inconnue'));
+        }
+        return;
+      }
 
       clearProductForm();
       fetchData();
@@ -681,6 +695,12 @@ const AdminDashboard = () => {
       console.error('Error adding product:', error);
       toast.error('Erreur lors de l\'ajout du produit');
     }
+  };
+
+  const generateUniqueProductId = () => {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `PRD-${timestamp}-${random}`;
   };
 
   const handleAddCategory = async () => {
@@ -965,6 +985,15 @@ const AdminDashboard = () => {
                       onChange={(e) => setNewProduct({...newProduct, product_code: e.target.value})}
                       placeholder="Code produit unique"
                     />
+                  </div>
+                  <div>
+                    <Label>ID produit (optionnel)</Label>
+                    <Input
+                      value={newProduct.product_id}
+                      onChange={(e) => setNewProduct({...newProduct, product_id: e.target.value})}
+                      placeholder="Laissez vide pour génération automatique"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Si vide, un ID unique sera généré automatiquement</p>
                   </div>
                   <div>
                     <Label>Prix (DZD) *</Label>

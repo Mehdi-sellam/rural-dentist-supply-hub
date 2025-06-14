@@ -315,12 +315,6 @@ const AdminDashboard = () => {
         if (order) {
           updateData.amount_paid = order.total_amount;
         }
-      } else if (paymentStatus === 'cancelled') {
-        // When payment is cancelled, also update order status to cancelled
-        await supabase
-          .from('orders')
-          .update({ status: 'cancelled' })
-          .eq('id', orderId);
       }
 
       const { error } = await supabase
@@ -342,6 +336,20 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error updating payment status:', error);
       toast.error('Erreur lors de la mise à jour du statut de paiement');
+    }
+  };
+
+  const handlePaymentStatusChange = async (orderId: string, paymentStatus: PaymentStatus) => {
+    try {
+      // If setting payment status to pending, cancelled, or refunded, cancel the order
+      if (paymentStatus === 'pending' || paymentStatus === 'refunded') {
+        await cancelOrder(orderId);
+      } else {
+        await updatePaymentStatus(orderId, paymentStatus);
+      }
+    } catch (error) {
+      console.error('Error handling payment status change:', error);
+      toast.error('Erreur lors de la mise à jour');
     }
   };
 
@@ -724,7 +732,7 @@ const AdminDashboard = () => {
       case 'pending': return <Badge variant="outline">En attente</Badge>;
       case 'partial': return <Badge className="bg-orange-500">Partiel</Badge>;
       case 'paid': return <Badge className="bg-green-500">Payé</Badge>;
-      case 'cancelled': return <Badge variant="destructive">Annulée</Badge>;
+      case 'refunded': return <Badge variant="destructive">Remboursé</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -1288,7 +1296,7 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Enhanced Orders Tab with 2-column Grid and improved layout */}
+          {/* Enhanced Orders Tab with 2-column Grid */}
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
@@ -1312,7 +1320,7 @@ const AdminDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {filteredOrders.map((order) => {
                     const remainingAmount = order.total_amount - (order.amount_paid || 0);
                     
@@ -1342,7 +1350,9 @@ const AdminDashboard = () => {
                             {order.amount_paid > 0 && (
                               <div className="space-y-1">
                                 <p className="text-sm text-green-600">Payé: {order.amount_paid.toLocaleString()} DZD</p>
-                                <p className="text-sm text-red-600">Montant restant: {remainingAmount.toLocaleString()} DZD</p>
+                                {remainingAmount > 0 && (
+                                  <p className="text-sm text-red-600">Montant restant: {remainingAmount.toLocaleString()} DZD</p>
+                                )}
                               </div>
                             )}
                             
@@ -1371,7 +1381,7 @@ const AdminDashboard = () => {
                                   value={order.payment_status} 
                                   onValueChange={(value: PaymentStatus) => {
                                     if (value !== 'partial') {
-                                      updatePaymentStatus(order.id, value);
+                                      handlePaymentStatusChange(order.id, value);
                                     } else {
                                       setOrders(prev => prev.map(o => 
                                         o.id === order.id ? { ...o, payment_status: value } : o
@@ -1386,7 +1396,7 @@ const AdminDashboard = () => {
                                     <SelectItem value="pending">En attente</SelectItem>
                                     <SelectItem value="partial">Partiel</SelectItem>
                                     <SelectItem value="paid">Payé</SelectItem>
-                                    <SelectItem value="cancelled">Annulée</SelectItem>
+                                    <SelectItem value="refunded">Annulée</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>

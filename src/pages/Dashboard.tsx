@@ -20,9 +20,30 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  // Add effect to refetch orders when user navigates back to dashboard
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        fetchUserOrders();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user]);
+
   const fetchUserOrders = async () => {
+    if (!user?.id) {
+      console.log('No user ID available for fetching orders');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      console.log('Fetching orders for user:', user.id);
       
       // Fetch orders with related order items and bundles
       const { data: ordersData, error: ordersError } = await supabase
@@ -35,10 +56,17 @@ const Dashboard = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (ordersError) throw ordersError;
+      if (ordersError) {
+        console.error('Error fetching orders:', ordersError);
+        throw ordersError;
+      }
 
-      console.log('Fetched orders:', ordersData);
+      console.log('Successfully fetched orders:', ordersData);
       setOrders(ordersData || []);
+      
+      if (!ordersData || ordersData.length === 0) {
+        console.log('No orders found for user');
+      }
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Erreur lors du chargement des commandes');
@@ -48,6 +76,7 @@ const Dashboard = () => {
   };
 
   if (!user) {
+    console.log('No user authenticated, redirecting...');
     return null;
   }
 
@@ -83,7 +112,16 @@ const Dashboard = () => {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Tableau de bord</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Tableau de bord</h1>
+          <button 
+            onClick={fetchUserOrders}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            disabled={loading}
+          >
+            {loading ? 'Actualisation...' : 'Actualiser'}
+          </button>
+        </div>
 
         {/* User Info */}
         <Card className="mb-8">
@@ -141,13 +179,19 @@ const Dashboard = () => {
         {/* Orders */}
         <Card>
           <CardHeader>
-            <CardTitle>Mes commandes</CardTitle>
+            <CardTitle>Mes commandes ({orders.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-muted-foreground">Chargement des commandes...</p>
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-muted-foreground mt-2">Chargement des commandes...</p>
+              </div>
             ) : orders.length === 0 ? (
-              <p className="text-muted-foreground">Aucune commande trouvée.</p>
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Aucune commande trouvée.</p>
+                <p className="text-sm text-muted-foreground mt-1">Vos commandes apparaîtront ici après votre premier achat.</p>
+              </div>
             ) : (
               <div className="space-y-4">
                 {orders.map((order: any) => {

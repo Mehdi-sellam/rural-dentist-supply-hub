@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,22 +54,31 @@ const Checkout = () => {
       return;
     }
 
+    if (!user?.id) {
+      toast.error('Utilisateur non authentifié');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      console.log('Starting order placement...');
+      console.log('Starting order placement for user:', user.id);
+      console.log('Cart items:', items);
+      console.log('Cart bundles:', bundles);
+      console.log('Total amount:', totalAmount);
       
-      // Create order in database - using preferred_delivery_date instead of delivery_date
+      // Create order in database
       const orderData = {
         user_id: user.id,
         total_amount: totalAmount,
         payment_method: paymentMethod,
         preferred_delivery_date: deliveryDate || null,
         status: 'pending' as const,
-        payment_status: 'pending' as const
+        payment_status: 'pending' as const,
+        amount_paid: 0
       };
 
-      console.log('Order data:', orderData);
+      console.log('Creating order with data:', orderData);
 
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -83,7 +93,7 @@ const Checkout = () => {
 
       console.log('Order created successfully:', order);
 
-      // Insert order items - removed subtotal field
+      // Insert order items
       if (items.length > 0) {
         const orderItems = items.map(item => ({
           order_id: order.id,
@@ -103,6 +113,8 @@ const Checkout = () => {
           console.error('Order items error:', itemsError);
           throw itemsError;
         }
+
+        console.log('Order items inserted successfully');
       }
 
       // Insert order bundles
@@ -125,6 +137,8 @@ const Checkout = () => {
           console.error('Order bundles error:', bundlesError);
           throw bundlesError;
         }
+
+        console.log('Order bundles inserted successfully');
       }
 
       // Prepare order data for confirmation page
@@ -139,8 +153,15 @@ const Checkout = () => {
       // Clear cart after successful order
       await clearCart();
 
+      console.log('Order placement completed successfully');
       toast.success('Commande passée avec succès !');
-      navigate('/order-confirmation', { state: { order: orderConfirmationData } });
+      
+      // Navigate to confirmation page with order data
+      navigate('/order-confirmation', { 
+        state: { order: orderConfirmationData },
+        replace: true 
+      });
+      
     } catch (error) {
       console.error('Error placing order:', error);
       toast.error('Erreur lors de la commande: ' + (error as any)?.message || 'Erreur inconnue');

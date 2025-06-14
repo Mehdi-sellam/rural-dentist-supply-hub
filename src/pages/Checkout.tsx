@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -84,15 +83,14 @@ const Checkout = () => {
 
       console.log('Order created successfully:', order);
 
-      // Insert order items
+      // Insert order items - removed subtotal field
       if (items.length > 0) {
         const orderItems = items.map(item => ({
           order_id: order.id,
           product_id: item.id,
           product_name: item.name,
           product_price: item.price,
-          quantity: item.quantity,
-          subtotal: item.price * item.quantity
+          quantity: item.quantity
         }));
 
         console.log('Inserting order items:', orderItems);

@@ -298,13 +298,14 @@ const AdminDashboard = () => {
   // Enhanced client filtering function
   const filteredClients = clients.filter(client => {
     try {
-      // Text search filter
+      // Text search filter - now includes address
       const matchesText = !clientSearch || 
         client.full_name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
         client.dental_office_name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
         client.email?.toLowerCase().includes(clientSearch.toLowerCase()) ||
         client.phone?.toLowerCase().includes(clientSearch.toLowerCase()) ||
-        client.wilaya?.toLowerCase().includes(clientSearch.toLowerCase());
+        client.wilaya?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+        client.address?.toLowerCase().includes(clientSearch.toLowerCase());
       
       // Date filter
       const matchesDate = !clientDateFilter || (() => {
@@ -1593,10 +1594,10 @@ const AdminDashboard = () => {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
-                        placeholder="Rechercher par nom, cabinet, email, téléphone, wilaya..."
+                        placeholder="Rechercher par nom, cabinet, email, téléphone, wilaya, adresse..."
                         value={clientSearch}
                         onChange={(e) => setClientSearch(e.target.value)}
-                        className="pl-10 w-80"
+                        className="pl-10 w-96"
                       />
                     </div>
                     <div className="relative">
@@ -1631,6 +1632,7 @@ const AdminDashboard = () => {
                           <p className="text-sm text-gray-600">Email: {client.email || 'Non renseigné'}</p>
                           <p className="text-sm text-gray-600">Téléphone: {client.phone || 'Non renseigné'}</p>
                           <p className="text-sm text-gray-600">Wilaya: {client.wilaya || 'Non renseigné'}</p>
+                          <p className="text-sm text-gray-600">Adresse: {client.address || 'Non renseigné'}</p>
                         </div>
                         <div className="text-sm text-gray-500">
                           <div>Inscrit le:</div>

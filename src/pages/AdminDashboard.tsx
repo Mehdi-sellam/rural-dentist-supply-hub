@@ -829,16 +829,47 @@ const AdminDashboard = () => {
     }
   };
 
-  const downloadData = (data: any[], filename: string) => {
-    const csv = data.map(item => Object.values(item).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`${filename} téléchargé avec succès`);
+  // Enhanced download functions
+  const downloadProductsPDF = () => {
+    const { generateProductsPDF } = require('@/utils/pdfGenerator');
+    const doc = generateProductsPDF(filteredProducts);
+    doc.save(`DentGo-Produits-${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success('Catalogue produits téléchargé avec succès');
+  };
+
+  const downloadOrdersPDF = () => {
+    const { generateOrdersPDF } = require('@/utils/pdfGenerator');
+    const doc = generateOrdersPDF(filteredOrders);
+    doc.save(`DentGo-Commandes-${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success('Rapport commandes téléchargé avec succès');
+  };
+
+  const downloadClientsPDF = () => {
+    const { generateClientsPDF } = require('@/utils/pdfGenerator');
+    const doc = generateClientsPDF(filteredClients);
+    doc.save(`DentGo-Clients-${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success('Liste clients téléchargée avec succès');
+  };
+
+  const downloadCategoriesPDF = () => {
+    const { generateCategoriesPDF } = require('@/utils/pdfGenerator');
+    const doc = generateCategoriesPDF(filteredCategories);
+    doc.save(`DentGo-Categories-${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success('Catalogue catégories téléchargé avec succès');
+  };
+
+  const downloadBundlesPDF = () => {
+    const { generateBundlesPDF } = require('@/utils/pdfGenerator');
+    const doc = generateBundlesPDF(filteredBundles, products);
+    doc.save(`DentGo-Kits-${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success('Catalogue kits téléchargé avec succès');
+  };
+
+  const downloadCompleteCatalog = () => {
+    const { generateCompleteCatalogPDF } = require('@/utils/pdfGenerator');
+    const doc = generateCompleteCatalogPDF(products, categories, bundles);
+    doc.save(`DentGo-Catalogue-Complet-${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success('Catalogue complet téléchargé avec succès');
   };
 
   const completedOrders = orders.filter(order => 
@@ -890,6 +921,37 @@ const AdminDashboard = () => {
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Tableau de Bord Admin</h1>
           <p className="text-gray-600">Gérez vos produits, commandes et clients</p>
+          
+          {/* Enhanced Download Section */}
+          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">Téléchargements PDF</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <Button onClick={downloadProductsPDF} variant="outline" size="sm" className="flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Produits
+              </Button>
+              <Button onClick={downloadOrdersPDF} variant="outline" size="sm" className="flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Commandes
+              </Button>
+              <Button onClick={downloadClientsPDF} variant="outline" size="sm" className="flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Clients
+              </Button>
+              <Button onClick={downloadCategoriesPDF} variant="outline" size="sm" className="flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Catégories
+              </Button>
+              <Button onClick={downloadBundlesPDF} variant="outline" size="sm" className="flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Kits
+              </Button>
+              <Button onClick={downloadCompleteCatalog} className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                <Download className="w-4 h-4" />
+                Catalogue Complet
+              </Button>
+            </div>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -954,9 +1016,9 @@ const AdminDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   {editingProduct ? 'Modifier le produit' : 'Ajouter un nouveau produit'}
-                  <Button onClick={() => downloadData(products, 'products.csv')} variant="outline">
+                  <Button onClick={downloadProductsPDF} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
-                    Télécharger
+                    Télécharger PDF
                   </Button>
                 </CardTitle>
               </CardHeader>
@@ -1144,9 +1206,9 @@ const AdminDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   {editingCategory ? 'Modifier la catégorie' : 'Ajouter une nouvelle catégorie'}
-                  <Button onClick={() => downloadData(categories, 'categories.csv')} variant="outline">
+                  <Button onClick={downloadCategoriesPDF} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
-                    Télécharger
+                    Télécharger PDF
                   </Button>
                 </CardTitle>
               </CardHeader>
@@ -1267,9 +1329,9 @@ const AdminDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   {editingBundle ? 'Modifier le kit' : 'Ajouter un nouveau kit'}
-                  <Button onClick={() => downloadData(bundles, 'bundles.csv')} variant="outline">
+                  <Button onClick={downloadBundlesPDF} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
-                    Télécharger
+                    Télécharger PDF
                   </Button>
                 </CardTitle>
               </CardHeader>
@@ -1487,9 +1549,9 @@ const AdminDashboard = () => {
                         <SelectItem value="refunded">Remboursé</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button onClick={() => downloadData(orders, 'orders.csv')} variant="outline">
+                    <Button onClick={downloadOrdersPDF} variant="outline">
                       <Download className="w-4 h-4 mr-2" />
-                      Télécharger
+                      Télécharger PDF
                     </Button>
                   </div>
                 </div>
@@ -1639,9 +1701,9 @@ const AdminDashboard = () => {
                         className="pl-10 w-64"
                       />
                     </div>
-                    <Button onClick={() => downloadData(clients, 'clients.csv')} variant="outline">
+                    <Button onClick={downloadClientsPDF} variant="outline">
                       <Download className="w-4 h-4 mr-2" />
-                      Télécharger
+                      Télécharger PDF
                     </Button>
                   </div>
                 </div>

@@ -3,11 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { X } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -72,6 +74,27 @@ const Dashboard = () => {
       toast.error('Erreur lors du chargement des commandes');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Cancel order function for clients
+  const cancelOrder = async (orderId: string) => {
+    try {
+      console.log('Client cancelling order:', orderId);
+      
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId)
+        .eq('user_id', user?.id); // Ensure user can only cancel their own orders
+
+      if (error) throw error;
+      
+      await fetchUserOrders();
+      toast.success('Commande annulée avec succès');
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      toast.error('Erreur lors de l\'annulation de la commande');
     }
   };
 
@@ -213,11 +236,25 @@ const Dashboard = () => {
                             </p>
                           )}
                         </div>
-                        <div className="text-right">
-                          {getStatusBadge(order.status)}
-                          <div className="mt-1">
-                            {getPaymentStatusBadge(order.payment_status)}
+                        <div className="text-right flex flex-col gap-2">
+                          <div>
+                            {getStatusBadge(order.status)}
+                            <div className="mt-1">
+                              {getPaymentStatusBadge(order.payment_status)}
+                            </div>
                           </div>
+                          {/* Cancel button - only show for pending orders */}
+                          {(order.status === 'pending' || order.status === 'confirmed') && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => cancelOrder(order.id)}
+                              className="flex items-center gap-1"
+                            >
+                              <X className="w-3 h-3" />
+                              Annuler
+                            </Button>
+                          )}
                         </div>
                       </div>
                       

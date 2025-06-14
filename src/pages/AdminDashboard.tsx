@@ -15,7 +15,7 @@ import Footer from '@/components/Footer';
 import ProductSelector from '@/components/admin/ProductSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Download, Upload, Eye, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, Upload, Eye, X, Search } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type OrderStatus = Database['public']['Enums']['order_status'];
@@ -42,6 +42,12 @@ const AdminDashboard = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Search states
+  const [productSearch, setProductSearch] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
+  const [bundleSearch, setBundleSearch] = useState('');
+  const [orderSearch, setOrderSearch] = useState('');
   
   // State for data
   const [products, setProducts] = useState<any[]>([]);
@@ -207,6 +213,50 @@ const AdminDashboard = () => {
     }
   };
 
+  // Search filter functions
+  const filteredProducts = products.filter(product =>
+    product.name_fr?.toLowerCase().includes(productSearch.toLowerCase()) ||
+    product.product_code?.toLowerCase().includes(productSearch.toLowerCase()) ||
+    product.categories?.name_fr?.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
+  const filteredCategories = categories.filter(category =>
+    category.name_fr?.toLowerCase().includes(categorySearch.toLowerCase()) ||
+    category.description_fr?.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const filteredBundles = bundles.filter(bundle =>
+    bundle.name_fr?.toLowerCase().includes(bundleSearch.toLowerCase()) ||
+    bundle.name?.toLowerCase().includes(bundleSearch.toLowerCase()) ||
+    bundle.description_fr?.toLowerCase().includes(bundleSearch.toLowerCase())
+  );
+
+  const filteredOrders = orders.filter(order =>
+    order.id?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+    order.profiles?.full_name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+    order.profiles?.dental_office_name?.toLowerCase().includes(orderSearch.toLowerCase())
+  );
+
+  // Cancel order function
+  const cancelOrder = async (orderId: string) => {
+    try {
+      console.log('Cancelling order:', orderId);
+      
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      
+      await fetchData();
+      toast.success('Commande annulée avec succès');
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      toast.error('Erreur lors de l\'annulation de la commande');
+    }
+  };
+
   const uploadFile = async (file: File, bucket: string, path: string) => {
     setUploadingImage(true);
     try {
@@ -366,27 +416,7 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Reset form
-      setEditingProduct(null);
-      setNewProduct({
-        name: '',
-        name_fr: '',
-        name_ar: '',
-        description: '',
-        description_fr: '',
-        description_ar: '',
-        price: '',
-        original_price: '',
-        product_code: '',
-        product_id: '',
-        category_id: '',
-        image: '/placeholder.svg',
-        in_stock: true,
-        badge: '',
-        specifications: []
-      });
-      setProductImageFile(null);
-
+      clearProductForm();
       fetchData();
       toast.success('Produit mis à jour avec succès');
     } catch (error) {
@@ -435,20 +465,7 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Reset form
-      setEditingCategory(null);
-      setNewCategory({
-        name: '',
-        name_fr: '',
-        name_ar: '',
-        description: '',
-        description_fr: '',
-        description_ar: '',
-        icon: '📦',
-        color: ''
-      });
-      setCategoryIconFile(null);
-
+      clearCategoryForm();
       fetchData();
       toast.success('Catégorie mise à jour avec succès');
     } catch (error) {
@@ -509,26 +526,7 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Reset form
-      setEditingBundle(null);
-      setNewBundle({
-        name: '',
-        name_fr: '',
-        name_ar: '',
-        description: '',
-        description_fr: '',
-        description_ar: '',
-        bundle_price: '',
-        original_price: '',
-        items: [],
-        procedures: '10+',
-        savings: '',
-        popular: false,
-        badge: '',
-        sub_description: '',
-        selectedProducts: []
-      });
-
+      clearBundleForm();
       fetchData();
       toast.success('Kit mis à jour avec succès');
     } catch (error) {
@@ -564,26 +562,7 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Reset form
-      setNewProduct({
-        name: '',
-        name_fr: '',
-        name_ar: '',
-        description: '',
-        description_fr: '',
-        description_ar: '',
-        price: '',
-        original_price: '',
-        product_code: '',
-        product_id: '',
-        category_id: '',
-        image: '/placeholder.svg',
-        in_stock: true,
-        badge: '',
-        specifications: []
-      });
-      setProductImageFile(null);
-
+      clearProductForm();
       fetchData();
       toast.success('Produit ajouté avec succès');
     } catch (error) {
@@ -619,19 +598,7 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Reset form
-      setNewCategory({
-        name: '',
-        name_fr: '',
-        name_ar: '',
-        description: '',
-        description_fr: '',
-        description_ar: '',
-        icon: '📦',
-        color: ''
-      });
-      setCategoryIconFile(null);
-
+      clearCategoryForm();
       fetchData();
       toast.success('Catégorie ajoutée avec succès');
     } catch (error) {
@@ -670,25 +637,7 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Reset form
-      setNewBundle({
-        name: '',
-        name_fr: '',
-        name_ar: '',
-        description: '',
-        description_fr: '',
-        description_ar: '',
-        bundle_price: '',
-        original_price: '',
-        items: [],
-        procedures: '10+',
-        savings: '',
-        popular: false,
-        badge: '',
-        sub_description: '',
-        selectedProducts: []
-      });
-
+      clearBundleForm();
       fetchData();
       toast.success('Kit ajouté avec succès');
     } catch (error) {
@@ -974,14 +923,25 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Products List */}
+            {/* Products List with Search */}
             <Card>
               <CardHeader>
-                <CardTitle>Liste des produits ({products.length})</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Liste des produits ({filteredProducts.length})</CardTitle>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Rechercher des produits..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <div key={product.id} className="flex items-center justify-between p-4 border rounded">
                       <div>
                         <h3 className="font-medium">{product.name_fr}</h3>
@@ -1087,14 +1047,25 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Categories List */}
+            {/* Categories List with Search */}
             <Card>
               <CardHeader>
-                <CardTitle>Liste des catégories ({categories.length})</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Liste des catégories ({filteredCategories.length})</CardTitle>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Rechercher des catégories..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {categories.map((category) => (
+                  {filteredCategories.map((category) => (
                     <div key={category.id} className={`p-4 border rounded bg-gradient-to-br ${category.color}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-2xl">{category.icon}</div>
@@ -1116,7 +1087,7 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Enhanced Bundles Tab */}
+          {/* Enhanced Bundles Tab with Grid View */}
           <TabsContent value="bundles" className="space-y-6">
             <Card>
               <CardHeader>
@@ -1251,32 +1222,48 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Bundles List */}
+            {/* Bundles Grid with Search */}
             <Card>
               <CardHeader>
-                <CardTitle>Liste des kits ({bundles.length})</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Liste des kits ({filteredBundles.length})</CardTitle>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Rechercher des kits..."
+                      value={bundleSearch}
+                      onChange={(e) => setBundleSearch(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {bundles.map((bundle) => (
-                    <div key={bundle.id} className="flex items-center justify-between p-4 border rounded">
-                      <div>
-                        <h3 className="font-medium">{bundle.name_fr || bundle.name}</h3>
-                        <p className="text-sm text-gray-600">Prix: {bundle.bundle_price}</p>
-                        <p className="text-sm text-gray-600">Prix original: {bundle.original_price}</p>
-                        <p className="text-sm text-gray-600">Économies: {bundle.calculated_savings ? `${bundle.calculated_savings.toLocaleString()} DZD` : bundle.savings}</p>
-                        <p className="text-sm text-gray-600">Produits inclus: {getProductNames(bundle.items || [])}</p>
-                        {bundle.popular && <Badge variant="secondary">Populaire</Badge>}
-                        {bundle.badge && <Badge variant="outline">{bundle.badge}</Badge>}
-                        {bundle.sub_description && <p className="text-sm text-muted-foreground">{bundle.sub_description}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredBundles.map((bundle) => (
+                    <div key={bundle.id} className="p-4 border rounded bg-white shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex gap-2">
+                          {bundle.popular && <Badge variant="secondary">Populaire</Badge>}
+                          {bundle.badge && <Badge variant="outline">{bundle.badge}</Badge>}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleEditBundle(bundle)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteBundle(bundle.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditBundle(bundle)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteBundle(bundle.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                      <h3 className="font-medium mb-2">{bundle.name_fr || bundle.name}</h3>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <p>Prix: {bundle.bundle_price}</p>
+                        <p>Prix original: {bundle.original_price}</p>
+                        <p>Économies: {bundle.calculated_savings ? `${bundle.calculated_savings.toLocaleString()} DZD` : bundle.savings}</p>
+                        <p>Procédures: {bundle.procedures}</p>
+                        {bundle.sub_description && <p className="text-muted-foreground">{bundle.sub_description}</p>}
+                        <p className="truncate">Produits: {getProductNames(bundle.items || [])}</p>
                       </div>
                     </div>
                   ))}
@@ -1285,48 +1272,65 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Enhanced Orders Tab */}
+          {/* Enhanced Orders Tab with Grid View and Cancel Functionality */}
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Commandes ({orders.length})
-                  <Button onClick={() => downloadData(orders, 'orders.csv')} variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Télécharger
-                  </Button>
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Commandes ({filteredOrders.length})</CardTitle>
+                  <div className="flex gap-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        placeholder="Rechercher des commandes..."
+                        value={orderSearch}
+                        onChange={(e) => setOrderSearch(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
+                    <Button onClick={() => downloadData(orders, 'orders.csv')} variant="outline">
+                      <Download className="w-4 h-4 mr-2" />
+                      Télécharger
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {orders.map((order) => (
-                    <Card key={order.id}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredOrders.map((order) => (
+                    <Card key={order.id} className="border">
                       <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 className="font-medium">Commande #{order.id.slice(0, 8)}</h3>
-                            <p className="text-sm text-gray-600">Client: {order.profiles?.full_name}</p>
-                            <p className="text-sm text-gray-600">Cabinet: {order.profiles?.dental_office_name}</p>
-                            <p className="text-sm text-gray-600">Total: {order.total_amount.toLocaleString()} DZD</p>
-                            <p className="text-sm text-gray-600">Date: {new Date(order.created_at).toLocaleDateString()}</p>
-                            {order.preferred_delivery_date && (
-                              <p className="text-sm text-gray-600">Date de livraison préférée: {new Date(order.preferred_delivery_date).toLocaleDateString()}</p>
-                            )}
-                            {order.amount_paid > 0 && (
-                              <p className="text-sm text-green-600">Montant payé: {order.amount_paid.toLocaleString()} DZD</p>
-                            )}
-                            {order.remaining_balance > 0 && (
-                              <p className="text-sm text-orange-600">Solde restant: {order.remaining_balance.toLocaleString()} DZD</p>
-                            )}
-                          </div>
-                          <div className="space-y-2 min-w-[250px]">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start">
                             <div>
-                              <Label>Statut de la commande</Label>
+                              <h3 className="font-medium">#{order.id.slice(0, 8)}</h3>
+                              <p className="text-sm text-gray-600">{order.profiles?.full_name}</p>
+                              <p className="text-xs text-gray-500">{order.profiles?.dental_office_name}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium">{order.total_amount.toLocaleString()} DZD</p>
+                              <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          
+                          {order.preferred_delivery_date && (
+                            <p className="text-xs text-gray-500">
+                              Livraison: {new Date(order.preferred_delivery_date).toLocaleDateString()}
+                            </p>
+                          )}
+                          
+                          {order.amount_paid > 0 && (
+                            <p className="text-sm text-green-600">Payé: {order.amount_paid.toLocaleString()} DZD</p>
+                          )}
+                          
+                          <div className="space-y-2">
+                            <div>
+                              <Label className="text-xs">Statut commande</Label>
                               <Select 
                                 value={order.status} 
                                 onValueChange={(value: OrderStatus) => updateOrderStatus(order.id, value)}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="h-8">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1334,70 +1338,87 @@ const AdminDashboard = () => {
                                   <SelectItem value="confirmed">Confirmée</SelectItem>
                                   <SelectItem value="shipped">Expédiée</SelectItem>
                                   <SelectItem value="delivered">Livrée</SelectItem>
-                                  <SelectItem value="cancelled">Annulée</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
+                            
                             <div>
-                              <Label>Statut du paiement</Label>
+                              <Label className="text-xs">Statut paiement</Label>
                               <Select 
                                 value={order.payment_status} 
                                 onValueChange={(value: PaymentStatus) => {
                                   if (value !== 'partial') {
                                     updatePaymentStatus(order.id, value);
                                   } else {
-                                    // Just update the local state to show the partial payment form
                                     setOrders(prev => prev.map(o => 
                                       o.id === order.id ? { ...o, payment_status: value } : o
                                     ));
                                   }
                                 }}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="h-8">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="pending">En attente</SelectItem>
                                   <SelectItem value="partial">Partiel</SelectItem>
                                   <SelectItem value="paid">Payé</SelectItem>
-                                  <SelectItem value="refunded">Remboursé</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
                             
-                            {/* Show partial payment section only when payment status is partial */}
                             {order.payment_status === 'partial' && (
-                              <div className="space-y-2 border-t pt-2">
-                                <Label>Montant du paiement partiel</Label>
-                                <div className="flex gap-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Montant partiel</Label>
+                                <div className="flex gap-1">
                                   <Input
                                     type="number"
-                                    placeholder="Montant en DZD"
+                                    placeholder="Montant"
                                     value={partialPaymentAmount[order.id] || ''}
                                     onChange={(e) => setPartialPaymentAmount(prev => ({
                                       ...prev,
                                       [order.id]: e.target.value
                                     }))}
+                                    className="h-8 text-xs"
                                   />
                                   <Button
                                     size="sm"
                                     onClick={() => handlePartialPaymentSubmit(order.id)}
-                                    disabled={!partialPaymentAmount[order.id] || parseFloat(partialPaymentAmount[order.id]) <= 0}
+                                    disabled={!partialPaymentAmount[order.id]}
+                                    className="h-8 px-2 text-xs"
                                   >
-                                    Appliquer
+                                    OK
                                   </Button>
                                 </div>
                               </div>
                             )}
                           </div>
+                          
+                          <div className="flex gap-2">
+                            {order.status !== 'cancelled' && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => cancelOrder(order.id)}
+                                className="flex-1 h-8 text-xs"
+                              >
+                                Annuler
+                              </Button>
+                            )}
+                            
+                            {order.status === 'delivered' && order.payment_status === 'paid' && (
+                              <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                                Terminée
+                              </Badge>
+                            )}
+                            
+                            {order.status === 'cancelled' && (
+                              <Badge variant="destructive" className="text-xs">
+                                Annulée
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        
-                        {/* Show if order is completed */}
-                        {order.status === 'delivered' && order.payment_status === 'paid' && (
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Commande Terminée
-                          </Badge>
-                        )}
                       </CardContent>
                     </Card>
                   ))}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,10 @@ import DatabaseSeeder from '@/components/DatabaseSeeder';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Download, RotateCcw } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
+
+type OrderStatus = Database['public']['Enums']['order_status'];
+type PaymentStatus = Database['public']['Enums']['payment_status'];
 
 const AdminDashboard = () => {
   const { user, profile } = useAuth();
@@ -144,7 +147,7 @@ const AdminDashboard = () => {
     }
   }, [activeTab]);
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
+  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     try {
       const { error } = await supabase
         .from('orders')
@@ -160,7 +163,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const updatePaymentStatus = async (orderId: string, paymentStatus: string) => {
+  const updatePaymentStatus = async (orderId: string, paymentStatus: PaymentStatus) => {
     try {
       const { error } = await supabase
         .from('orders')
@@ -591,7 +594,7 @@ const AdminDashboard = () => {
                             <Label>Statut de la commande</Label>
                             <Select 
                               value={order.status} 
-                              onValueChange={(value) => updateOrderStatus(order.id, value)}
+                              onValueChange={(value: OrderStatus) => updateOrderStatus(order.id, value)}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -609,7 +612,7 @@ const AdminDashboard = () => {
                             <Label>Statut du paiement</Label>
                             <Select 
                               value={order.payment_status} 
-                              onValueChange={(value) => updatePaymentStatus(order.id, value)}
+                              onValueChange={(value: PaymentStatus) => updatePaymentStatus(order.id, value)}
                             >
                               <SelectTrigger>
                                 <SelectValue />

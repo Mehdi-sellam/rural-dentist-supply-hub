@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
+import type { Product } from '@/types/product';
 
 const Catalog = () => {
   const { t } = useLanguage();
@@ -244,14 +245,27 @@ const Catalog = () => {
                             <Button
                               className="w-full text-xs btn-professional"
                               onClick={() => {
-                                addItem({
+                                const productForCart: Product = {
                                   id: product.id,
                                   name: product.name_fr,
-                                  price: product.price,
-                                  image: product.image,
+                                  nameAr: product.name_ar || '',
+                                  nameFr: product.name_fr,
                                   description: product.description_fr,
-                                  inStock: product.in_stock
-                                });
+                                  descriptionAr: product.description_ar || '',
+                                  descriptionFr: product.description_fr,
+                                  price: product.price,
+                                  originalPrice: product.original_price,
+                                  image: product.image,
+                                  category: product.categories?.name_fr || 'Non catégorisé',
+                                  rating: product.rating || 4.5,
+                                  reviews: product.reviews || 0,
+                                  inStock: product.in_stock,
+                                  badge: product.badge,
+                                  specifications: product.specifications,
+                                  productId: product.product_id,
+                                  productCode: product.product_code
+                                };
+                                addItem(productForCart);
                                 toast.success('Produit ajouté au panier');
                               }}
                               disabled={!product.in_stock}

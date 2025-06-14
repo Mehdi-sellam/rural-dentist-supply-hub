@@ -251,6 +251,233 @@ const AdminDashboard = () => {
     return CATEGORY_COLORS.find(color => !usedColors.includes(color)) || CATEGORY_COLORS[0];
   };
 
+  const getProductNames = (productIds: string[]) => {
+    return products
+      .filter(product => productIds.includes(product.id))
+      .map(product => product.name_fr || product.name)
+      .join(', ');
+  };
+
+  const handleEditProduct = (product: any) => {
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name || '',
+      name_fr: product.name_fr || '',
+      name_ar: product.name_ar || '',
+      description: product.description || '',
+      description_fr: product.description_fr || '',
+      description_ar: product.description_ar || '',
+      price: product.price?.toString() || '',
+      original_price: product.original_price?.toString() || '',
+      product_code: product.product_code || '',
+      product_id: product.product_id || '',
+      category_id: product.category_id || '',
+      image: product.image || '/placeholder.svg',
+      in_stock: product.in_stock ?? true,
+      badge: product.badge || '',
+      specifications: product.specifications || []
+    });
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!editingProduct || !newProduct.name_fr || !newProduct.price || !newProduct.product_code || !newProduct.category_id) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    try {
+      let imageUrl = newProduct.image;
+      
+      if (productImageFile) {
+        const fileName = `products/${Date.now()}_${productImageFile.name}`;
+        imageUrl = await uploadFile(productImageFile, 'product-images', fileName);
+      }
+
+      const { error } = await supabase
+        .from('products')
+        .update({
+          ...newProduct,
+          name: newProduct.name_fr,
+          description: newProduct.description_fr,
+          price: parseFloat(newProduct.price),
+          original_price: newProduct.original_price ? parseFloat(newProduct.original_price) : null,
+          image: imageUrl
+        })
+        .eq('id', editingProduct.id);
+
+      if (error) throw error;
+
+      // Reset form
+      setEditingProduct(null);
+      setNewProduct({
+        name: '',
+        name_fr: '',
+        name_ar: '',
+        description: '',
+        description_fr: '',
+        description_ar: '',
+        price: '',
+        original_price: '',
+        product_code: '',
+        product_id: '',
+        category_id: '',
+        image: '/placeholder.svg',
+        in_stock: true,
+        badge: '',
+        specifications: []
+      });
+      setProductImageFile(null);
+
+      fetchData();
+      toast.success('Produit mis à jour avec succès');
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast.error('Erreur lors de la mise à jour du produit');
+    }
+  };
+
+  const handleEditCategory = (category: any) => {
+    setEditingCategory(category);
+    setNewCategory({
+      name: category.name || '',
+      name_fr: category.name_fr || '',
+      name_ar: category.name_ar || '',
+      description: category.description || '',
+      description_fr: category.description_fr || '',
+      description_ar: category.description_ar || '',
+      icon: category.icon || '📦',
+      color: category.color || ''
+    });
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory || !newCategory.name_fr) {
+      toast.error('Veuillez remplir le nom de la catégorie');
+      return;
+    }
+
+    try {
+      let iconUrl = newCategory.icon;
+      
+      if (categoryIconFile) {
+        const fileName = `categories/${Date.now()}_${categoryIconFile.name}`;
+        iconUrl = await uploadFile(categoryIconFile, 'category-icons', fileName);
+      }
+      
+      const { error } = await supabase
+        .from('categories')
+        .update({
+          ...newCategory,
+          name: newCategory.name_fr,
+          description: newCategory.description_fr,
+          icon: iconUrl
+        })
+        .eq('id', editingCategory.id);
+
+      if (error) throw error;
+
+      // Reset form
+      setEditingCategory(null);
+      setNewCategory({
+        name: '',
+        name_fr: '',
+        name_ar: '',
+        description: '',
+        description_fr: '',
+        description_ar: '',
+        icon: '📦',
+        color: ''
+      });
+      setCategoryIconFile(null);
+
+      fetchData();
+      toast.success('Catégorie mise à jour avec succès');
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast.error('Erreur lors de la mise à jour de la catégorie');
+    }
+  };
+
+  const handleEditBundle = (bundle: any) => {
+    setEditingBundle(bundle);
+    setNewBundle({
+      name: bundle.name || '',
+      name_fr: bundle.name_fr || '',
+      name_ar: bundle.name_ar || '',
+      description: bundle.description || '',
+      description_fr: bundle.description_fr || '',
+      description_ar: bundle.description_ar || '',
+      bundle_price: bundle.bundle_price || '',
+      original_price: bundle.original_price || '',
+      items: bundle.items || [],
+      procedures: bundle.procedures || '10+',
+      savings: bundle.savings || '',
+      popular: bundle.popular || false,
+      badge: bundle.badge || '',
+      sub_description: bundle.sub_description || '',
+      selectedProducts: bundle.items || []
+    });
+  };
+
+  const handleUpdateBundle = async () => {
+    if (!editingBundle || !newBundle.name_fr || !newBundle.bundle_price || !newBundle.original_price) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    try {
+      const savings = calculateSavings(newBundle.original_price, newBundle.bundle_price);
+      
+      const { error } = await supabase
+        .from('bundles')
+        .update({
+          name: newBundle.name_fr,
+          name_fr: newBundle.name_fr,
+          name_ar: newBundle.name_ar,
+          description: newBundle.description_fr,
+          description_fr: newBundle.description_fr,
+          description_ar: newBundle.description_ar,
+          bundle_price: newBundle.bundle_price,
+          original_price: newBundle.original_price,
+          items: newBundle.selectedProducts,
+          procedures: newBundle.procedures,
+          savings,
+          popular: newBundle.popular,
+          badge: newBundle.badge,
+          sub_description: newBundle.sub_description
+        })
+        .eq('id', editingBundle.id);
+
+      if (error) throw error;
+
+      // Reset form
+      setEditingBundle(null);
+      setNewBundle({
+        name: '',
+        name_fr: '',
+        name_ar: '',
+        description: '',
+        description_fr: '',
+        description_ar: '',
+        bundle_price: '',
+        original_price: '',
+        items: [],
+        procedures: '10+',
+        savings: '',
+        popular: false,
+        badge: '',
+        sub_description: '',
+        selectedProducts: []
+      });
+
+      fetchData();
+      toast.success('Kit mis à jour avec succès');
+    } catch (error) {
+      console.error('Error updating bundle:', error);
+      toast.error('Erreur lors de la mise à jour du kit');
+    }
+  };
+
   const handleAddProduct = async () => {
     if (!newProduct.name_fr || !newProduct.price || !newProduct.product_code || !newProduct.category_id) {
       toast.error('Veuillez remplir tous les champs obligatoires');
@@ -553,7 +780,7 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  Ajouter un nouveau produit
+                  {editingProduct ? 'Modifier le produit' : 'Ajouter un nouveau produit'}
                   <Button onClick={() => downloadData(products, 'products.csv')} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
                     Télécharger
@@ -675,10 +902,36 @@ const AdminDashboard = () => {
                     />
                   </div>
                 </div>
-                <Button onClick={handleAddProduct} disabled={uploadingImage}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  {uploadingImage ? 'Téléchargement...' : 'Ajouter le produit'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={editingProduct ? handleUpdateProduct : handleAddProduct} disabled={uploadingImage}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    {uploadingImage ? 'Téléchargement...' : editingProduct ? 'Mettre à jour le produit' : 'Ajouter le produit'}
+                  </Button>
+                  {editingProduct && (
+                    <Button variant="outline" onClick={() => {
+                      setEditingProduct(null);
+                      setNewProduct({
+                        name: '',
+                        name_fr: '',
+                        name_ar: '',
+                        description: '',
+                        description_fr: '',
+                        description_ar: '',
+                        price: '',
+                        original_price: '',
+                        product_code: '',
+                        product_id: '',
+                        category_id: '',
+                        image: '/placeholder.svg',
+                        in_stock: true,
+                        badge: '',
+                        specifications: []
+                      });
+                    }}>
+                      Annuler
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -698,7 +951,7 @@ const AdminDashboard = () => {
                         <p className="text-sm text-gray-600">Catégorie: {product.categories?.name_fr || 'Non catégorisé'}</p>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button variant="destructive" size="sm" onClick={() => handleDeleteProduct(product.id)}>
@@ -717,7 +970,7 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  Ajouter une nouvelle catégorie
+                  {editingCategory ? 'Modifier la catégorie' : 'Ajouter une nouvelle catégorie'}
                   <Button onClick={() => downloadData(categories, 'categories.csv')} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
                     Télécharger
@@ -782,10 +1035,29 @@ const AdminDashboard = () => {
                     />
                   </div>
                 </div>
-                <Button onClick={handleAddCategory} disabled={uploadingImage}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  {uploadingImage ? 'Téléchargement...' : 'Ajouter la catégorie'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={editingCategory ? handleUpdateCategory : handleAddCategory} disabled={uploadingImage}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    {uploadingImage ? 'Téléchargement...' : editingCategory ? 'Mettre à jour la catégorie' : 'Ajouter la catégorie'}
+                  </Button>
+                  {editingCategory && (
+                    <Button variant="outline" onClick={() => {
+                      setEditingCategory(null);
+                      setNewCategory({
+                        name: '',
+                        name_fr: '',
+                        name_ar: '',
+                        description: '',
+                        description_fr: '',
+                        description_ar: '',
+                        icon: '📦',
+                        color: ''
+                      });
+                    }}>
+                      Annuler
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -801,7 +1073,7 @@ const AdminDashboard = () => {
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-2xl">{category.icon}</div>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleEditCategory(category)}>
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button variant="destructive" size="sm" onClick={() => handleDeleteCategory(category.id)}>
@@ -823,7 +1095,7 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  Ajouter un nouveau kit
+                  {editingBundle ? 'Modifier le kit' : 'Ajouter un nouveau kit'}
                   <Button onClick={() => downloadData(bundles, 'bundles.csv')} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
                     Télécharger
@@ -940,10 +1212,36 @@ const AdminDashboard = () => {
                   </div>
                 )}
 
-                <Button onClick={handleAddBundle} disabled={newBundle.selectedProducts.length === 0}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter le kit
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={editingBundle ? handleUpdateBundle : handleAddBundle} disabled={newBundle.selectedProducts.length === 0}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    {editingBundle ? 'Mettre à jour le kit' : 'Ajouter le kit'}
+                  </Button>
+                  {editingBundle && (
+                    <Button variant="outline" onClick={() => {
+                      setEditingBundle(null);
+                      setNewBundle({
+                        name: '',
+                        name_fr: '',
+                        name_ar: '',
+                        description: '',
+                        description_fr: '',
+                        description_ar: '',
+                        bundle_price: '',
+                        original_price: '',
+                        items: [],
+                        procedures: '10+',
+                        savings: '',
+                        popular: false,
+                        badge: '',
+                        sub_description: '',
+                        selectedProducts: []
+                      });
+                    }}>
+                      Annuler
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -961,12 +1259,13 @@ const AdminDashboard = () => {
                         <p className="text-sm text-gray-600">Prix: {bundle.bundle_price}</p>
                         <p className="text-sm text-gray-600">Prix original: {bundle.original_price}</p>
                         <p className="text-sm text-gray-600">Économies: {bundle.calculated_savings ? `${bundle.calculated_savings.toLocaleString()} DZD` : bundle.savings}</p>
+                        <p className="text-sm text-gray-600">Produits inclus: {getProductNames(bundle.items || [])}</p>
                         {bundle.popular && <Badge variant="secondary">Populaire</Badge>}
                         {bundle.badge && <Badge variant="outline">{bundle.badge}</Badge>}
                         {bundle.sub_description && <p className="text-sm text-muted-foreground">{bundle.sub_description}</p>}
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleEditBundle(bundle)}>
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button variant="destructive" size="sm" onClick={() => handleDeleteBundle(bundle.id)}>

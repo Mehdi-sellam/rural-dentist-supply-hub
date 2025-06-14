@@ -18,63 +18,63 @@ const Footer = () => {
               </div>
               <div>
                 <h3 className="text-xl font-bold">DentGo</h3>
-                <p className="text-sm text-gray-400">Supplies that travel to you</p>
+                <p className="text-sm text-gray-400">Des fournitures qui voyagent jusqu'à vous</p>
               </div>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">
-              Empowering dentists across Algeria with quality supplies and reliable delivery, from Algiers to the most remote villages.
+              Nous responsabilisons les dentistes à travers l'Algérie avec des fournitures de qualité et une livraison fiable, d'Alger aux villages les plus reculés.
             </p>
             <div className="flex items-center gap-4 pt-2">
               <Award className="w-5 h-5 text-green-400" />
-              <span className="text-sm text-gray-300">ISO Certified Supplier</span>
+              <span className="text-sm text-gray-300">Fournisseur Certifié ISO</span>
             </div>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Quick Links</h4>
+            <h4 className="text-lg font-semibold">Liens Rapides</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="/shop" className="text-gray-300 hover:text-primary transition-colors">Shop All Products</a></li>
-              <li><a href="/bundles" className="text-gray-300 hover:text-primary transition-colors">Procedure Bundles</a></li>
-              <li><a href="/loyalty" className="text-gray-300 hover:text-primary transition-colors">Loyalty Program</a></li>
-              <li><a href="/about" className="text-gray-300 hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="/contact" className="text-gray-300 hover:text-primary transition-colors">Contact Support</a></li>
+              <li><a href="/shop" className="text-gray-300 hover:text-primary transition-colors">Tous les Produits</a></li>
+              <li><a href="/bundles" className="text-gray-300 hover:text-primary transition-colors">Kits de Procédures</a></li>
+              <li><a href="/loyalty" className="text-gray-300 hover:text-primary transition-colors">Programme de Fidélité</a></li>
+              <li><a href="/about" className="text-gray-300 hover:text-primary transition-colors">À Propos</a></li>
+              <li><a href="/contact" className="text-gray-300 hover:text-primary transition-colors">Support Contact</a></li>
               <li><a href="/faq" className="text-gray-300 hover:text-primary transition-colors">FAQ</a></li>
             </ul>
           </div>
 
           {/* Categories */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Categories</h4>
+            <h4 className="text-lg font-semibold">Catégories</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="/category/restoratives" className="text-gray-300 hover:text-primary transition-colors">Restoratives</a></li>
-              <li><a href="/category/surgical" className="text-gray-300 hover:text-primary transition-colors">Surgical Tools</a></li>
-              <li><a href="/category/disposables" className="text-gray-300 hover:text-primary transition-colors">Disposables</a></li>
-              <li><a href="/category/equipment" className="text-gray-300 hover:text-primary transition-colors">Equipment</a></li>
-              <li><a href="/category/orthodontics" className="text-gray-300 hover:text-primary transition-colors">Orthodontics</a></li>
-              <li><a href="/category/endodontics" className="text-gray-300 hover:text-primary transition-colors">Endodontics</a></li>
+              <li><a href="/category/restoratives" className="text-gray-300 hover:text-primary transition-colors">Restaurations</a></li>
+              <li><a href="/category/surgical" className="text-gray-300 hover:text-primary transition-colors">Instruments Chirurgicaux</a></li>
+              <li><a href="/category/disposables" className="text-gray-300 hover:text-primary transition-colors">Jetables</a></li>
+              <li><a href="/category/equipment" className="text-gray-300 hover:text-primary transition-colors">Équipements</a></li>
+              <li><a href="/category/orthodontics" className="text-gray-300 hover:text-primary transition-colors">Orthodontie</a></li>
+              <li><a href="/category/endodontics" className="text-gray-300 hover:text-primary transition-colors">Endodontie</a></li>
             </ul>
           </div>
 
           {/* Contact Info */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Contact Us</h4>
+            <h4 className="text-lg font-semibold">Contactez-nous</h4>
             <div className="space-y-3 text-sm">
               <div className="flex items-start gap-3">
                 <MessageCircle className="w-5 h-5 text-green-400 mt-0.5" />
                 <div>
-                  <p className="font-medium text-green-400">WhatsApp Orders</p>
+                  <p className="font-medium text-green-400">Commandes WhatsApp</p>
                   <p className="text-gray-300">+213 XXX XXX XXX</p>
-                  <p className="text-xs text-gray-400">Available 24/7</p>
+                  <p className="text-xs text-gray-400">Disponible 24/7</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
                 <Phone className="w-5 h-5 text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium">Phone Support</p>
+                  <p className="font-medium">Support Téléphonique</p>
                   <p className="text-gray-300">+213 XXX XXX XXX</p>
-                  <p className="text-xs text-gray-400">8AM - 8PM (AR/FR/EN)</p>
+                  <p className="text-xs text-gray-400">8h - 20h (AR/FR/EN)</p>
                 </div>
               </div>
               
@@ -89,9 +89,9 @@ const Footer = () => {
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium">Warehouse</p>
-                  <p className="text-gray-300">Algiers, Algeria</p>
-                  <p className="text-xs text-gray-400">Serving all 48 wilayas</p>
+                  <p className="font-medium">Entrepôt</p>
+                  <p className="text-gray-300">Alger, Algérie</p>
+                  <p className="text-xs text-gray-400">Desservant les 48 wilayas</p>
                 </div>
               </div>
             </div>
@@ -105,15 +105,15 @@ const Footer = () => {
           <div className="grid md:grid-cols-3 gap-4 text-center">
             <div className="flex items-center justify-center gap-3">
               <Truck className="w-5 h-5 text-green-400" />
-              <span className="text-sm text-gray-300">Free delivery to rural areas</span>
+              <span className="text-sm text-gray-300">Livraison gratuite en zones rurales</span>
             </div>
             <div className="flex items-center justify-center gap-3">
               <Clock className="w-5 h-5 text-blue-400" />
-              <span className="text-sm text-gray-300">48h delivery nationwide</span>
+              <span className="text-sm text-gray-300">Livraison 48h à l'échelle nationale</span>
             </div>
             <div className="flex items-center justify-center gap-3">
               <Shield className="w-5 h-5 text-purple-400" />
-              <span className="text-sm text-gray-300">Quality guarantee</span>
+              <span className="text-sm text-gray-300">Garantie de qualité</span>
             </div>
           </div>
         </div>
@@ -124,12 +124,12 @@ const Footer = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-gray-400">
-              © 2024 DentGo. All rights reserved. | Serving dental professionals across Algeria
+              © 2024 DentGo. Tous droits réservés. | Au service des professionnels dentaires à travers l'Algérie
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-400">
-              <a href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</a>
-              <a href="/terms" className="hover:text-primary transition-colors">Terms of Service</a>
-              <a href="/shipping" className="hover:text-primary transition-colors">Shipping Info</a>
+              <a href="/privacy" className="hover:text-primary transition-colors">Politique de Confidentialité</a>
+              <a href="/terms" className="hover:text-primary transition-colors">Conditions de Service</a>
+              <a href="/shipping" className="hover:text-primary transition-colors">Info Livraison</a>
             </div>
           </div>
         </div>

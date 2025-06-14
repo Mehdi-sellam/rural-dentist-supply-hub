@@ -44,14 +44,14 @@ const Bundles = () => {
 
       if (error) {
         console.error('Error fetching bundles:', error);
-        toast.error('Erreur lors du chargement des bundles');
+        toast.error('Erreur lors du chargement des kits');
         return;
       }
 
       setBundles(data || []);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Erreur lors du chargement des bundles');
+      toast.error('Erreur lors du chargement des kits');
     } finally {
       setLoading(false);
     }
@@ -60,9 +60,9 @@ const Bundles = () => {
   const handleAddBundle = (bundle: Bundle) => {
     const cartBundle = {
       id: bundle.id,
-      name: bundle.name,
+      name: bundle.name_fr || bundle.name,
       nameAr: bundle.name_ar || '',
-      nameFr: bundle.name_fr || '',
+      nameFr: bundle.name_fr || bundle.name,
       bundlePrice: bundle.bundle_price,
       originalPrice: bundle.original_price,
       items: bundle.items,
@@ -71,7 +71,7 @@ const Bundles = () => {
     };
     
     addBundle(cartBundle);
-    toast.success(`${bundle.name} ajouté au panier`);
+    toast.success(`${bundle.name_fr || bundle.name} ajouté au panier`);
   };
 
   if (loading) {
@@ -79,7 +79,7 @@ const Bundles = () => {
       <div className="min-h-screen">
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
-          <p>Chargement des bundles...</p>
+          <p>Chargement des kits...</p>
         </div>
         <Footer />
       </div>
@@ -94,10 +94,10 @@ const Bundles = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Bundles Exclusifs
+              Kits Exclusifs
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Économisez plus avec nos bundles soigneusement sélectionnés pour votre pratique dentaire
+              Économisez plus avec nos kits soigneusement sélectionnés pour votre pratique dentaire
             </p>
           </div>
 
@@ -114,7 +114,7 @@ const Bundles = () => {
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Package className="w-6 h-6 text-primary" />
-                    <CardTitle className="text-xl">{bundle.name}</CardTitle>
+                    <CardTitle className="text-xl">{bundle.name_fr || bundle.name}</CardTitle>
                   </div>
                   
                   <div className="flex items-baseline gap-2">
@@ -130,12 +130,12 @@ const Bundles = () => {
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
-                  {bundle.description && (
-                    <p className="text-gray-600">{bundle.description}</p>
+                  {(bundle.description_fr || bundle.description) && (
+                    <p className="text-gray-600">{bundle.description_fr || bundle.description}</p>
                   )}
                   
                   <div>
-                    <h4 className="font-semibold mb-2">Inclus dans ce bundle:</h4>
+                    <h4 className="font-semibold mb-2">Inclus dans ce kit:</h4>
                     <ul className="space-y-1">
                       {bundle.items.map((item, index) => (
                         <li key={index} className="flex items-center gap-2 text-sm">
@@ -170,8 +170,8 @@ const Bundles = () => {
           {bundles.length === 0 && (
             <div className="text-center py-16">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">Aucun bundle disponible</h3>
-              <p className="text-gray-500">Les bundles seront bientôt disponibles.</p>
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">Aucun kit disponible</h3>
+              <p className="text-gray-500">Les kits seront bientôt disponibles.</p>
             </div>
           )}
         </div>

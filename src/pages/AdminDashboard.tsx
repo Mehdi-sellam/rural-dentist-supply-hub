@@ -7,13 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Download, RotateCcw } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, Upload, Eye } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type OrderStatus = Database['public']['Enums']['order_status'];
@@ -33,6 +34,9 @@ const CATEGORY_COLORS = [
   'from-lime-50 to-lime-100'
 ];
 
+const PRODUCT_BADGES = ['Nouveau', 'Populaire', 'Promo', 'Recommandé', 'Exclusif'];
+const BUNDLE_BADGES = ['Bestseller', 'Économique', 'Complet', 'Premium', 'Essentiel'];
+
 const AdminDashboard = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -49,6 +53,12 @@ const AdminDashboard = () => {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editingBundle, setEditingBundle] = useState<any>(null);
+  const [partialPaymentAmount, setPartialPaymentAmount] = useState<{[key: string]: string}>({});
+  
+  // File upload states
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [categoryIconFile, setCategoryIconFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   // New product form
   const [newProduct, setNewProduct] = useState({
@@ -94,7 +104,9 @@ const AdminDashboard = () => {
     items: [] as string[],
     procedures: '10+',
     savings: '',
-    popular: false
+    popular: false,
+    badge: '',
+    sub_description: ''
   });
 
   useEffect(() => {
@@ -133,6 +145,32 @@ const AdminDashboard = () => {
     }
   };
 
+  const uploadFile = async (file: File, bucket: string, path: string) => {
+    setUploadingImage(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(path);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Erreur lors du téléchargement du fichier');
+      throw error;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     try {
       const { error } = await supabase
@@ -150,21 +188,45 @@ const AdminDashboard = () => {
     }
   };
 
-  const updatePaymentStatus = async (orderId: string, paymentStatus: PaymentStatus) => {
+  const updatePaymentStatus = async (orderId: string, paymentStatus: PaymentStatus, partialAmount?: number) => {
     try {
+      const updateData: any = { payment_status: paymentStatus };
+      
+      if (paymentStatus === 'partial' && partialAmount) {
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+          updateData.amount_paid = partialAmount;
+          updateData.remaining_balance = order.total_amount - partialAmount;
+        }
+      } else if (paymentStatus === 'paid') {
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+          updateData.amount_paid = order.total_amount;
+          updateData.remaining_balance = 0;
+        }
+      }
+
       const { error } = await supabase
         .from('orders')
-        .update({ payment_status: paymentStatus })
+        .update(updateData)
         .eq('id', orderId);
 
       if (error) throw error;
       
+      setPartialPaymentAmount(prev => ({ ...prev, [orderId]: '' }));
       fetchData();
       toast.success('Statut de paiement mis à jour');
     } catch (error) {
       console.error('Error updating payment status:', error);
       toast.error('Erreur lors de la mise à jour');
     }
+  };
+
+  const calculateSavings = (originalPrice: string, bundlePrice: string) => {
+    const original = parseFloat(originalPrice.replace(/[^0-9]/g, '')) || 0;
+    const bundle = parseFloat(bundlePrice.replace(/[^0-9]/g, '')) || 0;
+    const savings = original - bundle;
+    return savings > 0 ? `${savings.toLocaleString()} DZD` : '';
   };
 
   const getNextCategoryColor = () => {
@@ -179,6 +241,13 @@ const AdminDashboard = () => {
     }
 
     try {
+      let imageUrl = newProduct.image;
+      
+      if (productImageFile) {
+        const fileName = `products/${Date.now()}_${productImageFile.name}`;
+        imageUrl = await uploadFile(productImageFile, 'product-images', fileName);
+      }
+
       const { error } = await supabase
         .from('products')
         .insert({
@@ -186,11 +255,13 @@ const AdminDashboard = () => {
           name: newProduct.name_fr,
           description: newProduct.description_fr,
           price: parseFloat(newProduct.price),
-          original_price: newProduct.original_price ? parseFloat(newProduct.original_price) : null
+          original_price: newProduct.original_price ? parseFloat(newProduct.original_price) : null,
+          image: imageUrl
         });
 
       if (error) throw error;
 
+      // Reset form
       setNewProduct({
         name: '',
         name_fr: '',
@@ -208,6 +279,7 @@ const AdminDashboard = () => {
         badge: '',
         specifications: []
       });
+      setProductImageFile(null);
 
       fetchData();
       toast.success('Produit ajouté avec succès');
@@ -225,6 +297,12 @@ const AdminDashboard = () => {
 
     try {
       const categoryColor = getNextCategoryColor();
+      let iconUrl = newCategory.icon;
+      
+      if (categoryIconFile) {
+        const fileName = `categories/${Date.now()}_${categoryIconFile.name}`;
+        iconUrl = await uploadFile(categoryIconFile, 'category-icons', fileName);
+      }
       
       const { error } = await supabase
         .from('categories')
@@ -232,11 +310,13 @@ const AdminDashboard = () => {
           ...newCategory,
           name: newCategory.name_fr,
           description: newCategory.description_fr,
-          color: categoryColor
+          color: categoryColor,
+          icon: iconUrl
         });
 
       if (error) throw error;
 
+      // Reset form
       setNewCategory({
         name: '',
         name_fr: '',
@@ -247,6 +327,7 @@ const AdminDashboard = () => {
         icon: '📦',
         color: ''
       });
+      setCategoryIconFile(null);
 
       fetchData();
       toast.success('Catégorie ajoutée avec succès');
@@ -263,16 +344,20 @@ const AdminDashboard = () => {
     }
 
     try {
+      const savings = calculateSavings(newBundle.original_price, newBundle.bundle_price);
+      
       const { error } = await supabase
         .from('bundles')
         .insert({
           ...newBundle,
           name: newBundle.name_fr,
-          description: newBundle.description_fr
+          description: newBundle.description_fr,
+          savings
         });
 
       if (error) throw error;
 
+      // Reset form
       setNewBundle({
         name: '',
         name_fr: '',
@@ -285,7 +370,9 @@ const AdminDashboard = () => {
         items: [],
         procedures: '10+',
         savings: '',
-        popular: false
+        popular: false,
+        badge: '',
+        sub_description: ''
       });
 
       fetchData();
@@ -359,6 +446,10 @@ const AdminDashboard = () => {
     toast.success(`${filename} téléchargé avec succès`);
   };
 
+  const completedOrders = orders.filter(order => 
+    order.status === 'delivered' && order.payment_status === 'paid'
+  );
+
   if (!user || !profile?.is_admin) {
     return null;
   }
@@ -385,7 +476,7 @@ const AdminDashboard = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Produits</CardTitle>
@@ -400,6 +491,14 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{orders.length}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Commandes Terminées</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{completedOrders.length}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -436,7 +535,7 @@ const AdminDashboard = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Nom (Français)</Label>
+                    <Label>Nom (Français) *</Label>
                     <Input
                       value={newProduct.name_fr}
                       onChange={(e) => setNewProduct({...newProduct, name_fr: e.target.value})}
@@ -444,7 +543,15 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <Label>Code produit</Label>
+                    <Label>Nom (Arabe)</Label>
+                    <Input
+                      value={newProduct.name_ar}
+                      onChange={(e) => setNewProduct({...newProduct, name_ar: e.target.value})}
+                      placeholder="Nom du produit en arabe"
+                    />
+                  </div>
+                  <div>
+                    <Label>Code produit *</Label>
                     <Input
                       value={newProduct.product_code}
                       onChange={(e) => setNewProduct({...newProduct, product_code: e.target.value})}
@@ -452,7 +559,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <Label>Prix (DZD)</Label>
+                    <Label>Prix (DZD) *</Label>
                     <Input
                       type="number"
                       value={newProduct.price}
@@ -461,7 +568,16 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <Label>Catégorie</Label>
+                    <Label>Prix original (DZD)</Label>
+                    <Input
+                      type="number"
+                      value={newProduct.original_price}
+                      onChange={(e) => setNewProduct({...newProduct, original_price: e.target.value})}
+                      placeholder="Prix original en DZD"
+                    />
+                  </div>
+                  <div>
+                    <Label>Catégorie *</Label>
                     <Select value={newProduct.category_id} onValueChange={(value) => setNewProduct({...newProduct, category_id: value})}>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner une catégorie" />
@@ -475,6 +591,45 @@ const AdminDashboard = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label>Badge</Label>
+                    <Select value={newProduct.badge} onValueChange={(value) => setNewProduct({...newProduct, badge: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un badge" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PRODUCT_BADGES.map((badge) => (
+                          <SelectItem key={badge} value={badge}>
+                            {badge}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="in_stock"
+                      checked={newProduct.in_stock}
+                      onCheckedChange={(checked) => setNewProduct({...newProduct, in_stock: !!checked})}
+                    />
+                    <Label htmlFor="in_stock">En stock</Label>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label>Image du produit</Label>
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setProductImageFile(e.target.files?.[0] || null)}
+                      />
+                      {productImageFile && (
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-4 h-4" />
+                          <span className="text-sm">{productImageFile.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div className="md:col-span-2">
                     <Label>Description (Français)</Label>
                     <Textarea
@@ -483,10 +638,18 @@ const AdminDashboard = () => {
                       placeholder="Description du produit en français"
                     />
                   </div>
+                  <div className="md:col-span-2">
+                    <Label>Description (Arabe)</Label>
+                    <Textarea
+                      value={newProduct.description_ar}
+                      onChange={(e) => setNewProduct({...newProduct, description_ar: e.target.value})}
+                      placeholder="Description du produit en arabe"
+                    />
+                  </div>
                 </div>
-                <Button onClick={handleAddProduct}>
+                <Button onClick={handleAddProduct} disabled={uploadingImage}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Ajouter le produit
+                  {uploadingImage ? 'Téléchargement...' : 'Ajouter le produit'}
                 </Button>
               </CardContent>
             </Card>
@@ -536,7 +699,7 @@ const AdminDashboard = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Nom (Français)</Label>
+                    <Label>Nom (Français) *</Label>
                     <Input
                       value={newCategory.name_fr}
                       onChange={(e) => setNewCategory({...newCategory, name_fr: e.target.value})}
@@ -544,12 +707,35 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <Label>Icône</Label>
+                    <Label>Nom (Arabe)</Label>
                     <Input
-                      value={newCategory.icon}
-                      onChange={(e) => setNewCategory({...newCategory, icon: e.target.value})}
-                      placeholder="Emoji pour l'icône"
+                      value={newCategory.name_ar}
+                      onChange={(e) => setNewCategory({...newCategory, name_ar: e.target.value})}
+                      placeholder="Nom de la catégorie en arabe"
                     />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label>Icône de la catégorie</Label>
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setCategoryIconFile(e.target.files?.[0] || null)}
+                      />
+                      {categoryIconFile && (
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-4 h-4" />
+                          <span className="text-sm">{categoryIconFile.name}</span>
+                        </div>
+                      )}
+                      {!categoryIconFile && (
+                        <Input
+                          value={newCategory.icon}
+                          onChange={(e) => setNewCategory({...newCategory, icon: e.target.value})}
+                          placeholder="Ou entrez un emoji pour l'icône"
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <Label>Description (Français)</Label>
@@ -559,10 +745,18 @@ const AdminDashboard = () => {
                       placeholder="Description de la catégorie en français"
                     />
                   </div>
+                  <div className="md:col-span-2">
+                    <Label>Description (Arabe)</Label>
+                    <Textarea
+                      value={newCategory.description_ar}
+                      onChange={(e) => setNewCategory({...newCategory, description_ar: e.target.value})}
+                      placeholder="Description de la catégorie en arabe"
+                    />
+                  </div>
                 </div>
-                <Button onClick={handleAddCategory}>
+                <Button onClick={handleAddCategory} disabled={uploadingImage}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Ajouter la catégorie
+                  {uploadingImage ? 'Téléchargement...' : 'Ajouter la catégorie'}
                 </Button>
               </CardContent>
             </Card>
@@ -712,6 +906,15 @@ const AdminDashboard = () => {
                             <p className="text-sm text-gray-600">Cabinet: {order.profiles?.dental_office_name}</p>
                             <p className="text-sm text-gray-600">Total: {order.total_amount.toLocaleString()} DZD</p>
                             <p className="text-sm text-gray-600">Date: {new Date(order.created_at).toLocaleDateString()}</p>
+                            {order.delivery_date && (
+                              <p className="text-sm text-gray-600">Date de livraison préférée: {new Date(order.delivery_date).toLocaleDateString()}</p>
+                            )}
+                            {order.amount_paid > 0 && (
+                              <p className="text-sm text-green-600">Montant payé: {order.amount_paid.toLocaleString()} DZD</p>
+                            )}
+                            {order.remaining_balance > 0 && (
+                              <p className="text-sm text-orange-600">Solde restant: {order.remaining_balance.toLocaleString()} DZD</p>
+                            )}
                           </div>
                           <div className="space-y-2">
                             <div>
@@ -736,7 +939,13 @@ const AdminDashboard = () => {
                               <Label>Statut du paiement</Label>
                               <Select 
                                 value={order.payment_status} 
-                                onValueChange={(value: PaymentStatus) => updatePaymentStatus(order.id, value)}
+                                onValueChange={(value: PaymentStatus) => {
+                                  if (value === 'partial') {
+                                    // Don't update immediately for partial payments
+                                    return;
+                                  }
+                                  updatePaymentStatus(order.id, value);
+                                }}
                               >
                                 <SelectTrigger>
                                   <SelectValue />
@@ -749,8 +958,41 @@ const AdminDashboard = () => {
                                 </SelectContent>
                               </Select>
                             </div>
+                            {/* Partial payment section */}
+                            <div className="space-y-2">
+                              <Label>Montant du paiement partiel</Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  type="number"
+                                  placeholder="Montant en DZD"
+                                  value={partialPaymentAmount[order.id] || ''}
+                                  onChange={(e) => setPartialPaymentAmount(prev => ({
+                                    ...prev,
+                                    [order.id]: e.target.value
+                                  }))}
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    const amount = parseFloat(partialPaymentAmount[order.id] || '0');
+                                    if (amount > 0) {
+                                      updatePaymentStatus(order.id, 'partial', amount);
+                                    }
+                                  }}
+                                  disabled={!partialPaymentAmount[order.id] || parseFloat(partialPaymentAmount[order.id]) <= 0}
+                                >
+                                  Appliquer
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                        {/* Show if order is completed */}
+                        {order.status === 'delivered' && order.payment_status === 'paid' && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-800">
+                            Commande Terminée
+                          </Badge>
+                        )}
                       </CardContent>
                     </Card>
                   ))}

@@ -1,62 +1,43 @@
 
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
 
 const CategoryGrid = () => {
-  const { data: categories = [], isLoading, error } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('name_fr');
-      
-      if (error) throw error;
-      return data;
+        .limit(6);
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return;
+      }
+
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
     }
-  });
+  };
 
-  if (isLoading) {
-    return (
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Shop by Category
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Find exactly what you need from our comprehensive collection of dental supplies
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, index) => (
-              <Card key={index} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-20 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (error) {
+  if (loading) {
     return (
       <section className="py-16 px-4 bg-gray-50">
         <div className="container mx-auto text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Unable to load categories
-          </h2>
-          <p className="text-gray-600">Please try again later.</p>
+          <p>Chargement des catégories...</p>
         </div>
       </section>
     );
@@ -67,54 +48,35 @@ const CategoryGrid = () => {
       <div className="container mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Shop by Category
+            Acheter par Catégorie
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Find exactly what you need from our comprehensive collection of dental supplies
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+            Trouvez exactement ce dont vous avez besoin dans notre collection complète de fournitures dentaires
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {categories.map((category) => (
-            <Card key={category.id} className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 bg-white">
-              <CardContent className="p-0">
-                <div className={`bg-gradient-to-br ${category.color} p-6 rounded-t-lg`}>
-                  <div className="text-4xl mb-3">{category.icon}</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{category.name_fr}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{category.description_fr}</p>
-                  <p className="text-xs text-primary font-medium">Items available</p>
-                </div>
-                
-                <div className="p-6">
-                  <div className="space-y-2 mb-4">
-                    {category.name_ar && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">العربية:</span> {category.name_ar}
-                      </p>
-                    )}
-                    {category.name && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">English:</span> {category.name}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <Link to={`/shop?category=${category.id}`}>
-                    <Button className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
-                      Browse Category
-                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+            <Link key={category.id} to={`/category/${category.id}`}>
+              <Card className={`transition-all duration-300 hover:shadow-lg cursor-pointer bg-gradient-to-br ${category.color}`}>
+                <CardContent className="p-6 text-center">
+                  <div className="text-4xl mb-4">{category.icon}</div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    {category.name_fr || category.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    {category.description_fr || category.description || 'Découvrez notre sélection'}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
 
-        <div className="text-center mt-12">
+        <div className="text-center">
           <Link to="/shop">
-            <Button variant="outline" size="lg" className="px-8">
-              View All Categories
+            <Button size="lg" className="text-lg px-8 py-6">
+              Voir Toutes les Catégories
             </Button>
           </Link>
         </div>

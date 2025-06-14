@@ -1,26 +1,59 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserOrders();
+    }
+  }, [user]);
+
+  const fetchUserOrders = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch orders with related order items and bundles
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (*),
+          order_bundles (*)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (ordersError) throw ordersError;
+
+      console.log('Fetched orders:', ordersData);
+      setOrders(ordersData || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      toast.error('Erreur lors du chargement des commandes');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!user) {
     return null;
   }
 
-  // Get user orders
-  const savedOrders = JSON.parse(localStorage.getItem('dentgo_orders') || '[]');
-  const userOrders = savedOrders.filter((order: any) => order.userId === user.id);
-
-  // Calculate statistics
-  const totalOrdered = userOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
-  const totalPaid = userOrders.reduce((sum: number, order: any) => sum + (order.amountPaid || 0), 0);
+  // Calculate statistics from database orders
+  const totalOrdered = orders.reduce((sum: number, order: any) => sum + (order.total_amount || 0), 0);
+  const totalPaid = orders.reduce((sum: number, order: any) => sum + (order.amount_paid || 0), 0);
   const totalRemaining = totalOrdered - totalPaid;
   const paymentPercentage = totalOrdered > 0 ? (totalPaid / totalOrdered) * 100 : 0;
 
@@ -30,6 +63,7 @@ const Dashboard = () => {
       case 'confirmed': return <Badge className="bg-blue-500">Confirmée</Badge>;
       case 'shipped': return <Badge className="bg-orange-500">Expédiée</Badge>;
       case 'delivered': return <Badge className="bg-green-500">Livrée</Badge>;
+      case 'cancelled': return <Badge variant="destructive">Annulée</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -39,6 +73,7 @@ const Dashboard = () => {
       case 'pending': return <Badge variant="outline">En attente</Badge>;
       case 'partial': return <Badge className="bg-orange-500">Partiel</Badge>;
       case 'paid': return <Badge className="bg-green-500">Payé</Badge>;
+      case 'refunded': return <Badge variant="destructive">Remboursé</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -50,7 +85,7 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Tableau de bord</h1>
 
-        {/* User Info - Moved to top */}
+        {/* User Info */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Informations du compte</CardTitle>
@@ -109,28 +144,35 @@ const Dashboard = () => {
             <CardTitle>Mes commandes</CardTitle>
           </CardHeader>
           <CardContent>
-            {userOrders.length === 0 ? (
+            {loading ? (
+              <p className="text-muted-foreground">Chargement des commandes...</p>
+            ) : orders.length === 0 ? (
               <p className="text-muted-foreground">Aucune commande trouvée.</p>
             ) : (
               <div className="space-y-4">
-                {userOrders.map((order: any) => {
-                  const orderPaid = order.amountPaid || 0;
-                  const orderRemaining = order.totalAmount - orderPaid;
-                  const orderPaymentPercentage = (orderPaid / order.totalAmount) * 100;
+                {orders.map((order: any) => {
+                  const orderPaid = order.amount_paid || 0;
+                  const orderRemaining = order.total_amount - orderPaid;
+                  const orderPaymentPercentage = (orderPaid / order.total_amount) * 100;
                   
                   return (
                     <div key={order.id} className="border rounded p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-medium">Commande #{order.id}</h3>
+                          <h3 className="font-medium">Commande #{order.id.slice(0, 8)}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(order.createdAt).toLocaleDateString('fr-FR')}
+                            {new Date(order.created_at).toLocaleDateString('fr-FR')}
                           </p>
+                          {order.preferred_delivery_date && (
+                            <p className="text-sm text-muted-foreground">
+                              Date de livraison préférée: {new Date(order.preferred_delivery_date).toLocaleDateString('fr-FR')}
+                            </p>
+                          )}
                         </div>
                         <div className="text-right">
                           {getStatusBadge(order.status)}
                           <div className="mt-1">
-                            {getPaymentStatusBadge(order.paymentStatus)}
+                            {getPaymentStatusBadge(order.payment_status)}
                           </div>
                         </div>
                       </div>
@@ -138,7 +180,7 @@ const Dashboard = () => {
                       <div className="grid md:grid-cols-3 gap-4 mb-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Total</p>
-                          <p className="font-medium">{order.totalAmount.toLocaleString()} DZD</p>
+                          <p className="font-medium">{order.total_amount.toLocaleString()} DZD</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Payé</p>
@@ -155,16 +197,16 @@ const Dashboard = () => {
                       
                       <div className="space-y-1">
                         <h4 className="font-medium">Produits:</h4>
-                        {order.items.map((item: any) => (
+                        {order.order_items?.map((item: any) => (
                           <div key={item.id} className="text-sm flex justify-between">
-                            <span>{item.name} x{item.quantity}</span>
-                            <span>{(item.price * item.quantity).toLocaleString()} DZD</span>
+                            <span>{item.product_name} x{item.quantity}</span>
+                            <span>{(item.product_price * item.quantity).toLocaleString()} DZD</span>
                           </div>
                         ))}
-                        {order.bundles.map((bundle: any) => (
+                        {order.order_bundles?.map((bundle: any) => (
                           <div key={bundle.id} className="text-sm flex justify-between">
-                            <span>{bundle.name} x{bundle.quantity}</span>
-                            <span>{(parseInt(bundle.bundlePrice.replace(/[^0-9]/g, '')) * bundle.quantity).toLocaleString()} DZD</span>
+                            <span>{bundle.bundle_name} x{bundle.quantity}</span>
+                            <span>{(parseInt(bundle.bundle_price.replace(/[^0-9]/g, '')) * bundle.quantity).toLocaleString()} DZD</span>
                           </div>
                         ))}
                       </div>

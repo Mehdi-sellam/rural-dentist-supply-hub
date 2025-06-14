@@ -829,16 +829,166 @@ const AdminDashboard = () => {
     }
   };
 
-  const downloadData = (data: any[], filename: string) => {
-    const csv = data.map(item => Object.values(item).join(',')).join('\n');
+  // Download data in CSV format with human-readable fields for each entity
+  const downloadProducts = () => {
+    if (!products.length) {
+      toast.error('Aucun produit à exporter');
+      return;
+    }
+    const csvHeader = [
+      'Nom (Français)', 'Nom (Arabe)', 'Code produit', 'ID Produit', 'Prix', 'Prix original', 'Catégorie',
+      'En stock', 'Badge', 'Spécifications', 'Description (Français)', 'Description (Arabe)', 'Image'
+    ];
+    const csvRows = products.map(product => [
+      product.name_fr || '',
+      product.name_ar || '',
+      product.product_code || '',
+      product.product_id || '',
+      product.price?.toLocaleString() || '',
+      product.original_price?.toLocaleString() || '',
+      product.categories?.name_fr || '',
+      product.in_stock ? 'Oui' : 'Non',
+      product.badge || '',
+      (product.specifications || []).join(' | '),
+      product.description_fr || '',
+      product.description_ar || '',
+      product.image || ''
+    ]);
+    const csv = [csvHeader, ...csvRows].map(r => r.map(val => `"${(val ?? '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename;
+    a.download = 'products.csv';
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`${filename} téléchargé avec succès`);
+    toast.success('Produits exportés');
+  };
+
+  const downloadCategories = () => {
+    if (!categories.length) {
+      toast.error('Aucune catégorie à exporter');
+      return;
+    }
+    const csvHeader = [
+      'Nom (Français)', 'Nom (Arabe)', 'Description (Français)', 'Description (Arabe)', 'Emoji/Icone', 'Couleur'
+    ];
+    const csvRows = categories.map(category => [
+      category.name_fr || '',
+      category.name_ar || '',
+      category.description_fr || '',
+      category.description_ar || '',
+      category.icon || '',
+      category.color || ''
+    ]);
+    const csv = [csvHeader, ...csvRows].map(r => r.map(val => `"${(val ?? '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'categories.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Catégories exportées');
+  };
+
+  const downloadBundles = () => {
+    if (!bundles.length) {
+      toast.error('Aucun kit à exporter');
+      return;
+    }
+    const csvHeader = [
+      'Nom (Français)', 'Nom (Arabe)', 'Prix du kit', 'Prix original', 'Économies', 'Procédures',
+      'Populaire', 'Badge', 'Produits inclus', 'Sous-description', 'Description (Français)', 'Description (Arabe)'
+    ];
+    const csvRows = bundles.map(bundle => [
+      bundle.name_fr || bundle.name || '',
+      bundle.name_ar || '',
+      bundle.bundle_price || '',
+      bundle.original_price || '',
+      bundle.calculated_savings ? bundle.calculated_savings.toLocaleString() + ' DZD' : (bundle.savings || ''),
+      bundle.procedures || '',
+      bundle.popular ? 'Oui' : 'Non',
+      bundle.badge || '',
+      (Array.isArray(bundle.items) ? bundle.items.join(' | ') : ''),
+      bundle.sub_description || '',
+      bundle.description_fr || bundle.description || '',
+      bundle.description_ar || ''
+    ]);
+    const csv = [csvHeader, ...csvRows].map(r => r.map(val => `"${(val ?? '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bundles.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Kits exportés');
+  };
+
+  const downloadOrders = () => {
+    if (!orders.length) {
+      toast.error('Aucune commande à exporter');
+      return;
+    }
+    const csvHeader = [
+      'Commande #', 'Nom client', 'Cabinet', 'Email', 'Téléphone', 'Wilaya', 'Adresse',
+      'Montant total', 'Payé', 'Reste à payer', 'Status', 'Status Paiement',
+      'Date de création', 'Date de livraison souhaitée'
+    ];
+    const csvRows = orders.map(order => [
+      order.id ? order.id.slice(0, 8) : '',
+      order.profiles?.full_name || '',
+      order.profiles?.dental_office_name || '',
+      order.profiles?.email || '',
+      order.profiles?.phone || '',
+      order.profiles?.wilaya || '',
+      order.profiles?.address || '',
+      order.total_amount?.toLocaleString() || '',
+      order.amount_paid?.toLocaleString() || '',
+      order.remaining_balance != null ? order.remaining_balance.toLocaleString() : (order.total_amount && order.amount_paid ? (order.total_amount - order.amount_paid).toLocaleString() : ''),
+      order.status || '',
+      order.payment_status || '',
+      order.created_at ? new Date(order.created_at).toLocaleDateString('fr-FR') : '',
+      order.preferred_delivery_date ? new Date(order.preferred_delivery_date).toLocaleDateString('fr-FR') : ''
+    ]);
+    const csv = [csvHeader, ...csvRows].map(r => r.map(val => `"${(val ?? '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'orders.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Commandes exportées');
+  };
+
+  const downloadClients = () => {
+    if (!clients.length) {
+      toast.error('Aucun client à exporter');
+      return;
+    }
+    const csvHeader = [
+      'Nom', 'Cabinet', 'Email', 'Téléphone', 'Wilaya', 'Adresse', 'Inscription le'
+    ];
+    const csvRows = clients.map(client => [
+      client.full_name || '',
+      client.dental_office_name || '',
+      client.email || '',
+      client.phone || '',
+      client.wilaya || '',
+      client.address || '',
+      client.created_at ? new Date(client.created_at).toLocaleDateString('fr-FR') : ''
+    ]);
+    const csv = [csvHeader, ...csvRows].map(r => r.map(val => `"${(val ?? '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'clients.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Clients exportés');
   };
 
   const completedOrders = orders.filter(order => 
@@ -954,7 +1104,7 @@ const AdminDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   {editingProduct ? 'Modifier le produit' : 'Ajouter un nouveau produit'}
-                  <Button onClick={() => downloadData(products, 'products.csv')} variant="outline">
+                  <Button onClick={downloadProducts} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
                     Télécharger
                   </Button>
@@ -1144,7 +1294,7 @@ const AdminDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   {editingCategory ? 'Modifier la catégorie' : 'Ajouter une nouvelle catégorie'}
-                  <Button onClick={() => downloadData(categories, 'categories.csv')} variant="outline">
+                  <Button onClick={downloadCategories} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
                     Télécharger
                   </Button>
@@ -1267,7 +1417,7 @@ const AdminDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   {editingBundle ? 'Modifier le kit' : 'Ajouter un nouveau kit'}
-                  <Button onClick={() => downloadData(bundles, 'bundles.csv')} variant="outline">
+                  <Button onClick={downloadBundles} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
                     Télécharger
                   </Button>
@@ -1487,7 +1637,7 @@ const AdminDashboard = () => {
                         <SelectItem value="refunded">Remboursé</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button onClick={() => downloadData(orders, 'orders.csv')} variant="outline">
+                    <Button onClick={downloadOrders} variant="outline">
                       <Download className="w-4 h-4 mr-2" />
                       Télécharger
                     </Button>
@@ -1639,7 +1789,7 @@ const AdminDashboard = () => {
                         className="pl-10 w-64"
                       />
                     </div>
-                    <Button onClick={() => downloadData(clients, 'clients.csv')} variant="outline">
+                    <Button onClick={downloadClients} variant="outline">
                       <Download className="w-4 h-4 mr-2" />
                       Télécharger
                     </Button>

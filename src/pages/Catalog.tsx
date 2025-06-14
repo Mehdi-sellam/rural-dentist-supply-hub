@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 import type { Product } from '@/types/product';
-import { generateCompleteCatalogPDF } from '@/utils/pdfGenerator';
 
 const Catalog = () => {
   const { t } = useLanguage();
@@ -17,7 +17,6 @@ const Catalog = () => {
   const [products, setProducts] = React.useState<any[]>([]);
   const [categories, setCategories] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [downloadLoading, setDownloadLoading] = React.useState(false);
 
   // Fetch data from Supabase
   React.useEffect(() => {
@@ -67,36 +66,33 @@ const Catalog = () => {
     fetchData();
   }, []);
 
-  const downloadCatalog = async () => {
-    try {
-      setDownloadLoading(true);
-      
-      // Fetch all necessary data
-      const [productsData, categoriesData, bundlesData] = await Promise.all([
-        supabase.from('products').select('*, categories(*)'),
-        supabase.from('categories').select('*'),
-        supabase.from('bundles').select('*')
-      ]);
+  const downloadCatalog = () => {
+    // Generate CSV content with fresh data
+    const headers = ['ID', 'Code', 'Nom', 'Description', 'Prix (DZD)', 'Catégorie', 'En stock'];
+    const csvContent = [
+      headers.join(','),
+      ...products.map((product: any) => [
+        product.id,
+        product.product_code,
+        product.name_fr,
+        product.description_fr,
+        product.price,
+        product.categories?.name_fr || 'Non catégorisé',
+        product.in_stock ? 'Oui' : 'Non'
+      ].join(','))
+    ].join('\n');
 
-      if (productsData.error || categoriesData.error || bundlesData.error) {
-        throw new Error('Erreur lors de la récupération des données');
-      }
-
-      // Generate complete catalog PDF
-      const doc = generateCompleteCatalogPDF(
-        productsData.data || [],
-        categoriesData.data || [],
-        bundlesData.data || []
-      );
-      
-      doc.save('catalogue-dentgo-complet.pdf');
-      toast.success('Catalogue téléchargé avec succès');
-    } catch (error) {
-      console.error('Error downloading catalog:', error);
-      toast.error('Erreur lors du téléchargement du catalogue');
-    } finally {
-      setDownloadLoading(false);
-    }
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'catalog-dentgo.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Catalogue téléchargé avec succès');
   };
 
   // Scroll to top when component mounts

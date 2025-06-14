@@ -57,21 +57,32 @@ const Checkout = () => {
     setIsLoading(true);
 
     try {
-      // Create order in database
+      console.log('Starting order placement...');
+      
+      // Create order in database - using preferred_delivery_date instead of delivery_date
+      const orderData = {
+        user_id: user.id,
+        total_amount: totalAmount,
+        payment_method: paymentMethod,
+        preferred_delivery_date: deliveryDate || null,
+        status: 'pending' as const,
+        payment_status: 'pending' as const
+      };
+
+      console.log('Order data:', orderData);
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          user_id: user.id,
-          total_amount: totalAmount,
-          payment_method: paymentMethod,
-          delivery_date: deliveryDate || null,
-          status: 'pending',
-          payment_status: 'pending'
-        })
+        .insert(orderData)
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Order creation error:', orderError);
+        throw orderError;
+      }
+
+      console.log('Order created successfully:', order);
 
       // Insert order items
       if (items.length > 0) {
@@ -84,11 +95,16 @@ const Checkout = () => {
           subtotal: item.price * item.quantity
         }));
 
+        console.log('Inserting order items:', orderItems);
+
         const { error: itemsError } = await supabase
           .from('order_items')
           .insert(orderItems);
 
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+          console.error('Order items error:', itemsError);
+          throw itemsError;
+        }
       }
 
       // Insert order bundles
@@ -101,11 +117,16 @@ const Checkout = () => {
           quantity: bundle.quantity
         }));
 
+        console.log('Inserting order bundles:', orderBundles);
+
         const { error: bundlesError } = await supabase
           .from('order_bundles')
           .insert(orderBundles);
 
-        if (bundlesError) throw bundlesError;
+        if (bundlesError) {
+          console.error('Order bundles error:', bundlesError);
+          throw bundlesError;
+        }
       }
 
       // Clear cart after successful order
@@ -115,7 +136,7 @@ const Checkout = () => {
       navigate('/order-confirmation', { state: { order } });
     } catch (error) {
       console.error('Error placing order:', error);
-      toast.error('Erreur lors de la commande');
+      toast.error('Erreur lors de la commande: ' + (error as any)?.message || 'Erreur inconnue');
     } finally {
       setIsLoading(false);
     }

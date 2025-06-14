@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ProductSelector from '@/components/admin/ProductSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Download, Upload, Eye } from 'lucide-react';
@@ -54,6 +55,7 @@ const AdminDashboard = () => {
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editingBundle, setEditingBundle] = useState<any>(null);
   const [partialPaymentAmount, setPartialPaymentAmount] = useState<{[key: string]: string}>({});
+  const [orderPaymentStatuses, setOrderPaymentStatuses] = useState<{[key: string]: PaymentStatus}>({});
   
   // File upload states
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
@@ -106,7 +108,8 @@ const AdminDashboard = () => {
     savings: '',
     popular: false,
     badge: '',
-    sub_description: ''
+    sub_description: '',
+    selectedProducts: [] as string[]
   });
 
   useEffect(() => {
@@ -139,6 +142,14 @@ const AdminDashboard = () => {
       setBundles(bundlesRes.data || []);
       setOrders(ordersRes.data || []);
       setClients(clientsRes.data || []);
+
+      // Initialize payment status state
+      const paymentStatusState: {[key: string]: PaymentStatus} = {};
+      (ordersRes.data || []).forEach(order => {
+        paymentStatusState[order.id] = order.payment_status;
+      });
+      setOrderPaymentStatuses(paymentStatusState);
+
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erreur lors du chargement des données');
@@ -193,16 +204,11 @@ const AdminDashboard = () => {
       const updateData: any = { payment_status: paymentStatus };
       
       if (paymentStatus === 'partial' && partialAmount) {
-        const order = orders.find(o => o.id === orderId);
-        if (order) {
-          updateData.amount_paid = partialAmount;
-          updateData.remaining_balance = order.total_amount - partialAmount;
-        }
+        updateData.amount_paid = partialAmount;
       } else if (paymentStatus === 'paid') {
         const order = orders.find(o => o.id === orderId);
         if (order) {
           updateData.amount_paid = order.total_amount;
-          updateData.remaining_balance = 0;
         }
       }
 
@@ -219,6 +225,17 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error updating payment status:', error);
       toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
+  const handlePaymentStatusChange = (orderId: string, newStatus: PaymentStatus) => {
+    setOrderPaymentStatuses(prev => ({
+      ...prev,
+      [orderId]: newStatus
+    }));
+
+    if (newStatus !== 'partial') {
+      updatePaymentStatus(orderId, newStatus);
     }
   };
 
@@ -349,10 +366,20 @@ const AdminDashboard = () => {
       const { error } = await supabase
         .from('bundles')
         .insert({
-          ...newBundle,
           name: newBundle.name_fr,
+          name_fr: newBundle.name_fr,
+          name_ar: newBundle.name_ar,
           description: newBundle.description_fr,
-          savings
+          description_fr: newBundle.description_fr,
+          description_ar: newBundle.description_ar,
+          bundle_price: newBundle.bundle_price,
+          original_price: newBundle.original_price,
+          items: newBundle.selectedProducts, // Store product IDs instead of text
+          procedures: newBundle.procedures,
+          savings,
+          popular: newBundle.popular,
+          badge: newBundle.badge,
+          sub_description: newBundle.sub_description
         });
 
       if (error) throw error;
@@ -372,7 +399,8 @@ const AdminDashboard = () => {
         savings: '',
         popular: false,
         badge: '',
-        sub_description: ''
+        sub_description: '',
+        selectedProducts: []
       });
 
       fetchData();
@@ -790,7 +818,7 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Bundles Tab */}
+          {/* Enhanced Bundles Tab */}
           <TabsContent value="bundles" className="space-y-6">
             <Card>
               <CardHeader>
@@ -805,7 +833,7 @@ const AdminDashboard = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Nom (Français)</Label>
+                    <Label>Nom (Français) *</Label>
                     <Input
                       value={newBundle.name_fr}
                       onChange={(e) => setNewBundle({...newBundle, name_fr: e.target.value})}
@@ -813,28 +841,67 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <Label>Prix du kit (DZD)</Label>
+                    <Label>Nom (Arabe)</Label>
+                    <Input
+                      value={newBundle.name_ar}
+                      onChange={(e) => setNewBundle({...newBundle, name_ar: e.target.value})}
+                      placeholder="Nom du kit en arabe"
+                    />
+                  </div>
+                  <div>
+                    <Label>Prix du kit (DZD) *</Label>
                     <Input
                       value={newBundle.bundle_price}
                       onChange={(e) => setNewBundle({...newBundle, bundle_price: e.target.value})}
-                      placeholder="Prix du kit en DZD"
+                      placeholder="Ex: 15000 DZD"
                     />
                   </div>
                   <div>
-                    <Label>Prix original (DZD)</Label>
+                    <Label>Prix original (DZD) *</Label>
                     <Input
                       value={newBundle.original_price}
                       onChange={(e) => setNewBundle({...newBundle, original_price: e.target.value})}
-                      placeholder="Prix original en DZD"
+                      placeholder="Ex: 20000 DZD"
                     />
                   </div>
                   <div>
-                    <Label>Économies</Label>
+                    <Label>Badge</Label>
+                    <Select value={newBundle.badge} onValueChange={(value) => setNewBundle({...newBundle, badge: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un badge" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BUNDLE_BADGES.map((badge) => (
+                          <SelectItem key={badge} value={badge}>
+                            {badge}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Procédures</Label>
                     <Input
-                      value={newBundle.savings}
-                      onChange={(e) => setNewBundle({...newBundle, savings: e.target.value})}
-                      placeholder="Montant des économies"
+                      value={newBundle.procedures}
+                      onChange={(e) => setNewBundle({...newBundle, procedures: e.target.value})}
+                      placeholder="Ex: 25+"
                     />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label>Sous-description</Label>
+                    <Input
+                      value={newBundle.sub_description}
+                      onChange={(e) => setNewBundle({...newBundle, sub_description: e.target.value})}
+                      placeholder="Ex: Idéal pour 25+ procédures"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="popular"
+                      checked={newBundle.popular}
+                      onCheckedChange={(checked) => setNewBundle({...newBundle, popular: !!checked})}
+                    />
+                    <Label htmlFor="popular">Kit populaire</Label>
                   </div>
                   <div className="md:col-span-2">
                     <Label>Description (Français)</Label>
@@ -844,8 +911,36 @@ const AdminDashboard = () => {
                       placeholder="Description du kit en français"
                     />
                   </div>
+                  <div className="md:col-span-2">
+                    <Label>Description (Arabe)</Label>
+                    <Textarea
+                      value={newBundle.description_ar}
+                      onChange={(e) => setNewBundle({...newBundle, description_ar: e.target.value})}
+                      placeholder="Description du kit en arabe"
+                    />
+                  </div>
                 </div>
-                <Button onClick={handleAddBundle}>
+
+                {/* Product Selection */}
+                <div className="md:col-span-2">
+                  <Label>Produits inclus dans le kit *</Label>
+                  <ProductSelector
+                    selectedProducts={newBundle.selectedProducts}
+                    onProductsChange={(products) => setNewBundle({...newBundle, selectedProducts: products})}
+                  />
+                </div>
+
+                {/* Automatic Savings Display */}
+                {newBundle.bundle_price && newBundle.original_price && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <Label>Économies calculées automatiquement</Label>
+                    <p className="text-lg font-semibold text-green-600">
+                      {calculateSavings(newBundle.original_price, newBundle.bundle_price)}
+                    </p>
+                  </div>
+                )}
+
+                <Button onClick={handleAddBundle} disabled={newBundle.selectedProducts.length === 0}>
                   <Plus className="w-4 h-4 mr-2" />
                   Ajouter le kit
                 </Button>
@@ -865,7 +960,10 @@ const AdminDashboard = () => {
                         <h3 className="font-medium">{bundle.name_fr || bundle.name}</h3>
                         <p className="text-sm text-gray-600">Prix: {bundle.bundle_price}</p>
                         <p className="text-sm text-gray-600">Prix original: {bundle.original_price}</p>
+                        <p className="text-sm text-gray-600">Économies: {bundle.calculated_savings ? `${bundle.calculated_savings.toLocaleString()} DZD` : bundle.savings}</p>
                         {bundle.popular && <Badge variant="secondary">Populaire</Badge>}
+                        {bundle.badge && <Badge variant="outline">{bundle.badge}</Badge>}
+                        {bundle.sub_description && <p className="text-sm text-muted-foreground">{bundle.sub_description}</p>}
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm">
@@ -882,7 +980,7 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Orders Tab */}
+          {/* Enhanced Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
@@ -906,8 +1004,8 @@ const AdminDashboard = () => {
                             <p className="text-sm text-gray-600">Cabinet: {order.profiles?.dental_office_name}</p>
                             <p className="text-sm text-gray-600">Total: {order.total_amount.toLocaleString()} DZD</p>
                             <p className="text-sm text-gray-600">Date: {new Date(order.created_at).toLocaleDateString()}</p>
-                            {order.delivery_date && (
-                              <p className="text-sm text-gray-600">Date de livraison préférée: {new Date(order.delivery_date).toLocaleDateString()}</p>
+                            {order.preferred_delivery_date && (
+                              <p className="text-sm text-gray-600">Date de livraison préférée: {new Date(order.preferred_delivery_date).toLocaleDateString()}</p>
                             )}
                             {order.amount_paid > 0 && (
                               <p className="text-sm text-green-600">Montant payé: {order.amount_paid.toLocaleString()} DZD</p>
@@ -938,14 +1036,8 @@ const AdminDashboard = () => {
                             <div>
                               <Label>Statut du paiement</Label>
                               <Select 
-                                value={order.payment_status} 
-                                onValueChange={(value: PaymentStatus) => {
-                                  if (value === 'partial') {
-                                    // Don't update immediately for partial payments
-                                    return;
-                                  }
-                                  updatePaymentStatus(order.id, value);
-                                }}
+                                value={orderPaymentStatuses[order.id] || order.payment_status} 
+                                onValueChange={(value: PaymentStatus) => handlePaymentStatusChange(order.id, value)}
                               >
                                 <SelectTrigger>
                                   <SelectValue />
@@ -958,33 +1050,35 @@ const AdminDashboard = () => {
                                 </SelectContent>
                               </Select>
                             </div>
-                            {/* Partial payment section */}
-                            <div className="space-y-2">
-                              <Label>Montant du paiement partiel</Label>
-                              <div className="flex gap-2">
-                                <Input
-                                  type="number"
-                                  placeholder="Montant en DZD"
-                                  value={partialPaymentAmount[order.id] || ''}
-                                  onChange={(e) => setPartialPaymentAmount(prev => ({
-                                    ...prev,
-                                    [order.id]: e.target.value
-                                  }))}
-                                />
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    const amount = parseFloat(partialPaymentAmount[order.id] || '0');
-                                    if (amount > 0) {
-                                      updatePaymentStatus(order.id, 'partial', amount);
-                                    }
-                                  }}
-                                  disabled={!partialPaymentAmount[order.id] || parseFloat(partialPaymentAmount[order.id]) <= 0}
-                                >
-                                  Appliquer
-                                </Button>
+                            {/* Conditional partial payment section */}
+                            {orderPaymentStatuses[order.id] === 'partial' && (
+                              <div className="space-y-2">
+                                <Label>Montant du paiement partiel</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    type="number"
+                                    placeholder="Montant en DZD"
+                                    value={partialPaymentAmount[order.id] || ''}
+                                    onChange={(e) => setPartialPaymentAmount(prev => ({
+                                      ...prev,
+                                      [order.id]: e.target.value
+                                    }))}
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      const amount = parseFloat(partialPaymentAmount[order.id] || '0');
+                                      if (amount > 0) {
+                                        updatePaymentStatus(order.id, 'partial', amount);
+                                      }
+                                    }}
+                                    disabled={!partialPaymentAmount[order.id] || parseFloat(partialPaymentAmount[order.id]) <= 0}
+                                  >
+                                    Appliquer
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                         {/* Show if order is completed */}

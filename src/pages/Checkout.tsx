@@ -44,6 +44,10 @@ const Checkout = () => {
 
   const selectedWilaya = WILAYAS.find(w => w.name === profile?.wilaya);
 
+  const handlePaymentMethodChange = (value: string) => {
+    setPaymentMethod(value as PaymentMethod);
+  };
+
   const handlePlaceOrder = async () => {
     if (!paymentMethod) {
       toast.error('Veuillez sélectionner un mode de paiement');
@@ -231,7 +235,7 @@ const Checkout = () => {
                 <CardTitle>Mode de paiement</CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                <RadioGroup value={paymentMethod} onValueChange={handlePaymentMethodChange}>
                   {PAYMENT_METHODS.map((method) => (
                     <div key={method.id} className="space-y-2">
                       <div className="flex items-center space-x-2">

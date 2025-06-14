@@ -315,6 +315,12 @@ const AdminDashboard = () => {
         if (order) {
           updateData.amount_paid = order.total_amount;
         }
+      } else if (paymentStatus === 'cancelled') {
+        // When payment is cancelled, also update order status to cancelled
+        await supabase
+          .from('orders')
+          .update({ status: 'cancelled' })
+          .eq('id', orderId);
       }
 
       const { error } = await supabase
@@ -712,6 +718,16 @@ const AdminDashboard = () => {
   const completedOrders = orders.filter(order => 
     order.status === 'delivered' && order.payment_status === 'paid'
   );
+
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending': return <Badge variant="outline">En attente</Badge>;
+      case 'partial': return <Badge className="bg-orange-500">Partiel</Badge>;
+      case 'paid': return <Badge className="bg-green-500">Payé</Badge>;
+      case 'cancelled': return <Badge variant="destructive">Annulée</Badge>;
+      default: return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   if (!user || !profile?.is_admin) {
     return null;
@@ -1272,7 +1288,7 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Enhanced Orders Tab with Grid View and Cancel Functionality */}
+          {/* Enhanced Orders Tab with 2-column Grid and improved layout */}
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
@@ -1296,132 +1312,124 @@ const AdminDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredOrders.map((order) => (
-                    <Card key={order.id} className="border">
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium">#{order.id.slice(0, 8)}</h3>
-                              <p className="text-sm text-gray-600">{order.profiles?.full_name}</p>
-                              <p className="text-xs text-gray-500">{order.profiles?.dental_office_name}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-medium">{order.total_amount.toLocaleString()} DZD</p>
-                              <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
-                            </div>
-                          </div>
-                          
-                          {order.preferred_delivery_date && (
-                            <p className="text-xs text-gray-500">
-                              Livraison: {new Date(order.preferred_delivery_date).toLocaleDateString()}
-                            </p>
-                          )}
-                          
-                          {order.amount_paid > 0 && (
-                            <p className="text-sm text-green-600">Payé: {order.amount_paid.toLocaleString()} DZD</p>
-                          )}
-                          
-                          <div className="space-y-2">
-                            <div>
-                              <Label className="text-xs">Statut commande</Label>
-                              <Select 
-                                value={order.status} 
-                                onValueChange={(value: OrderStatus) => updateOrderStatus(order.id, value)}
-                              >
-                                <SelectTrigger className="h-8">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">En attente</SelectItem>
-                                  <SelectItem value="confirmed">Confirmée</SelectItem>
-                                  <SelectItem value="shipped">Expédiée</SelectItem>
-                                  <SelectItem value="delivered">Livrée</SelectItem>
-                                </SelectContent>
-                              </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredOrders.map((order) => {
+                    const remainingAmount = order.total_amount - (order.amount_paid || 0);
+                    
+                    return (
+                      <Card key={order.id} className="border">
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-medium">#{order.id.slice(0, 8)}</h3>
+                                <p className="text-sm text-gray-600">{order.profiles?.full_name}</p>
+                                <p className="text-xs text-gray-500">{order.profiles?.dental_office_name}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-medium">{order.total_amount.toLocaleString()} DZD</p>
+                                <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
+                                {getPaymentStatusBadge(order.payment_status)}
+                              </div>
                             </div>
                             
-                            <div>
-                              <Label className="text-xs">Statut paiement</Label>
-                              <Select 
-                                value={order.payment_status} 
-                                onValueChange={(value: PaymentStatus) => {
-                                  if (value !== 'partial') {
-                                    updatePaymentStatus(order.id, value);
-                                  } else {
-                                    setOrders(prev => prev.map(o => 
-                                      o.id === order.id ? { ...o, payment_status: value } : o
-                                    ));
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="h-8">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">En attente</SelectItem>
-                                  <SelectItem value="partial">Partiel</SelectItem>
-                                  <SelectItem value="paid">Payé</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            {order.preferred_delivery_date && (
+                              <p className="text-xs text-gray-500">
+                                Date de livraison préférée: {new Date(order.preferred_delivery_date).toLocaleDateString()}
+                              </p>
+                            )}
                             
-                            {order.payment_status === 'partial' && (
+                            {order.amount_paid > 0 && (
                               <div className="space-y-1">
-                                <Label className="text-xs">Montant partiel</Label>
-                                <div className="flex gap-1">
-                                  <Input
-                                    type="number"
-                                    placeholder="Montant"
-                                    value={partialPaymentAmount[order.id] || ''}
-                                    onChange={(e) => setPartialPaymentAmount(prev => ({
-                                      ...prev,
-                                      [order.id]: e.target.value
-                                    }))}
-                                    className="h-8 text-xs"
-                                  />
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handlePartialPaymentSubmit(order.id)}
-                                    disabled={!partialPaymentAmount[order.id]}
-                                    className="h-8 px-2 text-xs"
-                                  >
-                                    OK
-                                  </Button>
-                                </div>
+                                <p className="text-sm text-green-600">Payé: {order.amount_paid.toLocaleString()} DZD</p>
+                                <p className="text-sm text-red-600">Montant restant: {remainingAmount.toLocaleString()} DZD</p>
                               </div>
                             )}
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            {order.status !== 'cancelled' && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => cancelOrder(order.id)}
-                                className="flex-1 h-8 text-xs"
-                              >
-                                Annuler
-                              </Button>
-                            )}
                             
-                            {order.status === 'delivered' && order.payment_status === 'paid' && (
-                              <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                                Terminée
-                              </Badge>
-                            )}
+                            <div className="space-y-2">
+                              <div>
+                                <Label className="text-xs">Statut commande</Label>
+                                <Select 
+                                  value={order.status} 
+                                  onValueChange={(value: OrderStatus) => updateOrderStatus(order.id, value)}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">En attente</SelectItem>
+                                    <SelectItem value="confirmed">Confirmée</SelectItem>
+                                    <SelectItem value="shipped">Expédiée</SelectItem>
+                                    <SelectItem value="delivered">Livrée</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs">Statut paiement</Label>
+                                <Select 
+                                  value={order.payment_status} 
+                                  onValueChange={(value: PaymentStatus) => {
+                                    if (value !== 'partial') {
+                                      updatePaymentStatus(order.id, value);
+                                    } else {
+                                      setOrders(prev => prev.map(o => 
+                                        o.id === order.id ? { ...o, payment_status: value } : o
+                                      ));
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">En attente</SelectItem>
+                                    <SelectItem value="partial">Partiel</SelectItem>
+                                    <SelectItem value="paid">Payé</SelectItem>
+                                    <SelectItem value="cancelled">Annulée</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              {order.payment_status === 'partial' && (
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Montant partiel</Label>
+                                  <div className="flex gap-1">
+                                    <Input
+                                      type="number"
+                                      placeholder="Montant"
+                                      value={partialPaymentAmount[order.id] || ''}
+                                      onChange={(e) => setPartialPaymentAmount(prev => ({
+                                        ...prev,
+                                        [order.id]: e.target.value
+                                      }))}
+                                      className="h-8 text-xs"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handlePartialPaymentSubmit(order.id)}
+                                      disabled={!partialPaymentAmount[order.id]}
+                                      className="h-8 px-2 text-xs"
+                                    >
+                                      OK
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                             
-                            {order.status === 'cancelled' && (
-                              <Badge variant="destructive" className="text-xs">
-                                Annulée
-                              </Badge>
-                            )}
+                            <div className="flex gap-2">
+                              {order.status === 'delivered' && order.payment_status === 'paid' && (
+                                <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                                  Terminée
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

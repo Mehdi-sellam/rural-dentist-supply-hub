@@ -48,6 +48,8 @@ const AdminDashboard = () => {
   const [categorySearch, setCategorySearch] = useState('');
   const [bundleSearch, setBundleSearch] = useState('');
   const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
   
   // State for data
   const [products, setProducts] = useState<any[]>([]);
@@ -231,11 +233,16 @@ const AdminDashboard = () => {
     bundle.description_fr?.toLowerCase().includes(bundleSearch.toLowerCase())
   );
 
-  const filteredOrders = orders.filter(order =>
-    order.id?.toLowerCase().includes(orderSearch.toLowerCase()) ||
-    order.profiles?.full_name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
-    order.profiles?.dental_office_name?.toLowerCase().includes(orderSearch.toLowerCase())
-  );
+  const filteredOrders = orders.filter(order => {
+    const matchesText = order.id?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+      order.profiles?.full_name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+      order.profiles?.dental_office_name?.toLowerCase().includes(orderSearch.toLowerCase());
+    
+    const matchesOrderStatus = !orderStatusFilter || order.status === orderStatusFilter;
+    const matchesPaymentStatus = !paymentStatusFilter || order.payment_status === paymentStatusFilter;
+    
+    return matchesText && matchesOrderStatus && matchesPaymentStatus;
+  });
 
   // Cancel order function
   const cancelOrder = async (orderId: string) => {
@@ -738,6 +745,17 @@ const AdminDashboard = () => {
   const completedOrders = orders.filter(order => 
     order.status === 'delivered' && order.payment_status === 'paid'
   );
+
+  const getOrderStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending': return <Badge variant="outline">En attente</Badge>;
+      case 'confirmed': return <Badge className="bg-blue-500">Confirmée</Badge>;
+      case 'shipped': return <Badge className="bg-orange-500">Expédiée</Badge>;
+      case 'delivered': return <Badge className="bg-green-500">Livrée</Badge>;
+      case 'cancelled': return <Badge variant="destructive">Annulée</Badge>;
+      default: return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   const getPaymentStatusBadge = (status: string) => {
     switch (status) {
@@ -1308,7 +1326,7 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Enhanced Orders Tab with 2-column Grid */}
+          {/* Enhanced Orders Tab with 2-column Grid and Filters */}
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
@@ -1324,6 +1342,31 @@ const AdminDashboard = () => {
                         className="pl-10 w-64"
                       />
                     </div>
+                    <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filtrer par statut commande" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Tous les statuts</SelectItem>
+                        <SelectItem value="pending">En attente</SelectItem>
+                        <SelectItem value="confirmed">Confirmée</SelectItem>
+                        <SelectItem value="shipped">Expédiée</SelectItem>
+                        <SelectItem value="delivered">Livrée</SelectItem>
+                        <SelectItem value="cancelled">Annulée</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filtrer par statut paiement" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Tous les paiements</SelectItem>
+                        <SelectItem value="pending">En attente</SelectItem>
+                        <SelectItem value="partial">Partiel</SelectItem>
+                        <SelectItem value="paid">Payé</SelectItem>
+                        <SelectItem value="refunded">Remboursé</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Button onClick={() => downloadData(orders, 'orders.csv')} variant="outline">
                       <Download className="w-4 h-4 mr-2" />
                       Télécharger
@@ -1349,7 +1392,10 @@ const AdminDashboard = () => {
                               <div className="text-right">
                                 <p className="font-medium">{order.total_amount.toLocaleString()} DZD</p>
                                 <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
-                                {getPaymentStatusBadge(order.payment_status)}
+                                <div className="flex gap-1 mt-1">
+                                  {getOrderStatusBadge(order.status)}
+                                  {order.status !== 'cancelled' && getPaymentStatusBadge(order.payment_status)}
+                                </div>
                               </div>
                             </div>
                             
@@ -1359,7 +1405,7 @@ const AdminDashboard = () => {
                               </p>
                             )}
                             
-                            {order.amount_paid > 0 && (
+                            {order.amount_paid > 0 && order.status !== 'cancelled' && (
                               <div className="space-y-1">
                                 <p className="text-sm text-green-600">Payé: {order.amount_paid.toLocaleString()} DZD</p>
                                 {remainingAmount > 0 && (
@@ -1383,37 +1429,40 @@ const AdminDashboard = () => {
                                     <SelectItem value="confirmed">Confirmée</SelectItem>
                                     <SelectItem value="shipped">Expédiée</SelectItem>
                                     <SelectItem value="delivered">Livrée</SelectItem>
+                                    <SelectItem value="cancelled">Annulée</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
                               
-                              <div>
-                                <Label className="text-xs">Statut paiement</Label>
-                                <Select 
-                                  value={order.payment_status} 
-                                  onValueChange={(value: PaymentStatus) => {
-                                    if (value !== 'partial') {
-                                      handlePaymentStatusChange(order.id, value);
-                                    } else {
-                                      setOrders(prev => prev.map(o => 
-                                        o.id === order.id ? { ...o, payment_status: value } : o
-                                      ));
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger className="h-8">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="pending">En attente</SelectItem>
-                                    <SelectItem value="partial">Partiel</SelectItem>
-                                    <SelectItem value="paid">Payé</SelectItem>
-                                    <SelectItem value="refunded">Annulée</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
+                              {order.status !== 'cancelled' && (
+                                <div>
+                                  <Label className="text-xs">Statut paiement</Label>
+                                  <Select 
+                                    value={order.payment_status} 
+                                    onValueChange={(value: PaymentStatus) => {
+                                      if (value !== 'partial') {
+                                        updatePaymentStatus(order.id, value);
+                                      } else {
+                                        setOrders(prev => prev.map(o => 
+                                          o.id === order.id ? { ...o, payment_status: value } : o
+                                        ));
+                                      }
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="pending">En attente</SelectItem>
+                                      <SelectItem value="partial">Partiel</SelectItem>
+                                      <SelectItem value="paid">Payé</SelectItem>
+                                      <SelectItem value="refunded">Remboursé</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
                               
-                              {order.payment_status === 'partial' && (
+                              {order.payment_status === 'partial' && order.status !== 'cancelled' && (
                                 <div className="space-y-1">
                                   <Label className="text-xs">Montant partiel</Label>
                                   <div className="flex gap-1">

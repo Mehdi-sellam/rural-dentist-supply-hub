@@ -179,7 +179,6 @@ const AdminDashboard = () => {
                   <SelectValue placeholder="Tous les statuts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les statuts</SelectItem>
                   <SelectItem value="pending">En attente</SelectItem>
                   <SelectItem value="paid">Payé</SelectItem>
                   <SelectItem value="partial">Partiel</SelectItem>
@@ -193,7 +192,6 @@ const AdminDashboard = () => {
                   <SelectValue placeholder="Tous les statuts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les statuts</SelectItem>
                   <SelectItem value="pending">En attente</SelectItem>
                   <SelectItem value="processing">En cours</SelectItem>
                   <SelectItem value="shipped">Expédiée</SelectItem>

@@ -216,9 +216,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session }) => {
                       value={order.payment_status}
                       onValueChange={(val) => handlePaymentStatusChange(order.id, val)}
                     >
-                      <SelectItem value="pending">En attente</SelectItem>
-                      <SelectItem value="partiel">Partiel</SelectItem>
-                      <SelectItem value="paid">Payé</SelectItem>
+                      <SelectTrigger />
+                      <SelectContent>
+                        <SelectItem value="pending">En attente</SelectItem>
+                        <SelectItem value="partiel">Partiel</SelectItem>
+                        <SelectItem value="paid">Payé</SelectItem>
+                      </SelectContent>
                     </Select>
                     {/* If "partiel" is selected, show amount paid input */}
                     {order.payment_status === "partiel" && (

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Table,
@@ -8,21 +9,39 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useEffect, useState } from 'react';
-import { Order, User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
   Select,
-  SelectContent,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/integrations/supabase/client";
 
+// Inline User type
+type User = {
+  id: string;
+  full_name: string;
+  dental_office_name: string;
+  phone: string;
+  email: string;
+  wilaya: string;
+  address: string;
+  is_admin: boolean;
+};
+
+// Inline Order type
+type Order = {
+  id: string;
+  user_id: string;
+  payment_status: string;
+  amount_paid?: number;
+  total_amount: number;
+  created_at: string;
+  [key: string]: any;
+};
 
 interface AdminDashboardProps {
   session: any;
@@ -35,7 +54,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session }) => {
 
   // Add a new state variable to track the partial payment amount for each order
   const [partialPayments, setPartialPayments] = React.useState<{ [orderId: string]: number }>({});
-
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -118,14 +136,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session }) => {
       .eq('id', order.id);
 
     if (!error) {
-      // Optionally fetch fresh data or update local state
-      // Show a toast or notification
       toast.success('Order updated!');
     } else {
       toast.error(error.message);
     }
   };
-
 
   if (loading) {
     return <div>Loading...</div>;
@@ -134,7 +149,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session }) => {
   return (
     <div className="container py-10">
       <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
-
       <section className="mb-8">
         <h3 className="text-xl font-semibold mb-2">Users</h3>
         <Table>
@@ -152,21 +166,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session }) => {
                   <div className="flex items-center space-x-2">
                     <Avatar>
                       <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                      <AvatarFallback>{user.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback>{user.full_name?.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span>{user.username}</span>
+                    <span>{user.full_name}</span>
                   </div>
                 </TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary">{user.role}</Badge>
+                  <Badge variant="secondary">{user.is_admin ? "Admin" : "User"}</Badge>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </section>
-
       <section>
         <h3 className="text-xl font-semibold mb-2">Commandes</h3>
         <Table>
@@ -189,10 +202,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session }) => {
                     {user ? (
                       <div className="flex items-center space-x-2">
                         <Avatar>
-                          <AvatarImage src="https://github.com/shadcn.png" alt={user.username} />
-                          <AvatarFallback>{user.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          <AvatarImage src="https://github.com/shadcn.png" alt={user.full_name} />
+                          <AvatarFallback>{user.full_name?.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <span>{user.username}</span>
+                        <span>{user.full_name}</span>
                       </div>
                     ) : 'N/A'}
                   </TableCell>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +10,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Database } from '@/integrations/supabase/types';
+
+type PaymentStatus = Database['public']['Enums']['payment_status'];
+type OrderStatus = Database['public']['Enums']['order_status'];
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -100,7 +103,7 @@ const Dashboard = () => {
   };
 
   // Update payment status function for admins
-  const updatePaymentStatus = async (orderId: string, newStatus: string) => {
+  const updatePaymentStatus = async (orderId: string, newStatus: PaymentStatus) => {
     try {
       console.log('Updating payment status for order:', orderId, 'to:', newStatus);
       
@@ -129,7 +132,7 @@ const Dashboard = () => {
   };
 
   // Update order status function for admins
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
       console.log('Updating order status for order:', orderId, 'to:', newStatus);
       
@@ -301,7 +304,7 @@ const Dashboard = () => {
                             {profile?.is_admin ? (
                               <Select
                                 value={order.status}
-                                onValueChange={(value) => updateOrderStatus(order.id, value)}
+                                onValueChange={(value) => updateOrderStatus(order.id, value as OrderStatus)}
                               >
                                 <SelectTrigger className="w-32">
                                   <SelectValue />
@@ -322,7 +325,7 @@ const Dashboard = () => {
                             {profile?.is_admin ? (
                               <Select
                                 value={order.payment_status}
-                                onValueChange={(value) => updatePaymentStatus(order.id, value)}
+                                onValueChange={(value) => updatePaymentStatus(order.id, value as PaymentStatus)}
                               >
                                 <SelectTrigger className="w-32">
                                   <SelectValue />

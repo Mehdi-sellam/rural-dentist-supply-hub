@@ -180,35 +180,30 @@ const AdminDashboard: React.FC = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
-              
-<Select
-  value={editOrder.payment_status}
-  onValueChange={(value) =>
-    setEditOrder((prev) => ({
-      ...prev,
-      payment_status: value,
-    }))
-  }
->
-  <SelectItem value="pending">En attente</SelectItem>
-  <SelectItem value="paid">Payée</SelectItem>
-  <SelectItem value="partiel">Partiel</SelectItem>
-</Select>
-
-{editOrder.payment_status === "partiel" && (
-  // Show the partial payment field only when status is partiel
-  <Input
-    name="partial_payment"
-    value={editOrder.partial_payment ?? ""}
-    onChange={(e) =>
-      setEditOrder((prev) => ({
-        ...prev,
-        partial_payment: e.target.value,
-      }))
-    }
-    placeholder="Montant payé partiellement"
-  />
-)}
+              {/* Only logic for showing partial_payment field (no UI/UX change) */}
+              <FormControl fullWidth margin="dense">
+                <InputLabel id="payment-status-label">Payment Status</InputLabel>
+                <Select
+                  labelId="payment-status-label"
+                  name="payment_status"
+                  value={editOrder.payment_status || ''}
+                  onChange={handlePaymentStatusChange}
+                >
+                  <MenuItem value="pending">En attente</MenuItem>
+                  <MenuItem value="paid">Payée</MenuItem>
+                  <MenuItem value="partiel">Partiel</MenuItem>
+                </Select>
+              </FormControl>
+              {editOrder.payment_status === "partiel" && (
+                <TextField
+                  fullWidth
+                  margin="dense"
+                  label="Montant payé partiellement"
+                  name="partial_payment"
+                  value={editOrder.partial_payment ?? ""}
+                  onChange={handleInputChange}
+                />
+              )}
             </Grid>
           </Grid>
         </DialogContent>

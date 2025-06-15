@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -115,10 +114,38 @@ const Dashboard = () => {
         return;
       }
 
+      // Find the order to get its total amount
+      const order = orders.find(o => o.id === orderId);
+      if (!order) {
+        toast.error('Commande non trouvée');
+        return;
+      }
+
+      // Calculate amount_paid based on the selected status to work with the trigger
+      let newAmountPaid = order.amount_paid || 0;
+      switch (newStatus) {
+        case 'pending':
+          newAmountPaid = 0;
+          break;
+        case 'partial':
+          // Keep existing amount if it's partial, or set to half if it was full
+          newAmountPaid = order.amount_paid > 0 && order.amount_paid < order.total_amount 
+            ? order.amount_paid 
+            : Math.floor(order.total_amount / 2);
+          break;
+        case 'paid':
+          newAmountPaid = order.total_amount;
+          break;
+        case 'refunded':
+          newAmountPaid = 0;
+          break;
+      }
+
       const { data, error } = await supabase
         .from('orders')
         .update({ 
           payment_status: newStatus,
+          amount_paid: newAmountPaid,
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
@@ -141,7 +168,7 @@ const Dashboard = () => {
       setOrders(prevOrders => 
         prevOrders.map(order => 
           order.id === orderId 
-            ? { ...order, payment_status: newStatus, updated_at: new Date().toISOString() }
+            ? { ...order, payment_status: newStatus, amount_paid: newAmountPaid, updated_at: new Date().toISOString() }
             : order
         )
       );

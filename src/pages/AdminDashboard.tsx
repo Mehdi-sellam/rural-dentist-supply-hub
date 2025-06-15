@@ -53,24 +53,34 @@ const AdminDashboard = () => {
   const [orderStatusFilter, setOrderStatusFilter] = useState('');
   const [refetchOrders, setRefetchOrders] = useState<() => void>(() => {});
 
-  // Helper for updating payment status, now with support for amount_paid for "partiel"
-  const handlePaymentStatusChange = async (order, status) => {
-    // If switching to "partiel" and no amount_paid, set to 0 by default
-    let updates = {
+  // NEW: type-correct handlePaymentStatusChange, updates
+  const handlePaymentStatusChange = async (
+    order: Order,
+    status: Database['public']['Enums']['payment_status']
+  ) => {
+    // If switching to "partial" and no amount_paid, set to 0 by default
+    const updates: Partial<Order> = {
       payment_status: status,
     };
-    if (status === "partiel" && (!order.amount_paid || order.amount_paid === 0)) {
+    if (
+      status === "partial" &&
+      (typeof order.amount_paid !== "number" || isNaN(order.amount_paid))
+    ) {
       updates.amount_paid = 0;
+      updates.remaining_balance = Number(order.total_amount);
     }
     await supabase.from("orders").update(updates).eq("id", order.id);
     if (refetchOrders) refetchOrders();
   };
 
-  const handleAmountPaidChange = async (order, amountPaid) => {
-    const validAmount = Math.min(Math.max(0, Number(amountPaid)), Number(order.total_amount));
+  const handleAmountPaidChange = async (
+    order: Order,
+    amountPaidStr: string
+  ) => {
+    const amountPaid = parseFloat(amountPaidStr);
+    const validAmount = Math.min(Math.max(0, amountPaid), Number(order.total_amount));
     await supabase.from("orders").update({
       amount_paid: validAmount,
-      // Update remaining_balance in DB for convenience
       remaining_balance: Number(order.total_amount) - validAmount
     }).eq("id", order.id);
     if (refetchOrders) refetchOrders();
@@ -101,7 +111,10 @@ const AdminDashboard = () => {
     setRefetchOrders(() => fetchOrders); // Update the refetchOrders function
   }, [user, navigate]);
 
-  const handleOrderStatusChange = async (orderId: number, newStatus: string) => {
+  const handleOrderStatusChange = async (
+    orderId: string, // matches Order['id'] which is string
+    newStatus: Database['public']['Enums']['order_status']
+  ) => {
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
@@ -167,7 +180,7 @@ const AdminDashboard = () => {
                   <SelectItem value="">Tous les statuts</SelectItem>
                   <SelectItem value="pending">En attente</SelectItem>
                   <SelectItem value="paid">Payé</SelectItem>
-                  <SelectItem value="partiel">Partiel</SelectItem>
+                  <SelectItem value="partial">Partiel</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -209,15 +222,20 @@ const AdminDashboard = () => {
                   <TableCell>{order.payment_method}</TableCell>
                   <TableCell>
                     <Select
-                      value={order.status}
-                      onValueChange={(status) => handleOrderStatusChange(order.id, status)}
+                      value={order.status || ""}
+                      onValueChange={(status) =>
+                        handleOrderStatusChange(
+                          order.id,
+                          status as Database['public']['Enums']['order_status']
+                        )
+                      }
                     >
                       <SelectTrigger className="w-[140px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending">En attente</SelectItem>
-                        <SelectItem value="processing">En cours</SelectItem>
+                        <SelectItem value="confirmed">Confirmée</SelectItem>
                         <SelectItem value="shipped">Expédiée</SelectItem>
                         <SelectItem value="delivered">Livrée</SelectItem>
                         <SelectItem value="cancelled">Annulée</SelectItem>
@@ -227,8 +245,13 @@ const AdminDashboard = () => {
                   {/* Payment status cell */}
                   <TableCell>
                     <Select
-                      value={order.payment_status}
-                      onValueChange={(status) => handlePaymentStatusChange(order, status)}
+                      value={order.payment_status || ""}
+                      onValueChange={(status) =>
+                        handlePaymentStatusChange(
+                          order,
+                          status as Database['public']['Enums']['payment_status']
+                        )
+                      }
                     >
                       <SelectTrigger className="w-[140px]">
                         <SelectValue />
@@ -236,11 +259,12 @@ const AdminDashboard = () => {
                       <SelectContent>
                         <SelectItem value="pending">En attente</SelectItem>
                         <SelectItem value="paid">Payé</SelectItem>
-                        <SelectItem value="partiel">Partiel</SelectItem>
+                        <SelectItem value="partial">Partiel</SelectItem>
+                        <SelectItem value="refunded">Remboursé</SelectItem>
                       </SelectContent>
                     </Select>
-                    {/* Only show amount_paid field if status is "partiel" */}
-                    {order.payment_status === "partiel" && (
+                    {/* Only show amount_paid field if status is "partial" */}
+                    {order.payment_status === "partial" && (
                       <div className="mt-2 flex items-center gap-1">
                         <Label htmlFor={`amount_paid_${order.id}`}>Montant payé</Label>
                         <Input
@@ -254,10 +278,19 @@ const AdminDashboard = () => {
                               ? order.amount_paid
                               : ""
                           }
-                          onChange={(e) => handleAmountPaidChange(order, e.target.value)}
+                          onChange={(e) =>
+                            handleAmountPaidChange(order, e.target.value)
+                          }
                         />
                         <span className="text-xs ml-1">
                           / {Number(order.total_amount)?.toLocaleString()} DZD
+                        </span>
+                        <span className="text-xs ml-1 text-gray-500">
+                          {"Reste: "}
+                          {order.total_amount != null && typeof order.amount_paid === "number"
+                            ? (Number(order.total_amount) - Number(order.amount_paid)).toLocaleString()
+                            : ""}
+                          {" DZD"}
                         </span>
                       </div>
                     )}

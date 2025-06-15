@@ -99,7 +99,7 @@ const Dashboard = () => {
     }
   };
 
-  // Update payment status function for admins - fixed to bypass trigger conflicts
+  // Update payment status function for admins - fixed to handle trigger conflicts
   const updatePaymentStatus = async (orderId: string, newStatus: PaymentStatus) => {
     try {
       console.log('Updating payment status for order:', orderId, 'to:', newStatus);
@@ -138,36 +138,26 @@ const Dashboard = () => {
           break;
       }
 
-      // Use RPC or direct SQL to bypass the trigger that auto-calculates payment_status
-      const { data, error } = await supabase.rpc('update_order_payment_status', {
-        order_id: orderId,
-        new_payment_status: newStatus,
-        new_amount_paid: newAmountPaid
-      });
+      console.log('Updating with amount_paid:', newAmountPaid, 'and status:', newStatus);
 
-      // If RPC doesn't exist, fall back to regular update but disable the trigger temporarily
-      if (error && error.message?.includes('function update_order_payment_status')) {
-        console.log('RPC not available, using direct update');
-        
-        const { data: updateData, error: updateError } = await supabase
-          .from('orders')
-          .update({ 
-            payment_status: newStatus,
-            amount_paid: newAmountPaid,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', orderId);
+      // Direct update to avoid trigger conflicts
+      const { data: updateData, error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: newStatus,
+          amount_paid: newAmountPaid,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .select('*')
+        .single();
 
-        if (updateError) {
-          console.error('Supabase error updating payment status:', updateError);
-          throw updateError;
-        }
-      } else if (error) {
-        console.error('RPC error updating payment status:', error);
-        throw error;
+      if (updateError) {
+        console.error('Supabase error updating payment status:', updateError);
+        throw updateError;
       }
 
-      console.log('Payment status updated successfully');
+      console.log('Payment status updated successfully:', updateData);
       
       // Update the local state immediately for better UX
       setOrders(prevOrders => 

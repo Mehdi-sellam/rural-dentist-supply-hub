@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectItem,
+  SelectTrigger,    // <-- Add this import
+  SelectContent    // <-- Add this import
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"

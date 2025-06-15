@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,6 +39,12 @@ const ScrollToTop = () => {
   return null;
 };
 
+// Wrapper to supply session from AuthContext to AdminDashboard
+const AdminDashboardWrapper = () => {
+  const { session } = useAuth();
+  return <AdminDashboard session={session} />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
@@ -65,7 +70,7 @@ const App = () => (
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/order-confirmation" element={<OrderConfirmation />} />
                   <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin" element={<AdminDashboardWrapper />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/test" element={<TestSuite />} />

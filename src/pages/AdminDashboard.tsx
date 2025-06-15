@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -142,7 +143,7 @@ const AdminDashboard: React.FC = () => {
         <DialogTitle>Edit Order</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} mt={1}>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Customer Name"
@@ -152,7 +153,7 @@ const AdminDashboard: React.FC = () => {
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Total"
@@ -162,7 +163,7 @@ const AdminDashboard: React.FC = () => {
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <FormControl fullWidth margin="dense">
                 <InputLabel id="status-label">Status</InputLabel>
                 <Select
@@ -179,7 +180,7 @@ const AdminDashboard: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               {/* Only logic for showing partial_payment field (no UI/UX change) */}
               <FormControl fullWidth margin="dense">
                 <InputLabel id="payment-status-label">Payment Status</InputLabel>

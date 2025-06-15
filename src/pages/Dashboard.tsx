@@ -99,7 +99,7 @@ const Dashboard = () => {
     }
   };
 
-  // Update payment status function for admins - fixed logic
+  // Update payment status function for admins - simplified direct update
   const updatePaymentStatus = async (orderId: string, newStatus: PaymentStatus) => {
     try {
       console.log('=== PAYMENT STATUS UPDATE STARTED ===');
@@ -147,38 +147,25 @@ const Dashboard = () => {
       console.log('Calculated amount_paid:', newAmountPaid);
       console.log('Total amount:', order.total_amount);
 
-      // Update using RPC function to bypass potential trigger issues
-      console.log('Attempting database update via RPC...');
-      const { data: rpcData, error: rpcError } = await supabase.rpc('update_order_payment_status', {
-        order_id: orderId,
-        new_payment_status: newStatus,
-        new_amount_paid: newAmountPaid
-      });
+      // Direct database update
+      console.log('Attempting database update...');
+      const { data: updateData, error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: newStatus,
+          amount_paid: newAmountPaid,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .select('*')
+        .single();
 
-      if (rpcError) {
-        console.log('RPC failed, trying direct update:', rpcError);
-        
-        // Fallback to direct update if RPC doesn't exist
-        const { data: updateData, error: updateError } = await supabase
-          .from('orders')
-          .update({ 
-            payment_status: newStatus,
-            amount_paid: newAmountPaid,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', orderId)
-          .select('*')
-          .single();
-
-        if (updateError) {
-          console.error('Database update error:', updateError);
-          throw updateError;
-        }
-        
-        console.log('Direct update successful:', updateData);
-      } else {
-        console.log('RPC update successful:', rpcData);
+      if (updateError) {
+        console.error('Database update error:', updateError);
+        throw updateError;
       }
+      
+      console.log('Database update successful:', updateData);
       
       // Update the local state immediately for better UX
       setOrders(prevOrders => {

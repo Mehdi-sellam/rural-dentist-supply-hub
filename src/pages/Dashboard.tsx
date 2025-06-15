@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
@@ -99,10 +100,13 @@ const Dashboard = () => {
     }
   };
 
-  // Update payment status function for admins - fixed to handle trigger conflicts
+  // Update payment status function for admins - enhanced debugging
   const updatePaymentStatus = async (orderId: string, newStatus: PaymentStatus) => {
     try {
-      console.log('Updating payment status for order:', orderId, 'to:', newStatus);
+      console.log('=== PAYMENT STATUS UPDATE STARTED ===');
+      console.log('Order ID:', orderId);
+      console.log('New Status:', newStatus);
+      console.log('User is admin:', profile?.is_admin);
       
       // First check if we have admin permissions
       if (!profile?.is_admin) {
@@ -114,9 +118,12 @@ const Dashboard = () => {
       // Find the order to get its total amount
       const order = orders.find(o => o.id === orderId);
       if (!order) {
+        console.error('Order not found in local state');
         toast.error('Commande non trouvée');
         return;
       }
+
+      console.log('Current order data:', order);
 
       // Calculate amount_paid based on the selected status
       let newAmountPaid = order.amount_paid || 0;
@@ -138,9 +145,11 @@ const Dashboard = () => {
           break;
       }
 
-      console.log('Updating with amount_paid:', newAmountPaid, 'and status:', newStatus);
+      console.log('Calculated amount_paid:', newAmountPaid);
+      console.log('Total amount:', order.total_amount);
 
-      // Direct update to avoid trigger conflicts
+      // First try to update without the trigger
+      console.log('Attempting database update...');
       const { data: updateData, error: updateError } = await supabase
         .from('orders')
         .update({ 
@@ -153,23 +162,39 @@ const Dashboard = () => {
         .single();
 
       if (updateError) {
-        console.error('Supabase error updating payment status:', updateError);
+        console.error('Database update error:', updateError);
+        console.error('Error details:', {
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint,
+          code: updateError.code
+        });
         throw updateError;
       }
 
-      console.log('Payment status updated successfully:', updateData);
+      console.log('Database update successful:', updateData);
       
       // Update the local state immediately for better UX
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.map(order => 
           order.id === orderId 
             ? { ...order, payment_status: newStatus, amount_paid: newAmountPaid, updated_at: new Date().toISOString() }
             : order
-        )
-      );
+        );
+        console.log('Local state updated:', updatedOrders.find(o => o.id === orderId));
+        return updatedOrders;
+      });
+      
+      // Force a refetch to ensure consistency
+      setTimeout(() => {
+        console.log('Refetching orders to verify update...');
+        fetchUserOrders();
+      }, 500);
       
       toast.success('Statut de paiement mis à jour avec succès');
+      console.log('=== PAYMENT STATUS UPDATE COMPLETED ===');
     } catch (error) {
+      console.error('=== PAYMENT STATUS UPDATE FAILED ===');
       console.error('Error updating payment status:', error);
       toast.error('Erreur lors de la mise à jour du statut de paiement');
     }

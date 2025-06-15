@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -31,36 +31,40 @@ import { DateRange } from "react-day-picker"
 import { useToast } from "@/components/ui/use-toast"
 
 const AdminDashboard = () => {
-  const { user, isAdmin } = useAuth();
-  const { locale } = useLanguage();
-  const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [users, setUsers] = useState([]);
+  const { user, profile } = useAuth();
+  // Determine admin from profile
+  const isAdmin = profile?.is_admin;
+  const { t } = useLanguage();
+  const locale = typeof navigator !== "undefined" && navigator.language ? navigator.language : "fr-FR";
+  const [orders, setOrders] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState<any[]>([]);
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: undefined,
     to: undefined,
   })
-  const { toast } = useToast()
+  const { toast } = useToast();
 
-  const { data: ordersData, refetch: refetchOrders } = useQuery('orders', async () => {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error("Error fetching orders:", error);
-      throw error;
+  // useQuery updated to correct object format
+  const { data: ordersData, refetch: refetchOrders } = useQuery({
+    queryKey: ['orders'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error("Error fetching orders:", error);
+        throw error;
+      }
+      return data || [];
     }
-    return data;
   });
 
   useEffect(() => {
-    if (ordersData) {
-      setOrders(ordersData);
-    }
+    setOrders(Array.isArray(ordersData) ? ordersData : []);
   }, [ordersData]);
 
   useEffect(() => {
@@ -97,17 +101,17 @@ const AdminDashboard = () => {
     fetchUsers();
   }, []);
 
+  // Filter by date
   useEffect(() => {
     if (date?.from && date?.to) {
       const filtered = orders.filter(order => {
         const orderDate = new Date(order.created_at);
-        const fromDate = new Date(date.from);
-        const toDate = new Date(date.to);
-  
-        // Set hours to 00:00:00 for fromDate and 23:59:59 for toDate
+        const fromDate = new Date(date.from as Date);
+        const toDate = new Date(date.to as Date);
+
         fromDate.setHours(0, 0, 0, 0);
         toDate.setHours(23, 59, 59, 999);
-  
+
         return orderDate >= fromDate && orderDate <= toDate;
       });
       setFilteredOrders(filtered);
@@ -116,10 +120,11 @@ const AdminDashboard = () => {
     }
   }, [date, orders]);
 
+  // Filter by search term
   useEffect(() => {
     const results = orders.filter(order =>
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer_email.toLowerCase().includes(searchTerm.toLowerCase())
+      (order.id && order.id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (order.customer_email && order.customer_email.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setFilteredOrders(results);
   }, [searchTerm, orders]);
@@ -130,36 +135,31 @@ const AdminDashboard = () => {
     }
   }, [user, isAdmin]);
 
-  const handlePaymentStatusChange = async (order, status) => {
-    // If changing to 'partial' and no amount_paid, set amount_paid to 0
-    let updates = { payment_status: status };
+  const handlePaymentStatusChange = async (order: any, status: string) => {
+    let updates: Record<string, any> = { payment_status: status };
     if (status === "partial" && (!order.amount_paid || order.amount_paid === 0)) {
       updates.amount_paid = 0;
+      updates.remaining_balance = order.total_amount; // set remaining to total when partiel
     }
-    // Optionally update remaining_balance field as well
     await supabase
       .from('orders')
       .update(updates)
       .eq('id', order.id);
-  
-    // Refresh orders (assuming you have a refetch or setOrders function)
+
     refetchOrders && refetchOrders();
   };
-  
-  const handleAmountPaidChange = async (order, amountPaid) => {
+
+  const handleAmountPaidChange = async (order: any, amountPaid: number) => {
     // Clamp to [0, total_amount]
     const validAmount = Math.min(Math.max(0, amountPaid), Number(order.total_amount));
     await supabase
       .from('orders')
       .update({
         amount_paid: validAmount,
-        // Optionally update remaining_balance immediately
         remaining_balance: Number(order.total_amount) - validAmount,
-        // Optionally: payment_status logic, but it's covered by DB trigger
       })
       .eq('id', order.id);
-  
-    // Refresh orders
+
     refetchOrders && refetchOrders();
   };
 
@@ -237,7 +237,7 @@ const AdminDashboard = () => {
                   <TableCell className="font-medium">{order.id}</TableCell>
                   <TableCell>{order.customer_email}</TableCell>
                   <TableCell>{new Date(order.created_at).toLocaleDateString(locale)}</TableCell>
-                  <TableCell>{order.total_amount.toLocaleString(locale, {
+                  <TableCell>{Number(order.total_amount).toLocaleString(locale, {
                     style: 'currency',
                     currency: 'DZD',
                   })}</TableCell>
@@ -253,11 +253,10 @@ const AdminDashboard = () => {
                           Statut paiement
                         </Label>
                         <Select
-                          id={`payment-status-${order.id}`}
                           value={order.payment_status}
                           onValueChange={e => handlePaymentStatusChange(order, e)}
                         >
-                          <SelectTrigger className="w-[180px]">
+                          <SelectTrigger id={`payment-status-${order.id}`} className="w-[180px]">
                             <SelectValue placeholder="Theme" />
                           </SelectTrigger>
                           <SelectContent>
@@ -267,7 +266,7 @@ const AdminDashboard = () => {
                           </SelectContent>
                         </Select>
                       </div>
-
+                      {/* Montant payé input appears when status is partiel */}
                       {order.payment_status === "partial" && (
                         <div className="flex items-center gap-2">
                           <Label htmlFor={`amount-paid-${order.id}`} className="font-medium min-w-[120px]">
@@ -280,11 +279,10 @@ const AdminDashboard = () => {
                             max={order.total_amount}
                             step={0.01}
                             className="w-[120px]"
-                            value={order.amount_paid || ""}
+                            value={order.amount_paid ?? ""}
                             onChange={e => handleAmountPaidChange(order, Number(e.target.value))}
                             placeholder="Saisir montant payé"
                           />
-                          {/* Show remaining automatically */}
                           <span className="text-sm text-gray-500">
                             Reste à payer: {Math.max(0, Number(order.total_amount) - Number(order.amount_paid)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DZD
                           </span>

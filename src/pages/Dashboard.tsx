@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
@@ -99,7 +100,7 @@ const Dashboard = () => {
     }
   };
 
-  // Update payment status function for admins - simplified direct update
+  // Update payment status function using backend service
   const updatePaymentStatus = async (orderId: string, newStatus: PaymentStatus) => {
     try {
       console.log('=== PAYMENT STATUS UPDATE STARTED ===');
@@ -114,67 +115,40 @@ const Dashboard = () => {
         return;
       }
 
-      // Find the order to get its total amount
-      const order = orders.find(o => o.id === orderId);
-      if (!order) {
-        console.error('Order not found in local state');
-        toast.error('Commande non trouvée');
-        return;
+      // Call the backend service
+      const { data, error } = await supabase.functions.invoke('update-payment-status', {
+        body: {
+          orderId: orderId,
+          newStatus: newStatus,
+          userId: user?.id
+        }
+      });
+
+      if (error) {
+        console.error('Backend service error:', error);
+        throw error;
       }
 
-      console.log('Current order data:', order);
-
-      // Calculate amount_paid based on the selected status
-      let newAmountPaid = order.amount_paid || 0;
-      switch (newStatus) {
-        case 'pending':
-          newAmountPaid = 0;
-          break;
-        case 'partial':
-          // Keep existing amount if it's already partial and reasonable, otherwise set to half
-          newAmountPaid = order.amount_paid > 0 && order.amount_paid < order.total_amount 
-            ? order.amount_paid 
-            : Math.floor(order.total_amount / 2);
-          break;
-        case 'paid':
-          newAmountPaid = order.total_amount;
-          break;
-        case 'refunded':
-          newAmountPaid = 0;
-          break;
+      if (!data.success) {
+        console.error('Backend service failed:', data.error);
+        throw new Error(data.error);
       }
 
-      console.log('Calculated amount_paid:', newAmountPaid);
-      console.log('Total amount:', order.total_amount);
-
-      // Direct database update
-      console.log('Attempting database update...');
-      const { data: updateData, error: updateError } = await supabase
-        .from('orders')
-        .update({ 
-          payment_status: newStatus,
-          amount_paid: newAmountPaid,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId)
-        .select('*')
-        .single();
-
-      if (updateError) {
-        console.error('Database update error:', updateError);
-        throw updateError;
-      }
-      
-      console.log('Database update successful:', updateData);
+      console.log('Backend service response:', data);
       
       // Update the local state immediately for better UX
       setOrders(prevOrders => {
         const updatedOrders = prevOrders.map(order => 
           order.id === orderId 
-            ? { ...order, payment_status: newStatus, amount_paid: newAmountPaid, updated_at: new Date().toISOString() }
+            ? { 
+                ...order, 
+                payment_status: newStatus, 
+                amount_paid: data.order.amount_paid,
+                updated_at: data.order.updated_at 
+              }
             : order
         );
-        console.log('Local state updated:', updatedOrders.find(o => o.id === orderId));
+        console.log('Local state updated');
         return updatedOrders;
       });
       

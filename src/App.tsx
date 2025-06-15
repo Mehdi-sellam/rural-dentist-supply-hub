@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/context/AuthContext"; // <-- Import useAuth
+import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/hooks/useLanguage";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -40,12 +40,6 @@ const ScrollToTop = () => {
   return null;
 };
 
-// Wrapper to supply session from AuthContext to AdminDashboard
-const AdminDashboardWrapper = () => {
-  const { session } = useAuth();
-  return <AdminDashboard session={session} />;
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
@@ -71,7 +65,7 @@ const App = () => (
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/order-confirmation" element={<OrderConfirmation />} />
                   <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/admin" element={<AdminDashboardWrapper />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/test" element={<TestSuite />} />

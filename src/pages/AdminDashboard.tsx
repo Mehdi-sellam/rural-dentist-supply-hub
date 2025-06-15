@@ -18,7 +18,6 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Grid,
   Typography,
   Box,
 } from '@mui/material';
@@ -142,8 +141,15 @@ const AdminDashboard: React.FC = () => {
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>Edit Order</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} mt={1}>
-            <Grid item xs={12} sm={6}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 2,
+              mt: 1,
+            }}
+          >
+            <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
               <TextField
                 fullWidth
                 label="Customer Name"
@@ -152,8 +158,8 @@ const AdminDashboard: React.FC = () => {
                 onChange={handleInputChange}
                 margin="dense"
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            </Box>
+            <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
               <TextField
                 fullWidth
                 label="Total"
@@ -162,8 +168,8 @@ const AdminDashboard: React.FC = () => {
                 onChange={handleInputChange}
                 margin="dense"
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            </Box>
+            <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
               <FormControl fullWidth margin="dense">
                 <InputLabel id="status-label">Status</InputLabel>
                 <Select
@@ -179,11 +185,13 @@ const AdminDashboard: React.FC = () => {
                   <MenuItem value="cancelled">Cancelled</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            </Box>
+            <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
               {/* Only logic for showing partial_payment field (no UI/UX change) */}
               <FormControl fullWidth margin="dense">
-                <InputLabel id="payment-status-label">Payment Status</InputLabel>
+                <InputLabel id="payment-status-label">
+                  Payment Status
+                </InputLabel>
                 <Select
                   labelId="payment-status-label"
                   name="payment_status"
@@ -195,18 +203,18 @@ const AdminDashboard: React.FC = () => {
                   <MenuItem value="partiel">Partiel</MenuItem>
                 </Select>
               </FormControl>
-              {editOrder.payment_status === "partiel" && (
+              {editOrder.payment_status === 'partiel' && (
                 <TextField
                   fullWidth
                   margin="dense"
                   label="Montant payé partiellement"
                   name="partial_payment"
-                  value={editOrder.partial_payment ?? ""}
+                  value={editOrder.partial_payment ?? ''}
                   onChange={handleInputChange}
                 />
               )}
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} startIcon={<Close />} color="error">

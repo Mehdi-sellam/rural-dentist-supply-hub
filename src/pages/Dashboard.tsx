@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -107,6 +108,13 @@ const Dashboard = () => {
     try {
       console.log('Updating payment status for order:', orderId, 'to:', newStatus);
       
+      // First check if we have admin permissions
+      if (!profile?.is_admin) {
+        console.error('User is not admin');
+        toast.error('Vous n\'avez pas les permissions nécessaires');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('orders')
         .update({ 
@@ -114,16 +122,30 @@ const Dashboard = () => {
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
-        .select()
+        .select('*')
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase error updating payment status:', error);
         throw error;
       }
 
+      if (!data) {
+        console.error('No data returned from update');
+        throw new Error('Aucune donnée retournée de la mise à jour');
+      }
+
       console.log('Payment status updated successfully:', data);
-      await fetchUserOrders();
+      
+      // Update the local state immediately for better UX
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId 
+            ? { ...order, payment_status: newStatus, updated_at: new Date().toISOString() }
+            : order
+        )
+      );
+      
       toast.success('Statut de paiement mis à jour avec succès');
     } catch (error) {
       console.error('Error updating payment status:', error);
@@ -136,6 +158,13 @@ const Dashboard = () => {
     try {
       console.log('Updating order status for order:', orderId, 'to:', newStatus);
       
+      // First check if we have admin permissions
+      if (!profile?.is_admin) {
+        console.error('User is not admin');
+        toast.error('Vous n\'avez pas les permissions nécessaires');
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('orders')
         .update({ 
@@ -143,16 +172,30 @@ const Dashboard = () => {
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
-        .select()
+        .select('*')
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase error updating order status:', error);
         throw error;
       }
 
+      if (!data) {
+        console.error('No data returned from update');
+        throw new Error('Aucune donnée retournée de la mise à jour');
+      }
+
       console.log('Order status updated successfully:', data);
-      await fetchUserOrders();
+      
+      // Update the local state immediately for better UX
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId 
+            ? { ...order, status: newStatus, updated_at: new Date().toISOString() }
+            : order
+        )
+      );
+      
       toast.success('Statut de commande mis à jour avec succès');
     } catch (error) {
       console.error('Error updating order status:', error);

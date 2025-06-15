@@ -45,7 +45,7 @@ import type { Database } from '@/integrations/supabase/types';
 type Order = Database['public']['Tables']['orders']['Row'];
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,11 +86,12 @@ const AdminDashboard = () => {
     if (refetchOrders) refetchOrders();
   };
 
+  // Use effect to redirect if not admin
   useEffect(() => {
-    if (!user || user.email !== 'admin@dentgo.net') {
+    if (!user || !profile || !profile.is_admin) {
       navigate('/auth');
     }
-  }, [user, navigate]);
+  }, [user, profile, navigate]);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -147,7 +148,8 @@ const AdminDashboard = () => {
     return matchesSearch && matchesPaymentStatus && matchesOrderStatus;
   });
 
-  if (!user || user.email !== 'admin@dentgo.net') {
+  // Only allow admin access
+  if (!user || !profile || !profile.is_admin) {
     return null;
   }
 

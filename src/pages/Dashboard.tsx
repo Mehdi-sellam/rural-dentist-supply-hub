@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -95,6 +96,64 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error cancelling order:', error);
       toast.error('Erreur lors de l\'annulation de la commande');
+    }
+  };
+
+  // Update payment status function for admins
+  const updatePaymentStatus = async (orderId: string, newStatus: string) => {
+    try {
+      console.log('Updating payment status for order:', orderId, 'to:', newStatus);
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Payment status updated successfully:', data);
+      await fetchUserOrders();
+      toast.success('Statut de paiement mis à jour avec succès');
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast.error('Erreur lors de la mise à jour du statut de paiement');
+    }
+  };
+
+  // Update order status function for admins
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      console.log('Updating order status for order:', orderId, 'to:', newStatus);
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Order status updated successfully:', data);
+      await fetchUserOrders();
+      toast.success('Statut de commande mis à jour avec succès');
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Erreur lors de la mise à jour du statut de commande');
     }
   };
 
@@ -237,14 +296,51 @@ const Dashboard = () => {
                           )}
                         </div>
                         <div className="text-right flex flex-col gap-2">
-                          <div>
-                            {getStatusBadge(order.status)}
-                            <div className="mt-1">
-                              {getPaymentStatusBadge(order.payment_status)}
-                            </div>
+                          <div className="flex gap-2">
+                            {/* Order Status */}
+                            {profile?.is_admin ? (
+                              <Select
+                                value={order.status}
+                                onValueChange={(value) => updateOrderStatus(order.id, value)}
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">En attente</SelectItem>
+                                  <SelectItem value="confirmed">Confirmée</SelectItem>
+                                  <SelectItem value="shipped">Expédiée</SelectItem>
+                                  <SelectItem value="delivered">Livrée</SelectItem>
+                                  <SelectItem value="cancelled">Annulée</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              getStatusBadge(order.status)
+                            )}
+                            
+                            {/* Payment Status */}
+                            {profile?.is_admin ? (
+                              <Select
+                                value={order.payment_status}
+                                onValueChange={(value) => updatePaymentStatus(order.id, value)}
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">En attente</SelectItem>
+                                  <SelectItem value="partial">Partiel</SelectItem>
+                                  <SelectItem value="paid">Payé</SelectItem>
+                                  <SelectItem value="refunded">Remboursé</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              getPaymentStatusBadge(order.payment_status)
+                            )}
                           </div>
-                          {/* Cancel button - only show for pending orders */}
-                          {(order.status === 'pending' || order.status === 'confirmed') && (
+                          
+                          {/* Cancel button - only show for pending orders and non-admins */}
+                          {!profile?.is_admin && (order.status === 'pending' || order.status === 'confirmed') && (
                             <Button
                               variant="destructive"
                               size="sm"

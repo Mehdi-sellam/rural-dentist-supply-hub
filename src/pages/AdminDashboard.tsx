@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -67,6 +68,9 @@ const AdminDashboard = () => {
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editingBundle, setEditingBundle] = useState<any>(null);
   const [partialPaymentAmount, setPartialPaymentAmount] = useState<{[key: string]: string}>({});
+
+  // State for inline partial payment editing
+  const [editingPartialFor, setEditingPartialFor] = useState<string | null>(null);
   
   // File upload states
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
@@ -350,7 +354,7 @@ const AdminDashboard = () => {
   const uploadFile = async (file: File, bucket: string, path: string) => {
     setUploadingImage(true);
     try {
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from(bucket)
         .upload(path, file, {
           cacheControl: '3600',
@@ -396,67 +400,62 @@ const AdminDashboard = () => {
     }
   };
 
-  const updatePaymentStatus = async (orderId: string, paymentStatus: PaymentStatus, partialAmount?: number) => {
+  const updatePaymentStatus = async (orderId: string, paymentStatus: PaymentStatus, amount?: number) => {
     try {
-      console.log('Updating payment status:', orderId, paymentStatus, partialAmount);
-      
-      const updateData: any = { payment_status: paymentStatus };
-      
-      if (paymentStatus === 'partial' && partialAmount) {
-        updateData.amount_paid = partialAmount;
-      } else if (paymentStatus === 'paid') {
-        const order = orders.find(o => o.id === orderId);
-        if (order) {
-          updateData.amount_paid = order.total_amount;
-        }
-      }
+      console.log('Invoking edge function to update payment status:', orderId, paymentStatus, amount);
 
-      const { error } = await supabase
-        .from('orders')
-        .update(updateData)
-        .eq('id', orderId);
+      const { data, error } = await supabase.functions.invoke('update-order-payment', {
+        body: { orderId, status: paymentStatus, amount },
+      });
 
       if (error) throw error;
       
-      // Clear partial payment amount for this order
-      setPartialPaymentAmount(prev => {
-        const newState = { ...prev };
-        delete newState[orderId];
-        return newState;
-      });
-      
-      // Update local state instead of refetching all data
+      // Update local state to reflect the change
       setOrders(prev => prev.map(order => 
-        order.id === orderId ? { ...order, ...updateData } : order
+        order.id === orderId ? { ...order, payment_status: paymentStatus, amount_paid: amount || order.amount_paid } : order
       ));
       
-      toast.success('Statut de paiement mis à jour');
+      toast.success('Statut de paiement mis à jour avec succès');
     } catch (error) {
-      console.error('Error updating payment status:', error);
-      toast.error('Erreur lors de la mise à jour du statut de paiement');
+      console.error('Error updating payment status via edge function:', error);
+      toast.error('Erreur lors de la mise à jour du statut de paiement.');
     }
   };
 
-  const handlePaymentStatusChange = async (orderId: string, paymentStatus: PaymentStatus) => {
-    try {
-      // If setting payment status to pending, cancelled, or refunded, cancel the order
-      if (paymentStatus === 'pending' || paymentStatus === 'refunded') {
-        await cancelOrder(orderId);
-      } else {
-        await updatePaymentStatus(orderId, paymentStatus);
+  const handlePaymentStatusChange = (orderId: string, paymentStatus: PaymentStatus) => {
+    console.log(`handlePaymentStatusChange: Triggered for order ${orderId} with status ${paymentStatus}`);
+    if (paymentStatus === 'partial') {
+      setEditingPartialFor(orderId);
+      // Do not call updatePaymentStatus yet, wait for amount input
+    } else {
+      setEditingPartialFor(null); // Hide input if another status is chosen
+      const order = orders.find(o => o.id === orderId);
+      let amount = undefined;
+      if (paymentStatus === 'paid' && order) {
+        amount = order.total_amount;
       }
-    } catch (error) {
-      console.error('Error handling payment status change:', error);
-      toast.error('Erreur lors de la mise à jour');
+      updatePaymentStatus(orderId, paymentStatus, amount);
     }
   };
 
   const handlePartialPaymentSubmit = (orderId: string) => {
-    const amount = parseFloat(partialPaymentAmount[orderId] || '0');
-    if (amount > 0) {
-      updatePaymentStatus(orderId, 'partial', amount);
+    console.log(`handlePartialPaymentSubmit: Triggered for order ${orderId}`);
+    const amountStr = partialPaymentAmount[orderId];
+    console.log(`handlePartialPaymentSubmit: Amount from state is "${amountStr}"`);
+
+    if (amountStr) {
+      const amount = parseFloat(amountStr);
+      if (!isNaN(amount) && amount > 0) {
+        console.log(`handlePartialPaymentSubmit: Submitting valid amount ${amount}`);
+        updatePaymentStatus(orderId, 'partial', amount);
+        setEditingPartialFor(null); // Close the input field on success
+      } else {
+        toast.error('Veuillez entrer un montant valide.');
+        console.error('handlePartialPaymentSubmit: Invalid amount entered.');
+      }
     } else {
-      toast.error('Veuillez entrer un montant valide');
+      toast.error('Le montant ne peut pas être vide.');
+      console.error('handlePartialPaymentSubmit: Amount is empty.');
     }
   };
 
@@ -894,7 +893,7 @@ const AdminDashboard = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
-            <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+            <TabsTrigger value="overview">Vue d'overview</TabsTrigger>
             <TabsTrigger value="products">Produits</TabsTrigger>
             <TabsTrigger value="categories">Catégories</TabsTrigger>
             <TabsTrigger value="bundles">Kits</TabsTrigger>
@@ -1567,7 +1566,7 @@ const AdminDashboard = () => {
                                       <Label className="text-xs">Statut paiement</Label>
                                       <Select 
                                         value={order.payment_status || 'pending'} 
-                                        onValueChange={(value: PaymentStatus) => updatePaymentStatus(order.id, value)}
+                                        onValueChange={(value: PaymentStatus) => handlePaymentStatusChange(order.id, value)}
                                       >
                                         <SelectTrigger className="h-8">
                                           <SelectValue />
@@ -1579,6 +1578,23 @@ const AdminDashboard = () => {
                                           <SelectItem value="refunded">Remboursé</SelectItem>
                                         </SelectContent>
                                       </Select>
+                                      {editingPartialFor === order.id && (
+                                        <div className="flex items-center gap-2 mt-2">
+                                          <Input
+                                            type="number"
+                                            placeholder="Montant partiel"
+                                            value={partialPaymentAmount[order.id] || ''}
+                                            onChange={(e) => {
+                                              console.log(`Input change for order ${order.id}: ${e.target.value}`);
+                                              setPartialPaymentAmount(prev => ({ ...prev, [order.id]: e.target.value }))
+                                            }}
+                                            className="h-8"
+                                          />
+                                          <Button size="sm" onClick={() => handlePartialPaymentSubmit(order.id)} className="h-8">
+                                            Soumettre
+                                          </Button>
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>

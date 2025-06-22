@@ -13,7 +13,7 @@ import { chromium } from 'playwright';
     // Use the correct selectors for the email and password fields
     await page.fill('#email', process.env.LOVABLE_EMAIL);
     await page.fill('#password', process.env.LOVABLE_PASSWORD);
-    await page.click('button[type="submit"]');
+    await page.click('button:has-text("Log in")');
  
     // Wait for navigation to complete after login
     await page.waitForNavigation();

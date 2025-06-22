@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +67,7 @@ const AdminDashboard = () => {
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editingBundle, setEditingBundle] = useState<any>(null);
   const [partialPaymentAmount, setPartialPaymentAmount] = useState<{[key: string]: string}>({});
+  const [editingPartialFor, setEditingPartialFor] = useState<string | null>(null);
   
   // File upload states
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
@@ -396,20 +397,39 @@ const AdminDashboard = () => {
     }
   };
 
-  const updatePaymentStatus = async (orderId: string, paymentStatus: PaymentStatus, partialAmount?: number) => {
+  const updatePaymentStatus = async (
+    orderId: string,
+    paymentStatus: PaymentStatus,
+    partialAmount?: number
+  ) => {
     try {
-      console.log('Updating payment status:', orderId, paymentStatus, partialAmount);
-      
-      const updateData: any = { payment_status: paymentStatus };
-      
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) throw new Error('Order not found');
+
+      let updateData: any = { payment_status: paymentStatus };
+      let newPartialHistory = Array.isArray(order.partial_payment_history) ? order.partial_payment_history : [];
+
       if (paymentStatus === 'partial' && partialAmount) {
-        updateData.amount_paid = partialAmount;
+        // Add to amount_paid, append to partial_payment_history
+        const newAmountPaid = (order.amount_paid || 0) + partialAmount;
+        updateData.amount_paid = newAmountPaid;
+        updateData.partial_payment_history = [
+          ...newPartialHistory,
+          {
+            amount: partialAmount,
+            date: new Date().toISOString(),
+            by: user?.id || 'admin',
+          },
+        ];
       } else if (paymentStatus === 'paid') {
-        const order = orders.find(o => o.id === orderId);
-        if (order) {
-          updateData.amount_paid = order.total_amount;
-        }
+        updateData.amount_paid = order.total_amount;
+        updateData.partial_payment_history = [];
+      } else if (paymentStatus === 'pending' || paymentStatus === 'refunded') {
+        updateData.amount_paid = 0;
+        updateData.partial_payment_history = [];
       }
+
+      // remaining_balance is a generated column, so no need to update manually
 
       const { error } = await supabase
         .from('orders')
@@ -417,22 +437,16 @@ const AdminDashboard = () => {
         .eq('id', orderId);
 
       if (error) throw error;
-      
-      // Clear partial payment amount for this order
-      setPartialPaymentAmount(prev => {
-        const newState = { ...prev };
-        delete newState[orderId];
-        return newState;
-      });
-      
-      // Update local state instead of refetching all data
-      setOrders(prev => prev.map(order => 
-        order.id === orderId ? { ...order, ...updateData } : order
-      ));
-      
+
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId ? { ...order, ...updateData } : order
+        )
+      );
+
       toast.success('Statut de paiement mis à jour');
     } catch (error) {
-      console.error('Error updating payment status:', error);
+      console.error('[updatePaymentStatus] Error:', error);
       toast.error('Erreur lors de la mise à jour du statut de paiement');
     }
   };
@@ -453,8 +467,10 @@ const AdminDashboard = () => {
 
   const handlePartialPaymentSubmit = (orderId: string) => {
     const amount = parseFloat(partialPaymentAmount[orderId] || '0');
+    console.log(`[Partial Submit] Order: ${orderId}, Entered amount: ${amount}`);
     if (amount > 0) {
       updatePaymentStatus(orderId, 'partial', amount);
+      setEditingPartialFor(null);
     } else {
       toast.error('Veuillez entrer un montant valide');
     }
@@ -1566,8 +1582,16 @@ const AdminDashboard = () => {
                                     <div>
                                       <Label className="text-xs">Statut paiement</Label>
                                       <Select 
-                                        value={order.payment_status || 'pending'} 
-                                        onValueChange={(value: PaymentStatus) => updatePaymentStatus(order.id, value)}
+                                        value={order.payment_status || 'pending'}
+                                        onValueChange={(value: PaymentStatus) => {
+                                          console.log(`[Dropdown] Order: ${order.id}, Selected status: ${value}`);
+                                          if (value === 'partial') {
+                                            setEditingPartialFor(order.id);
+                                          } else {
+                                            updatePaymentStatus(order.id, value);
+                                            setEditingPartialFor(null);
+                                          }
+                                        }}
                                       >
                                         <SelectTrigger className="h-8">
                                           <SelectValue />
@@ -1590,6 +1614,53 @@ const AdminDashboard = () => {
                                     </Badge>
                                   )}
                                 </div>
+
+                                {editingPartialFor === order.id && (
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Input
+                                      type="number"
+                                      placeholder="Montant partiel"
+                                      value={partialPaymentAmount[order.id] || ''}
+                                      onChange={(e) =>
+                                        setPartialPaymentAmount((prev) => ({
+                                          ...prev,
+                                          [order.id]: e.target.value,
+                                        }))
+                                      }
+                                      className="h-8"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        const amount = parseFloat(partialPaymentAmount[order.id] || '0');
+                                        console.log(`[Partial Submit] Order: ${order.id}, Entered amount: ${amount}`);
+                                        if (amount > 0) {
+                                          updatePaymentStatus(order.id, 'partial', amount);
+                                          setEditingPartialFor(null);
+                                        } else {
+                                          toast.error('Veuillez entrer un montant valide');
+                                        }
+                                      }}
+                                      className="h-8"
+                                    >
+                                      Soumettre
+                                    </Button>
+                                  </div>
+                                )}
+
+                                {/* Show partial payment history if exists */}
+                                {Array.isArray(order.partial_payment_history) && order.partial_payment_history.length > 0 && (
+                                  <div className="mt-2">
+                                    <Label className="text-xs">Historique des paiements partiels</Label>
+                                    <ul className="text-xs text-gray-700">
+                                      {order.partial_payment_history.map((entry, idx) => (
+                                        <li key={idx}>
+                                          {entry.amount} DZD le {new Date(entry.date).toLocaleString()}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
                             </CardContent>
                           </Card>

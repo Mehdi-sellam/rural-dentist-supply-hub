@@ -23,11 +23,24 @@ import { chromium } from 'playwright';
     console.log('Navigating to project dashboard...');
     await page.goto('https://lovable.dev/projects/44513973-80d4-47ad-af0b-72c980249b28');
 
-    // Click the necessary buttons to deploy
-    console.log('Starting deployment...');
-    // IMPORTANT: You must find the correct selectors for these buttons
-    await page.click('button:has-text("Share")'); 
-    await page.click('button:has-text("Publish")');
+    // Wait for the page to load and find the project card
+    console.log('Waiting for project card to load...');
+    await page.waitForSelector('body > div.flex.min-h-0.flex-1.flex-col > div > main > div > div > div:nth-child(1) > div.grid.w-full.grid-cols-1.gap-6.md\\:grid-cols-3.lg\\:grid-cols-4 > div:nth-child(1) > a > div > img', { timeout: 30000 });
+    
+    // Click on the project card to open it
+    console.log('Clicking on project card...');
+    await page.click('body > div.flex.min-h-0.flex-1.flex-col > div > main > div > div > div:nth-child(1) > div.grid.w-full.grid-cols-1.gap-6.md\\:grid-cols-3.lg\\:grid-cols-4 > div:nth-child(1) > a');
+    
+    // Wait for the project page to load
+    await page.waitForTimeout(3000);
+    
+    // Click the publish menu
+    console.log('Clicking publish menu...');
+    await page.click('#publish-menu > span');
+    
+    // Wait for the publish menu to open and click the publish button
+    console.log('Clicking publish button...');
+    await page.click('#radix-\\:r74\\: > div.flex.items-center.justify-between.gap-2.pb-2\\.5.pl-2\\.5.pr-4.pt-1\\.5 > div > button:nth-child(2)');
 
     // Optional: Wait for a confirmation message
     await page.waitForSelector('text=Deployment started successfully', { timeout: 60000 });

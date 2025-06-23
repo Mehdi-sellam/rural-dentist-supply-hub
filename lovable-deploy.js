@@ -73,7 +73,33 @@ import { chromium } from 'playwright';
     await projectLink.click();
     
     // Wait for the project page to load
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(5000);
+    
+    // Take a screenshot for debugging
+    console.log('Taking screenshot for debugging...');
+    await page.screenshot({ path: 'project-page.png', fullPage: true });
+    
+    // Debug: Log all buttons and spans on the page
+    console.log('Debugging: Looking for all buttons and spans...');
+    const allButtons = await page.$$('button');
+    const allSpans = await page.$$('span');
+    
+    console.log(`Found ${allButtons.length} buttons and ${allSpans.length} spans`);
+    
+    // Log text content of buttons and spans that might be publish-related
+    for (let i = 0; i < allButtons.length; i++) {
+      const text = await allButtons[i].textContent();
+      if (text && text.toLowerCase().includes('publish')) {
+        console.log(`Button ${i}: "${text}"`);
+      }
+    }
+    
+    for (let i = 0; i < allSpans.length; i++) {
+      const text = await allSpans[i].textContent();
+      if (text && text.toLowerCase().includes('publish')) {
+        console.log(`Span ${i}: "${text}"`);
+      }
+    }
     
     // Try to find the publish menu with the correct selector
     console.log('Looking for publish menu...');
@@ -95,20 +121,50 @@ import { chromium } from 'playwright';
         'button:has-text("Publish")',
         '[data-testid="publish-button"]',
         'button[aria-label*="publish" i]',
-        'button[title*="publish" i]'
+        'button[title*="publish" i]',
+        // Try more general selectors
+        'button',
+        'span',
+        '[role="button"]'
       ];
       
       for (const selector of publishSelectors) {
         try {
           console.log(`Trying publish selector: ${selector}`);
-          await page.waitForSelector(selector, { timeout: 5000 });
-          publishMenu = await page.$(selector);
-          if (publishMenu) {
-            console.log(`Found publish menu with selector: ${selector}`);
+          const elements = await page.$$(selector);
+          console.log(`Found ${elements.length} elements with selector: ${selector}`);
+          
+          for (let i = 0; i < elements.length; i++) {
+            const text = await elements[i].textContent();
+            if (text && text.toLowerCase().includes('publish')) {
+              publishMenu = elements[i];
+              console.log(`Found publish element with text: "${text}"`);
+              break;
+            }
+          }
+          
+          if (publishMenu) break;
+        } catch (error) {
+          console.log(`Publish selector failed: ${selector}`);
+          continue;
+        }
+      }
+    }
+    
+    if (!publishMenu) {
+      // Last resort: try to find any clickable element with "publish" text
+      console.log('Trying to find any element with "publish" text...');
+      const allElements = await page.$$('*');
+      for (const element of allElements) {
+        try {
+          const text = await element.textContent();
+          if (text && text.toLowerCase().includes('publish')) {
+            const tagName = await element.evaluate(el => el.tagName.toLowerCase());
+            console.log(`Found element with "publish" text: ${tagName} - "${text}"`);
+            publishMenu = element;
             break;
           }
         } catch (error) {
-          console.log(`Publish selector failed: ${selector}`);
           continue;
         }
       }
@@ -123,7 +179,11 @@ import { chromium } from 'playwright';
     await publishMenu.click();
     
     // Wait for the publish menu to open and try to find the update button
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
+    
+    // Take another screenshot after clicking publish
+    console.log('Taking screenshot after clicking publish...');
+    await page.screenshot({ path: 'after-publish-click.png', fullPage: true });
     
     // Try to find the update button with the correct selector
     console.log('Looking for update button...');

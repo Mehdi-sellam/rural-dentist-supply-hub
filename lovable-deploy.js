@@ -34,7 +34,7 @@ import { chromium } from 'playwright';
     
     // Type the project name to search for it
     console.log('Searching for project...');
-    await searchBar.fill('rural dentist'); // Search for your project name
+    await searchBar.fill('dent-go'); // Search for the correct project name
     
     // Wait a moment for search results
     await page.waitForTimeout(2000);
@@ -47,7 +47,7 @@ import { chromium } from 'playwright';
     const projectLinks = await page.$$('a[href*="/projects/"]');
     for (const link of projectLinks) {
       const text = await link.textContent();
-      if (text && (text.toLowerCase().includes('rural') || text.toLowerCase().includes('dental'))) {
+      if (text && text.toLowerCase().includes('dent-go')) {
         projectLink = link;
         console.log(`Found project: ${text}`);
         break;
@@ -75,29 +75,42 @@ import { chromium } from 'playwright';
     // Wait for the project page to load
     await page.waitForTimeout(3000);
     
-    // Try multiple approaches to find the publish menu
+    // Try to find the publish menu with the correct selector
     console.log('Looking for publish menu...');
     let publishMenu = null;
-    const publishSelectors = [
-      '#publish-menu > span',
-      'button:has-text("Publish")',
-      '[data-testid="publish-button"]',
-      'button[aria-label*="publish" i]',
-      'button[title*="publish" i]'
-    ];
     
-    for (const selector of publishSelectors) {
-      try {
-        console.log(`Trying publish selector: ${selector}`);
-        await page.waitForSelector(selector, { timeout: 5000 });
-        publishMenu = await page.$(selector);
-        if (publishMenu) {
-          console.log(`Found publish menu with selector: ${selector}`);
-          break;
+    try {
+      console.log('Trying publish menu selector: #publish-menu > span');
+      await page.waitForSelector('#publish-menu > span', { timeout: 10000 });
+      publishMenu = await page.$('#publish-menu > span');
+      if (publishMenu) {
+        console.log('Found publish menu with selector: #publish-menu > span');
+      }
+    } catch (error) {
+      console.log('Publish menu selector failed, trying alternative approaches...');
+      
+      // Try alternative selectors
+      const publishSelectors = [
+        'span:has-text("Publish")',
+        'button:has-text("Publish")',
+        '[data-testid="publish-button"]',
+        'button[aria-label*="publish" i]',
+        'button[title*="publish" i]'
+      ];
+      
+      for (const selector of publishSelectors) {
+        try {
+          console.log(`Trying publish selector: ${selector}`);
+          await page.waitForSelector(selector, { timeout: 5000 });
+          publishMenu = await page.$(selector);
+          if (publishMenu) {
+            console.log(`Found publish menu with selector: ${selector}`);
+            break;
+          }
+        } catch (error) {
+          console.log(`Publish selector failed: ${selector}`);
+          continue;
         }
-      } catch (error) {
-        console.log(`Publish selector failed: ${selector}`);
-        continue;
       }
     }
     
@@ -109,41 +122,54 @@ import { chromium } from 'playwright';
     console.log('Clicking publish menu...');
     await publishMenu.click();
     
-    // Wait for the publish menu to open and try to find the publish button
+    // Wait for the publish menu to open and try to find the update button
     await page.waitForTimeout(1000);
     
-    // Try multiple approaches to find the actual publish button
-    let publishButton = null;
-    const publishButtonSelectors = [
-      '#radix-\\:r74\\: > div.flex.items-center.justify-between.gap-2.pb-2\\.5.pl-2\\.5.pr-4.pt-1\\.5 > div > button:nth-child(2)',
-      'button:has-text("Deploy")',
-      'button:has-text("Publish")',
-      'button[type="submit"]',
-      'button[class*="primary"]'
-    ];
+    // Try to find the update button with the correct selector
+    console.log('Looking for update button...');
+    let updateButton = null;
     
-    for (const selector of publishButtonSelectors) {
-      try {
-        console.log(`Trying publish button selector: ${selector}`);
-        await page.waitForSelector(selector, { timeout: 5000 });
-        publishButton = await page.$(selector);
-        if (publishButton) {
-          console.log(`Found publish button with selector: ${selector}`);
-          break;
+    try {
+      console.log('Trying update button selector: #radix-\\:r1c1\\: > div.flex.items-center.justify-between.gap-2.pb-2\\.5.pl-2\\.5.pr-4.pt-1\\.5 > div > button:nth-child(2)');
+      await page.waitForSelector('#radix-\\:r1c1\\: > div.flex.items-center.justify-between.gap-2.pb-2\\.5.pl-2\\.5.pr-4.pt-1\\.5 > div > button:nth-child(2)', { timeout: 10000 });
+      updateButton = await page.$('#radix-\\:r1c1\\: > div.flex.items-center.justify-between.gap-2.pb-2\\.5.pl-2\\.5.pr-4.pt-1\\.5 > div > button:nth-child(2)');
+      if (updateButton) {
+        console.log('Found update button with specific selector');
+      }
+    } catch (error) {
+      console.log('Update button selector failed, trying alternative approaches...');
+      
+      // Try alternative selectors for the update button
+      const updateButtonSelectors = [
+        'button:has-text("Update")',
+        'button[class*="bg-secondary"]',
+        'button[type="submit"]',
+        'button[class*="primary"]'
+      ];
+      
+      for (const selector of updateButtonSelectors) {
+        try {
+          console.log(`Trying update button selector: ${selector}`);
+          await page.waitForSelector(selector, { timeout: 5000 });
+          updateButton = await page.$(selector);
+          if (updateButton) {
+            console.log(`Found update button with selector: ${selector}`);
+            break;
+          }
+        } catch (error) {
+          console.log(`Update button selector failed: ${selector}`);
+          continue;
         }
-      } catch (error) {
-        console.log(`Publish button selector failed: ${selector}`);
-        continue;
       }
     }
     
-    if (!publishButton) {
-      throw new Error('Could not find publish button');
+    if (!updateButton) {
+      throw new Error('Could not find update button');
     }
     
-    // Click the publish button
-    console.log('Clicking publish button...');
-    await publishButton.click();
+    // Click the update button
+    console.log('Clicking update button...');
+    await updateButton.click();
 
     // Wait for a confirmation message or any success indicator
     try {

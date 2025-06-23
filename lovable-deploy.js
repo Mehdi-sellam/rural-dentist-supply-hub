@@ -19,65 +19,58 @@ import { chromium } from 'playwright';
     await page.waitForNavigation();
     console.log('Login successful.');
 
-    // Navigate directly to your project's page
-    console.log('Navigating to project dashboard...');
-    await page.goto('https://lovable.dev/projects/44513973-80d4-47ad-af0b-72c980249b28');
+    // Navigate to the projects page
+    console.log('Navigating to projects page...');
+    await page.goto('https://lovable.dev/projects');
 
-    // Wait for the page to load and try multiple approaches to find the project card
-    console.log('Waiting for project card to load...');
+    // Wait for the search bar to be available
+    console.log('Waiting for search bar...');
+    await page.waitForSelector('input[placeholder="Search projects..."]', { timeout: 15000 });
     
-    // Wait for the page to be fully loaded
-    await page.waitForLoadState('networkidle');
+    // Find and click the search bar
+    console.log('Clicking search bar...');
+    const searchBar = await page.$('input[placeholder="Search projects..."]');
+    await searchBar.click();
     
-    // Try multiple selectors to find the project card
-    let projectCard = null;
-    const selectors = [
-      // Try the original selector first
-      'body > div.flex.min-h-0.flex-1.flex-col > div > main > div > div > div:nth-child(1) > div.grid.w-full.grid-cols-1.gap-6.md\\:grid-cols-3.lg\\:grid-cols-4 > div:nth-child(1) > a',
-      // Fallback: look for any project card link
-      'a[href*="/projects/"]',
-      // Fallback: look for cards with images
-      'div:has(img) > a',
-      // Fallback: look for any clickable card
-      'div[class*="card"] a, div[class*="Card"] a'
-    ];
+    // Type the project name to search for it
+    console.log('Searching for project...');
+    await searchBar.fill('rural dentist'); // Search for your project name
     
-    for (const selector of selectors) {
-      try {
-        console.log(`Trying selector: ${selector}`);
-        await page.waitForSelector(selector, { timeout: 10000 });
-        projectCard = await page.$(selector);
-        if (projectCard) {
-          console.log(`Found project card with selector: ${selector}`);
-          break;
-        }
-      } catch (error) {
-        console.log(`Selector failed: ${selector}`);
-        continue;
+    // Wait a moment for search results
+    await page.waitForTimeout(2000);
+    
+    // Look for the project in search results
+    console.log('Looking for project in search results...');
+    let projectLink = null;
+    
+    // Try to find the project by looking for links that contain the project name
+    const projectLinks = await page.$$('a[href*="/projects/"]');
+    for (const link of projectLinks) {
+      const text = await link.textContent();
+      if (text && (text.toLowerCase().includes('rural') || text.toLowerCase().includes('dental'))) {
+        projectLink = link;
+        console.log(`Found project: ${text}`);
+        break;
       }
     }
     
-    if (!projectCard) {
-      // If no selector worked, try to find by text content
-      console.log('Trying to find project by text content...');
-      const projectLinks = await page.$$('a');
-      for (const link of projectLinks) {
-        const text = await link.textContent();
-        if (text && text.toLowerCase().includes('rural') || text.toLowerCase().includes('dental')) {
-          projectCard = link;
-          console.log(`Found project card by text: ${text}`);
-          break;
-        }
+    if (!projectLink) {
+      // If not found by text, try to click the first project link
+      console.log('Project not found by name, trying first project link...');
+      const firstProjectLink = await page.$('a[href*="/projects/"]');
+      if (firstProjectLink) {
+        projectLink = firstProjectLink;
+        console.log('Using first project link found');
       }
     }
     
-    if (!projectCard) {
-      throw new Error('Could not find project card with any selector');
+    if (!projectLink) {
+      throw new Error('Could not find any project to deploy');
     }
     
-    // Click on the project card to open it
-    console.log('Clicking on project card...');
-    await projectCard.click();
+    // Click on the project to open it
+    console.log('Clicking on project...');
+    await projectLink.click();
     
     // Wait for the project page to load
     await page.waitForTimeout(3000);

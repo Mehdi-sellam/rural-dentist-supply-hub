@@ -3,8 +3,8 @@ import { chromium } from 'playwright';
 
 (async () => {
   const browser = await chromium.launch({ 
-    headless: false, // Set to false for debugging, change back to true for production
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    headless: true, // Keep headless for GitHub Actions
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
   });
   const page = await browser.newPage();
 
@@ -65,6 +65,10 @@ import { chromium } from 'playwright';
     await projectLink.click();
     
     await page.waitForTimeout(5000);
+    
+    // Set a large viewport to ensure responsive elements are visible
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.waitForTimeout(2000);
     
     console.log('Taking screenshot for debugging...');
     await page.screenshot({ path: 'project-page.png', fullPage: true });

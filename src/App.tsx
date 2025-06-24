@@ -8,6 +8,9 @@ import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import FAQ from '@/pages/FAQ';
 import Shop from '@/pages/Shop';
+import Catalog from '@/pages/Catalog';
+import Bundles from '@/pages/Bundles';
+import Cart from '@/pages/Cart';
 
 // Simple Home page
 const HomePage = () => {
@@ -70,6 +73,9 @@ const App = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/catalog" element={<Catalog />} />
+          <Route path="/bundles" element={<Bundles />} />
+          <Route path="/cart" element={<Cart />} />
         </Routes>
       </main>
       <Footer />

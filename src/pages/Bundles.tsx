@@ -27,6 +27,7 @@ const Bundles = () => {
   const { addBundle } = useCart();
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBundles();
@@ -34,25 +35,46 @@ const Bundles = () => {
 
   const fetchBundles = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      console.log('[Bundles] Fetching bundles from Supabase...');
+      if (!supabase) {
+        throw new Error('Supabase client is not configured.');
+      }
       const { data, error } = await supabase
         .from('bundles')
         .select('*')
         .order('popular', { ascending: false });
 
       if (error) {
-        console.error('Error fetching bundles:', error);
+        console.error('[Bundles] Error fetching bundles:', error);
+        setError('Erreur lors du chargement des kits.');
         toast.error('Erreur lors du chargement des kits');
         return;
       }
 
       setBundles(data || []);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Erreur lors du chargement des kits');
+    } catch (error: any) {
+      console.error('[Bundles] Error:', error);
+      setError('Erreur de connexion ou configuration Supabase.');
+      toast.error('Erreur de connexion ou configuration Supabase.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Timeout fallback for loading
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        if (loading) {
+          setError('Chargement trop long. Problème de connexion ou de configuration.');
+          setLoading(false);
+        }
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   const handleAddBundle = (bundle: Bundle) => {
     const cartBundle = {
@@ -73,9 +95,21 @@ const Bundles = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
-        <div className="container mx-auto px-4 py-16 text-center">
-          <p>Chargement des kits...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement des kits...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 font-bold text-lg mb-2">{error}</p>
+          <p className="text-muted-foreground">Vérifiez la configuration Supabase et la connexion internet.<br/>Contactez le support si le problème persiste.</p>
         </div>
       </div>
     );

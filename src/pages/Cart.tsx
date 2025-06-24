@@ -15,6 +15,8 @@ const Cart = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
+  console.log('[Cart] Rendering cart with', items.length, 'items and', bundles.length, 'bundles');
+
   const generateWhatsAppOrder = () => {
     let message = "Bonjour! J'aimerais passer une commande:\n\n";
     items.forEach(item => {

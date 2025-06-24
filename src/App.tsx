@@ -2,12 +2,14 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
+import CategoryGrid from '@/components/CategoryGrid';
 
 // Simple Home page
 const HomePage = () => {
   return (
     <div className="min-h-screen">
       <HeroSection />
+      <CategoryGrid />
       <div className="bg-gray-50 p-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -25,6 +27,7 @@ const HomePage = () => {
               <li>✅ Components are rendering</li>
               <li>✅ Original Header component added</li>
               <li>✅ HeroSection component added</li>
+              <li>✅ CategoryGrid component added</li>
             </ul>
           </div>
         </div>

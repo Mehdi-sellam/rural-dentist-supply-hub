@@ -16,18 +16,24 @@ if (rootElement) {
   console.log('Creating React root...');
   const root = createRoot(rootElement);
   console.log('Rendering App component with all providers...');
-  root.render(
-    <BrowserRouter>
-      <LanguageProvider>
-        <AuthProvider>
-          <CartProvider>
-            <App />
-          </CartProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </BrowserRouter>
-  );
-  console.log('App component rendered with all providers');
+  
+  try {
+    root.render(
+      <BrowserRouter>
+        <LanguageProvider>
+          <AuthProvider>
+            <CartProvider>
+              <App />
+            </CartProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </BrowserRouter>
+    );
+    console.log('App component rendered with all providers');
+  } catch (error) {
+    console.error('Error rendering app:', error);
+    rootElement.innerHTML = `<h1>Rendering Error: ${error}</h1>`;
+  }
 } else {
   console.error('Root element not found!');
   document.body.innerHTML = '<h1>ERROR: Root element not found!</h1>';

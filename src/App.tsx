@@ -72,35 +72,41 @@ const App = () => {
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
         <ErrorBoundary>
+          <div>Loading Header...</div>
           <Header />
         </ErrorBoundary>
         
         <main>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/bundles" element={<Bundles />} />
-            <Route path="/catalog" element={<Catalog />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/order-confirmation" element={<OrderConfirmation />} />
-            <Route path="/loyalty" element={<Loyalty />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <ErrorBoundary>
+            <div>Loading Routes...</div>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/bundles" element={<Bundles />} />
+              <Route path="/catalog" element={<Catalog />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/account" element={<Account />} />
+              <Route path="/order-confirmation" element={<OrderConfirmation />} />
+              <Route path="/loyalty" element={<Loyalty />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
 
         <ErrorBoundary>
+          <div>Loading Footer...</div>
           <Footer />
         </ErrorBoundary>
         
         <ErrorBoundary>
+          <div>Loading WhatsApp...</div>
           <WhatsAppFloat />
         </ErrorBoundary>
       </div>

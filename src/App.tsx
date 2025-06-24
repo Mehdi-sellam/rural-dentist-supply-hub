@@ -1,4 +1,30 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Header from '@/components/Header';
+import HeroSection from '@/components/HeroSection';
+import FeaturedProducts from '@/components/FeaturedProducts';
+import CategoryGrid from '@/components/CategoryGrid';
+import BundleOffers from '@/components/BundleOffers';
+import TestimonialsSection from '@/components/TestimonialsSection';
+import InfoSection from '@/components/InfoSection';
+import Footer from '@/components/Footer';
+import WhatsAppFloat from '@/components/WhatsAppFloat';
+import Index from '@/pages/Index';
+import Shop from '@/pages/Shop';
+import Bundles from '@/pages/Bundles';
+import Catalog from '@/pages/Catalog';
+import About from '@/pages/About';
+import Contact from '@/pages/Contact';
+import Auth from '@/pages/Auth';
+import Cart from '@/pages/Cart';
+import Checkout from '@/pages/Checkout';
+import Dashboard from '@/pages/Dashboard';
+import AdminDashboard from '@/pages/AdminDashboard';
+import Account from '@/pages/Account';
+import OrderConfirmation from '@/pages/OrderConfirmation';
+import Loyalty from '@/pages/Loyalty';
+import FAQ from '@/pages/FAQ';
+import NotFound from '@/pages/NotFound';
 
 // Error Boundary Component
 interface ErrorBoundaryState {
@@ -39,78 +65,44 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
-// Simple Header without Router dependencies
-const SimpleHeader = () => {
-  try {
-    console.log('Loading Simple Header component...');
-    return (
-      <header style={{ 
-        padding: '10px 20px', 
-        backgroundColor: '#f8f9fa', 
-        borderBottom: '1px solid #dee2e6',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ 
-            width: '32px', 
-            height: '32px', 
-            backgroundColor: '#007bff', 
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}>
-            DG
-          </div>
-          <span style={{ fontWeight: 'bold', fontSize: '20px', color: '#007bff' }}>
-            DentGo
-          </span>
-        </div>
-        <nav style={{ display: 'flex', gap: '20px' }}>
-          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>Home</a>
-          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>Shop</a>
-          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>About</a>
-          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>Contact</a>
-        </nav>
-      </header>
-    );
-  } catch (error) {
-    console.error('Simple Header component error:', error);
-    return <div>Header Error: {(error as Error).message}</div>;
-  }
-};
-
-// Simple test components to isolate issues
-const TestHero = () => {
-  try {
-    console.log('Loading Hero component...');
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Hero Section</div>;
-  } catch (error) {
-    console.error('Hero component error:', error);
-    return <div>Hero Error: {(error as Error).message}</div>;
-  }
-};
-
 const App = () => {
   console.log('App component is rendering');
 
   return (
     <ErrorBoundary>
-      <div style={{ fontFamily: 'Arial, sans-serif' }}>
+      <div className="min-h-screen bg-background">
         <ErrorBoundary>
-          <SimpleHeader />
+          <Header />
         </ErrorBoundary>
-        <TestHero />
-        <div style={{ padding: '20px' }}>
-          <h1>DentGo - Components Test</h1>
-          <p>Testing individual components...</p>
-          <p>Current time: {new Date().toLocaleString()}</p>
-        </div>
+        
+        <main>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/bundles" element={<Bundles />} />
+            <Route path="/catalog" element={<Catalog />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/order-confirmation" element={<OrderConfirmation />} />
+            <Route path="/loyalty" element={<Loyalty />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+
+        <ErrorBoundary>
+          <Footer />
+        </ErrorBoundary>
+        
+        <ErrorBoundary>
+          <WhatsAppFloat />
+        </ErrorBoundary>
       </div>
     </ErrorBoundary>
   );

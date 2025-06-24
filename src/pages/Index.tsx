@@ -1,12 +1,9 @@
-
 import React from 'react';
-import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import CategoryGrid from '@/components/CategoryGrid';
 import InfoSection from '@/components/InfoSection';
 import BundleOffers from '@/components/BundleOffers';
 import TestimonialsSection from '@/components/TestimonialsSection';
-import Footer from '@/components/Footer';
 
 const Index = () => {
   // Scroll to top when component mounts
@@ -16,13 +13,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
-      <Header />
       <HeroSection />
       <CategoryGrid />
       <InfoSection />
       <BundleOffers />
       <TestimonialsSection />
-      <Footer />
     </div>
   );
 };

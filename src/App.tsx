@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import Header from '@/components/Header';
 
 // Error Boundary Component
 interface ErrorBoundaryState {
@@ -40,16 +41,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 }
 
 // Simple test components to isolate issues
-const TestHeader = () => {
-  try {
-    console.log('Loading Header component...');
-    return <div style={{ padding: '10px', backgroundColor: '#f0f0f0' }}>Header Component</div>;
-  } catch (error) {
-    console.error('Header component error:', error);
-    return <div>Header Error: {(error as Error).message}</div>;
-  }
-};
-
 const TestHero = () => {
   try {
     console.log('Loading Hero component...');
@@ -66,7 +57,9 @@ const App = () => {
   return (
     <ErrorBoundary>
       <div style={{ fontFamily: 'Arial, sans-serif' }}>
-        <TestHeader />
+        <ErrorBoundary>
+          <Header />
+        </ErrorBoundary>
         <TestHero />
         <div style={{ padding: '20px' }}>
           <h1>DentGo - Components Test</h1>

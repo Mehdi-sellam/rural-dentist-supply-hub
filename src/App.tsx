@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -61,7 +61,58 @@ const AboutPage = () => {
 };
 
 const App = () => {
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   console.log('App component is rendering');
+
+  useEffect(() => {
+    // Set a timeout to prevent infinite loading
+    const timer = setTimeout(() => {
+      if (!isReady) {
+        console.log('App: Timeout reached, forcing ready state');
+        setIsReady(true);
+      }
+    }, 5000);
+
+    // Try to initialize the app
+    try {
+      console.log('App: Initializing...');
+      // Simulate initialization
+      setTimeout(() => {
+        console.log('App: Initialization complete');
+        setIsReady(true);
+      }, 100);
+    } catch (err) {
+      console.error('App: Initialization error:', err);
+      setError('Failed to initialize application');
+      setIsReady(true);
+    }
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Initializing DentGo...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 font-bold text-lg mb-2">{error}</p>
+          <p className="text-muted-foreground">Please refresh the page or contact support.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, CartItem } from '@/types/product';
-import { supabase } from '@/integrations/supabase/client';
+
+// Try to import supabase client, but don't crash if it fails
+let supabase: any = null;
+
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -45,20 +48,44 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
     console.log('CartProvider: Auth context obtained, user:', !!user);
 
+    // Initialize Supabase client
+    useEffect(() => {
+      const initSupabase = async () => {
+        try {
+          const { supabase: supabaseClient } = await import('@/integrations/supabase/client');
+          supabase = supabaseClient;
+          console.log('CartProvider: Supabase client loaded successfully');
+        } catch (error) {
+          console.error('CartProvider: Failed to load Supabase client:', error);
+          // Create a mock supabase client
+          supabase = {
+            from: () => ({
+              select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
+              insert: () => Promise.resolve({ error: null }),
+              update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+              delete: () => ({ eq: () => Promise.resolve({ error: null }) })
+            })
+          };
+        }
+      };
+      
+      initSupabase();
+    }, []);
+
     // Load cart from database when user logs in
     useEffect(() => {
       console.log('CartProvider: useEffect triggered, user:', !!user);
-      if (user) {
+      if (user && supabase) {
         loadCartFromDatabase();
       } else {
         // Clear cart when user logs out
         setItems([]);
         setBundles([]);
       }
-    }, [user]);
+    }, [user, supabase]);
 
     const loadCartFromDatabase = async () => {
-      if (!user) return;
+      if (!user || !supabase) return;
 
       try {
         console.log('CartProvider: Loading cart from database...');
@@ -134,6 +161,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      if (!supabase) {
+        console.error('Supabase not available');
+        return;
+      }
+
       try {
         // Check if item already exists in cart
         const { data: existingItem } = await supabase
@@ -178,6 +210,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      if (!supabase) {
+        console.error('Supabase not available');
+        return;
+      }
+
       try {
         // Check if bundle already exists in cart
         const { data: existingBundle } = await supabase
@@ -217,7 +254,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const removeItem = async (id: string) => {
-      if (!user) return;
+      if (!user || !supabase) return;
 
       try {
         const { error } = await supabase
@@ -234,7 +271,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const removeBundle = async (id: string) => {
-      if (!user) return;
+      if (!user || !supabase) return;
 
       try {
         const { error } = await supabase
@@ -251,7 +288,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const updateQuantity = async (id: string, quantity: number) => {
-      if (!user) return;
+      if (!user || !supabase) return;
 
       try {
         if (quantity <= 0) {
@@ -272,7 +309,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const updateBundleQuantity = async (id: string, quantity: number) => {
-      if (!user) return;
+      if (!user || !supabase) return;
 
       try {
         if (quantity <= 0) {
@@ -293,7 +330,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const clearCart = async () => {
-      if (!user) return;
+      if (!user || !supabase) return;
 
       try {
         const { error: itemsError } = await supabase

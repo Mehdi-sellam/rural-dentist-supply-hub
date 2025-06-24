@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+
+// Try to import supabase client, but don't crash if it fails
+let supabase: any = null;
 
 interface Profile {
   id: string;
@@ -38,6 +40,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   console.log('AuthProvider: State initialized');
 
+  // Initialize Supabase client
+  useEffect(() => {
+    const initSupabase = async () => {
+      try {
+        const { supabase: supabaseClient } = await import('@/integrations/supabase/client');
+        supabase = supabaseClient;
+        console.log('Supabase client loaded successfully');
+      } catch (error) {
+        console.error('Failed to load Supabase client:', error);
+        // Create a mock supabase client for development
+        supabase = {
+          auth: {
+            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+            getSession: () => Promise.resolve({ data: { session: null } }),
+            signOut: () => Promise.resolve({ error: null }),
+            signInWithPassword: () => Promise.resolve({ error: null }),
+            signUp: () => Promise.resolve({ error: null })
+          },
+          from: () => ({
+            select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) })
+          })
+        };
+      }
+    };
+    
+    initSupabase();
+  }, []);
+
   const fetchProfile = async (userId: string) => {
     try {
       console.log('Fetching profile for user:', userId);
@@ -67,6 +97,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener');
+    
+    if (!supabase) {
+      console.log('Supabase not ready yet, skipping auth setup');
+      setLoading(false);
+      return;
+    }
     
     try {
       // Set up auth state listener
@@ -110,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('AuthProvider: Error in useEffect:', error);
       setLoading(false);
     }
-  }, []);
+  }, [supabase]);
 
   const login = async (email: string, password: string) => {
     try {

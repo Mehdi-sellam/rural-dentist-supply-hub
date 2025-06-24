@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    # Uncomment and set these if you want to use environment variables instead of hardcoding in your code
+    environment:
+      - VITE_SUPABASE_URL=https://pmjrssmcyuyjxpvojmfk.supabase.co
+      - VITE_SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtanJzc21jeXV5anhwdm9qbWZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0OTAzNjksImV4cCI6MjA2NTA2NjM2OX0.5Op3LafYuybBnHZUbwbAs0h5Mvyv-5NXrDPLqx18dFU 

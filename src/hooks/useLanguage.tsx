@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode } from 'react';
 
 interface LanguageContextType {
@@ -166,9 +165,13 @@ const translations = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+  console.log('LanguageProvider: Initializing...');
+  
   const t = (key: string): string => {
     return translations[key] || key;
   };
+
+  console.log('LanguageProvider: Rendering with translations loaded');
 
   return (
     <LanguageContext.Provider value={{ t }}>

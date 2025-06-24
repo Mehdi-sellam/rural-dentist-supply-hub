@@ -16,12 +16,6 @@ export default defineConfig({
     minify: 'esbuild',
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-        },
-      },
     },
   },
   plugins: [react()],
@@ -29,8 +23,5 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
   },
 });

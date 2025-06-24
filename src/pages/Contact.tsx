@@ -6,8 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MapPin, Phone, Mail, Clock, MessageCircle, Send } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 
 const Contact = () => {
@@ -62,8 +60,6 @@ Message: ${formData.message}`;
 
   return (
     <div className="min-h-screen">
-      <Header />
-      
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="text-center mb-12">
@@ -200,51 +196,35 @@ Message: ${formData.message}`;
               </CardContent>
             </Card>
 
+            {/* FAQ Section */}
             <Card className="border-border">
               <CardHeader>
-                <CardTitle className="heading-professional">Contact direct</CardTitle>
+                <CardTitle className="heading-professional">Questions fréquentes</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground text-professional mb-4">
-                  Pour une réponse rapide, contactez-nous directement :
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full gap-2 border-border"
-                  onClick={() => window.open('https://wa.me/213XXXXXXXXX?text=Bonjour! J\'aimerais obtenir des informations sur vos produits dentaires.', '_blank')}
-                >
-                  <MessageCircle className="w-4 h-4 text-green-600" />
-                  Contacter via WhatsApp
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full gap-2 border-border"
-                  onClick={() => window.open('https://t.me/+213XXXXXXXXX?text=Bonjour! J\'aimerais obtenir des informations sur vos produits dentaires.', '_blank')}
-                >
-                  <Send className="w-4 h-4 text-blue-600" />
-                  Contacter via Telegram
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="p-6">
-                <h3 className="font-bold text-lg mb-3 heading-professional text-primary">
-                  Zones de livraison
-                </h3>
-                <div className="space-y-2 text-sm text-professional">
-                  <p>🚚 <strong>Alger:</strong> Livraison chaque Lundi</p>
-                  <p>🚚 <strong>Blida:</strong> Livraison chaque Mardi</p>
-                  <p>🚚 <strong>Tipaza:</strong> Livraison chaque Mercredi</p>
-                  <p>🚚 <strong>Boumerdès:</strong> Livraison chaque Jeudi</p>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-professional">Comment commander ?</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Vous pouvez commander via notre site web, par téléphone ou WhatsApp.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-professional">Délais de livraison ?</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Livraison 24-48h dans les grandes villes, 48h garantie dans les zones rurales.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-professional">Modes de paiement ?</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Paiement à la livraison, virement bancaire, ou paiement échelonné.
+                  </p>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 };

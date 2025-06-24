@@ -80,7 +80,12 @@ const App = () => {
           <ErrorBoundary>
             <div>Loading Routes...</div>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={
+                <ErrorBoundary>
+                  <div>Loading Index page...</div>
+                  <Index />
+                </ErrorBoundary>
+              } />
               <Route path="/shop" element={<Shop />} />
               <Route path="/bundles" element={<Bundles />} />
               <Route path="/catalog" element={<Catalog />} />

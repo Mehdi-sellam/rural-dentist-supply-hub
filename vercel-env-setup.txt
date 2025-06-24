@@ -1,0 +1,32 @@
+# Vercel Environment Variables Setup
+# Copy and paste these into your Vercel dashboard
+
+# Go to: https://vercel.com/dashboard
+# Select your project
+# Go to Settings → Environment Variables
+# Add these variables:
+
+# Variable 1:
+# Name: VITE_SUPABASE_URL
+# Value: https://pmjrssmcyuyjxpvojmfk.supabase.co
+# Environment: Production, Preview, Development
+
+# Variable 2:
+# Name: VITE_SUPABASE_KEY
+# Value: (your actual anon key from Supabase dashboard)
+# Environment: Production, Preview, Development
+
+# To get your Supabase anon key:
+# 1. Go to https://supabase.com/dashboard
+# 2. Select your project (pmjrssmcyuyjxpvojmfk)
+# 3. Go to Settings → API
+# 4. Copy the "anon public" key (starts with "eyJ...")
+
+# After adding the variables:
+# 1. Save the environment variables
+# 2. Redeploy your project
+# 3. Your app should now work with Supabase!
+
+# Example .env file format (for local development):
+VITE_SUPABASE_URL=https://pmjrssmcyuyjxpvojmfk.supabase.co
+VITE_SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your_actual_key_here 

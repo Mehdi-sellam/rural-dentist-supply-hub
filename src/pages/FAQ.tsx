@@ -1,10 +1,7 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, MessageCircle, Phone, Mail } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 const FAQ = () => {
   const [openItems, setOpenItems] = useState<number[]>([]);
@@ -90,8 +87,6 @@ const FAQ = () => {
 
   return (
     <div className="min-h-screen">
-      <Header />
-      
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-50 to-green-50 py-16 px-4">
         <div className="container mx-auto text-center">
@@ -183,8 +178,6 @@ const FAQ = () => {
           </Card>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 };

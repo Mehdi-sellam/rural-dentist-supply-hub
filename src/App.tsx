@@ -1,10 +1,12 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import HeroSection from '@/components/HeroSection';
 import CategoryGrid from '@/components/CategoryGrid';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
+import FAQ from '@/pages/FAQ';
 
 // Simple Home page
 const HomePage = () => {
@@ -65,8 +67,10 @@ const App = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/faq" element={<FAQ />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 };

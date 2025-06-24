@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import CategoryGrid from '@/components/CategoryGrid';
+import About from '@/pages/About';
 
 // Simple Home page
 const HomePage = () => {
@@ -61,7 +62,7 @@ const App = () => {
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
+          <Route path="/about" element={<About />} />
         </Routes>
       </main>
     </div>

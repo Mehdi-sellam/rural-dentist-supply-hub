@@ -19,6 +19,7 @@ const Shop = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { addItem } = useCart();
   const { t } = useLanguage();
 
@@ -27,20 +28,24 @@ const Shop = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+        setError(null);
+        console.log('[Shop] Fetching categories from Supabase...');
+        if (!supabase) {
+          throw new Error('Supabase client is not configured.');
+        }
         // Fetch categories
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('categories')
           .select('*');
-
         if (categoriesError) {
-          console.error('Error fetching categories:', categoriesError);
+          console.error('[Shop] Error fetching categories:', categoriesError);
+          setError('Erreur lors du chargement des catégories.');
           toast.error('Erreur lors du chargement des catégories');
         } else {
           setCategories(categoriesData || []);
         }
-
         // Fetch products with category information
+        console.log('[Shop] Fetching products from Supabase...');
         const { data: productsData, error: productsError } = await supabase
           .from('products')
           .select(`
@@ -51,24 +56,36 @@ const Shop = () => {
               icon
             )
           `);
-
         if (productsError) {
-          console.error('Error fetching products:', productsError);
+          console.error('[Shop] Error fetching products:', productsError);
+          setError('Erreur lors du chargement des produits.');
           toast.error('Erreur lors du chargement des produits');
         } else {
           setProducts(productsData || []);
         }
-
-      } catch (error) {
-        console.error('Exception fetching data:', error);
-        toast.error('Erreur de connexion');
+      } catch (error: any) {
+        console.error('[Shop] Exception fetching data:', error);
+        setError('Erreur de connexion ou configuration Supabase.');
+        toast.error('Erreur de connexion ou configuration Supabase.');
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
+
+  // Timeout fallback for loading
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        if (loading) {
+          setError('Chargement trop long. Problème de connexion ou de configuration.');
+          setLoading(false);
+        }
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name_fr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -77,11 +94,9 @@ const Shop = () => {
                          product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.product_id?.includes(searchTerm);
-    
     const matchesCategory = !selectedCategory || 
                           product.category_id === selectedCategory ||
                           product.categories?.id === selectedCategory;
-    
     return matchesSearch && matchesCategory;
   });
 
@@ -112,14 +127,21 @@ const Shop = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Chargement des produits...</p>
-            </div>
-          </div>
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement des produits...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 font-bold text-lg mb-2">{error}</p>
+          <p className="text-muted-foreground">Vérifiez la configuration Supabase et la connexion internet.<br/>Contactez le support si le problème persiste.</p>
         </div>
       </div>
     );

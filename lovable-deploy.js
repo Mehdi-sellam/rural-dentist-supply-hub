@@ -2,7 +2,10 @@
 import { chromium } from 'playwright';
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ 
+    headless: false, // Set to false for debugging, change back to true for production
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
   const page = await browser.newPage();
 
   try {
@@ -66,46 +69,101 @@ import { chromium } from 'playwright';
     console.log('Taking screenshot for debugging...');
     await page.screenshot({ path: 'project-page.png', fullPage: true });
     
+    // Enhanced debugging: Log all buttons and their properties
+    console.log('=== DEBUGGING: Analyzing all buttons ===');
+    const allButtons = await page.$$('button');
+    console.log(`Found ${allButtons.length} buttons on the page`);
+    
+    for (let i = 0; i < allButtons.length; i++) {
+      try {
+        const button = allButtons[i];
+        const text = await button.textContent();
+        const id = await button.getAttribute('id');
+        const className = await button.getAttribute('class');
+        const ariaLabel = await button.getAttribute('aria-label');
+        const dataTestId = await button.getAttribute('data-testid');
+        const isVisible = await button.isVisible();
+        
+        console.log(`Button ${i}: id="${id}" class="${className}" text="${text}" aria-label="${ariaLabel}" data-testid="${dataTestId}" visible=${isVisible}`);
+        
+        // Check if this button contains "publish" in any way
+        if (text && text.toLowerCase().includes('publish')) {
+          console.log(`*** FOUND PUBLISH BUTTON: Button ${i} ***`);
+        }
+        if (id && id.toLowerCase().includes('publish')) {
+          console.log(`*** FOUND PUBLISH BUTTON BY ID: Button ${i} ***`);
+        }
+        if (className && className.toLowerCase().includes('publish')) {
+          console.log(`*** FOUND PUBLISH BUTTON BY CLASS: Button ${i} ***`);
+        }
+      } catch (error) {
+        console.log(`Button ${i}: Error getting properties`);
+      }
+    }
+    
     console.log('Looking for publish button...');
     let publishButton = null;
     
-    try {
-      console.log('Trying publish button selector: #publish-menu');
-      await page.waitForSelector('#publish-menu', { timeout: 10000 });
-      publishButton = await page.$('#publish-menu');
-      if (publishButton) {
-        console.log('Found publish button with ID selector: #publish-menu');
-      }
-    } catch (error) {
-      console.log('Publish button ID selector failed, trying alternative approaches...');
-      
-      const publishSelectors = [
-        'button:has-text("Publish")',
-        'button span:has-text("Publish")',
-        'button[class*="bg-affirmative-primary"]',
-        'button[class*="publish"]',
-        '[data-testid="publish-button"]',
-        'button[aria-label*="publish" i]',
-        'button[title*="publish" i]'
-      ];
-      
-      for (const selector of publishSelectors) {
-        try {
-          console.log(`Trying publish selector: ${selector}`);
-          await page.waitForSelector(selector, { timeout: 5000 });
-          publishButton = await page.$(selector);
-          if (publishButton) {
-            console.log(`Found publish button with selector: ${selector}`);
-            break;
+    // Try multiple approaches to find the publish button
+    const publishSelectors = [
+      '#publish-menu',
+      'button#publish-menu',
+      'button[aria-haspopup="menu"]',
+      'button[class*="bg-affirmative-primary"]',
+      'button[class*="publish"]',
+      'button:has-text("Publish")',
+      'button span:has-text("Publish")',
+      '[data-testid="publish-button"]',
+      'button[aria-label*="publish" i]',
+      'button[title*="publish" i]',
+      // Try to find any button with aria-haspopup="menu" (dropdown/menu buttons)
+      'button[aria-haspopup="menu"]:visible',
+      // Try to find buttons with specific classes from the HTML
+      'button.inline-flex.items-center.justify-center.whitespace-nowrap.text-sm.font-medium',
+      // Try to find any visible button that might be the publish button
+      'button:visible'
+    ];
+    
+    for (const selector of publishSelectors) {
+      try {
+        console.log(`Trying publish selector: ${selector}`);
+        const elements = await page.$$(selector);
+        console.log(`Found ${elements.length} elements with selector: ${selector}`);
+        
+        for (let i = 0; i < elements.length; i++) {
+          try {
+            const element = elements[i];
+            const text = await element.textContent();
+            const id = await element.getAttribute('id');
+            const isVisible = await element.isVisible();
+            
+            console.log(`  Element ${i}: id="${id}" text="${text}" visible=${isVisible}`);
+            
+            // Check if this element is the publish button
+            if (text && text.toLowerCase().includes('publish')) {
+              console.log(`*** FOUND PUBLISH ELEMENT: ${selector} element ${i} ***`);
+              publishButton = element;
+              break;
+            }
+            if (id === 'publish-menu') {
+              console.log(`*** FOUND PUBLISH ELEMENT BY ID: ${selector} element ${i} ***`);
+              publishButton = element;
+              break;
+            }
+          } catch (error) {
+            console.log(`  Element ${i}: Error getting properties`);
           }
-        } catch (error) {
-          console.log(`Publish selector failed: ${selector}`);
-          continue;
         }
+        
+        if (publishButton) break;
+      } catch (error) {
+        console.log(`Publish selector failed: ${selector}`);
+        continue;
       }
     }
     
     if (!publishButton) {
+      // Last resort: try to find any button with "Publish" text
       console.log('Trying to find any button with "Publish" text...');
       const allButtons = await page.$$('button');
       for (const button of allButtons) {
@@ -117,6 +175,54 @@ import { chromium } from 'playwright';
             break;
           }
         } catch (error) {
+          continue;
+        }
+      }
+    }
+    
+    if (!publishButton) {
+      // Try to force the button to be visible by setting viewport size
+      console.log('Trying to force responsive classes to show the button...');
+      await page.setViewportSize({ width: 1920, height: 1080 });
+      await page.waitForTimeout(2000);
+      
+      // Take another screenshot after viewport change
+      await page.screenshot({ path: 'project-page-large-viewport.png', fullPage: true });
+      
+      // Try the selectors again
+      for (const selector of publishSelectors) {
+        try {
+          console.log(`Trying publish selector again with large viewport: ${selector}`);
+          const elements = await page.$$(selector);
+          console.log(`Found ${elements.length} elements with selector: ${selector}`);
+          
+          for (let i = 0; i < elements.length; i++) {
+            try {
+              const element = elements[i];
+              const text = await element.textContent();
+              const id = await element.getAttribute('id');
+              const isVisible = await element.isVisible();
+              
+              console.log(`  Element ${i}: id="${id}" text="${text}" visible=${isVisible}`);
+              
+              if (text && text.toLowerCase().includes('publish')) {
+                console.log(`*** FOUND PUBLISH ELEMENT: ${selector} element ${i} ***`);
+                publishButton = element;
+                break;
+              }
+              if (id === 'publish-menu') {
+                console.log(`*** FOUND PUBLISH ELEMENT BY ID: ${selector} element ${i} ***`);
+                publishButton = element;
+                break;
+              }
+            } catch (error) {
+              console.log(`  Element ${i}: Error getting properties`);
+            }
+          }
+          
+          if (publishButton) break;
+        } catch (error) {
+          console.log(`Publish selector failed: ${selector}`);
           continue;
         }
       }

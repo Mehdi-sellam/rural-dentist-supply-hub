@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: './', // Ensure relative paths work correctly
+  base: '/', // Use absolute paths for Vercel
   server: {
     host: "::",
     port: 8080,
@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => ({
     assetsDir: 'assets',
     sourcemap: false, // Disable sourcemaps in production
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+      },
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],

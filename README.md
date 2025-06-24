@@ -59,10 +59,48 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (Backend)
 
 ## How can I deploy this project?
 
+### Option 1: Deploy to Vercel (Recommended)
+
+1. **Fork or push your code to GitHub** (if not already done)
+
+2. **Connect to Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Sign up/Login with your GitHub account
+   - Click "New Project"
+   - Import your GitHub repository
+
+3. **Configure Environment Variables:**
+   Add these environment variables in Vercel:
+   ```
+   VITE_SUPABASE_URL=https://pmjrssmcyuyjxpvojmfk.supabase.co
+   VITE_SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtanJzc21jeXV5anhwdm9qbWZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0OTAzNjksImV4cCI6MjA2NTA2NjM2OX0.5Op3LafYuybBnHZUb
+   ```
+
+4. **Deploy:**
+   - Vercel will automatically detect it's a Vite project
+   - Click "Deploy"
+   - Your site will be live at `https://your-project.vercel.app`
+
+5. **Custom Domain (Optional):**
+   - In Vercel dashboard, go to Settings > Domains
+   - Add your custom domain
+
+### Option 2: Deploy with Lovable
+
 Simply open [Lovable](https://lovable.dev/projects/44513973-80d4-47ad-af0b-72c980249b28) and click on Share -> Publish.
+
+## Environment Variables
+
+For local development, create a `.env` file in the root directory:
+
+```env
+VITE_SUPABASE_URL=https://pmjrssmcyuyjxpvojmfk.supabase.co
+VITE_SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtanJzc21jeXV5anhwdm9qbWZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0OTAzNjksImV4cCI6MjA2NTA2NjM2OX0.5Op3LafYuybBnHZUb
+```
 
 ## Can I connect a custom domain to my Lovable project?
 

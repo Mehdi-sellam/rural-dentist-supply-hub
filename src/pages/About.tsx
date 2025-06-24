@@ -1,10 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { DollarSign, CreditCard, Headphones, Globe, MapPin, Phone } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 const About = () => {
   const { t } = useLanguage();
@@ -16,8 +13,6 @@ const About = () => {
 
   return (
     <div className="min-h-screen">
-      <Header />
-      
       {/* Hero Section */}
       <section className="dental-gradient py-16 px-4">
         <div className="container mx-auto">
@@ -170,8 +165,6 @@ const About = () => {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 };

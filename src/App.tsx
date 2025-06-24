@@ -7,6 +7,7 @@ import CategoryGrid from '@/components/CategoryGrid';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import FAQ from '@/pages/FAQ';
+import Shop from '@/pages/Shop';
 
 // Simple Home page
 const HomePage = () => {
@@ -68,6 +69,7 @@ const App = () => {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/faq" element={<FAQ />} />
+          <Route path="/shop" element={<Shop />} />
         </Routes>
       </main>
       <Footer />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Package, Check, Crown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/integrations/supabase/client';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 
 interface Bundle {
@@ -77,19 +74,15 @@ const Bundles = () => {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <Header />
         <div className="container mx-auto px-4 py-16 text-center">
           <p>Chargement des kits...</p>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen">
-      <Header />
-      
       <section className="py-16 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -176,8 +169,6 @@ const Bundles = () => {
           )}
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 };

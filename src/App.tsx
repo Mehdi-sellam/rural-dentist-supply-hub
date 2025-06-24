@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import Header from '@/components/Header';
 
 // Error Boundary Component
 interface ErrorBoundaryState {
@@ -40,6 +39,52 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
+// Simple Header without Router dependencies
+const SimpleHeader = () => {
+  try {
+    console.log('Loading Simple Header component...');
+    return (
+      <header style={{ 
+        padding: '10px 20px', 
+        backgroundColor: '#f8f9fa', 
+        borderBottom: '1px solid #dee2e6',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ 
+            width: '32px', 
+            height: '32px', 
+            backgroundColor: '#007bff', 
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          }}>
+            DG
+          </div>
+          <span style={{ fontWeight: 'bold', fontSize: '20px', color: '#007bff' }}>
+            DentGo
+          </span>
+        </div>
+        <nav style={{ display: 'flex', gap: '20px' }}>
+          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>Home</a>
+          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>Shop</a>
+          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>About</a>
+          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>Contact</a>
+        </nav>
+      </header>
+    );
+  } catch (error) {
+    console.error('Simple Header component error:', error);
+    return <div>Header Error: {(error as Error).message}</div>;
+  }
+};
+
 // Simple test components to isolate issues
 const TestHero = () => {
   try {
@@ -58,7 +103,7 @@ const App = () => {
     <ErrorBoundary>
       <div style={{ fontFamily: 'Arial, sans-serif' }}>
         <ErrorBoundary>
-          <Header />
+          <SimpleHeader />
         </ErrorBoundary>
         <TestHero />
         <div style={{ padding: '20px' }}>

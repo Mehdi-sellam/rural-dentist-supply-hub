@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Package, Check, Crown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/integrations/supabase/client';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 
 interface Bundle {
@@ -27,7 +30,6 @@ const Bundles = () => {
   const { addBundle } = useCart();
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBundles();
@@ -35,46 +37,25 @@ const Bundles = () => {
 
   const fetchBundles = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      console.log('[Bundles] Fetching bundles from Supabase...');
-      if (!supabase) {
-        throw new Error('Supabase client is not configured.');
-      }
       const { data, error } = await supabase
         .from('bundles')
         .select('*')
         .order('popular', { ascending: false });
 
       if (error) {
-        console.error('[Bundles] Error fetching bundles:', error);
-        setError('Erreur lors du chargement des kits.');
+        console.error('Error fetching bundles:', error);
         toast.error('Erreur lors du chargement des kits');
         return;
       }
 
       setBundles(data || []);
-    } catch (error: any) {
-      console.error('[Bundles] Error:', error);
-      setError('Erreur de connexion ou configuration Supabase.');
-      toast.error('Erreur de connexion ou configuration Supabase.');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Erreur lors du chargement des kits');
     } finally {
       setLoading(false);
     }
   };
-
-  // Timeout fallback for loading
-  useEffect(() => {
-    if (loading) {
-      const timer = setTimeout(() => {
-        if (loading) {
-          setError('Chargement trop long. Problème de connexion ou de configuration.');
-          setLoading(false);
-        }
-      }, 7000);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
 
   const handleAddBundle = (bundle: Bundle) => {
     const cartBundle = {
@@ -95,28 +76,20 @@ const Bundles = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Chargement des kits...</p>
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <p>Chargement des kits...</p>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 font-bold text-lg mb-2">{error}</p>
-          <p className="text-muted-foreground">Vérifiez la configuration Supabase et la connexion internet.<br/>Contactez le support si le problème persiste.</p>
-        </div>
+        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen">
+      <Header />
+      
       <section className="py-16 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -203,6 +176,8 @@ const Bundles = () => {
           )}
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 };

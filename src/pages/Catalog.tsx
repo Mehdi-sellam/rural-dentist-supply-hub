@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,8 @@ import { Download, MessageCircle, Send, FileText, Users, Phone, ShoppingCart } f
 import { useLanguage } from '@/hooks/useLanguage';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/integrations/supabase/client';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 import type { Product } from '@/types/product';
 
@@ -14,33 +17,26 @@ const Catalog = () => {
   const [products, setProducts] = React.useState<any[]>([]);
   const [categories, setCategories] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
 
   // Fetch data from Supabase
   React.useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError(null);
-        console.log('[Catalog] Fetching categories from Supabase...');
-        if (!supabase) {
-          throw new Error('Supabase client is not configured.');
-        }
+        
         // Fetch categories
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('categories')
           .select('*');
 
         if (categoriesError) {
-          console.error('[Catalog] Error fetching categories:', categoriesError);
-          setError('Erreur lors du chargement des catégories.');
+          console.error('Error fetching categories:', categoriesError);
           toast.error('Erreur lors du chargement des catégories');
         } else {
           setCategories(categoriesData || []);
         }
 
         // Fetch products with category information
-        console.log('[Catalog] Fetching products from Supabase...');
         const { data: productsData, error: productsError } = await supabase
           .from('products')
           .select(`
@@ -53,17 +49,15 @@ const Catalog = () => {
           `);
 
         if (productsError) {
-          console.error('[Catalog] Error fetching products:', productsError);
-          setError('Erreur lors du chargement des produits.');
+          console.error('Error fetching products:', productsError);
           toast.error('Erreur lors du chargement des produits');
         } else {
           setProducts(productsData || []);
         }
 
-      } catch (error: any) {
-        console.error('[Catalog] Exception fetching data:', error);
-        setError('Erreur de connexion ou configuration Supabase.');
-        toast.error('Erreur de connexion ou configuration Supabase.');
+      } catch (error) {
+        console.error('Exception fetching data:', error);
+        toast.error('Erreur de connexion');
       } finally {
         setLoading(false);
       }
@@ -71,19 +65,6 @@ const Catalog = () => {
 
     fetchData();
   }, []);
-
-  // Timeout fallback for loading
-  React.useEffect(() => {
-    if (loading) {
-      const timer = setTimeout(() => {
-        if (loading) {
-          setError('Chargement trop long. Problème de connexion ou de configuration.');
-          setLoading(false);
-        }
-      }, 7000);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
 
   const downloadCatalog = () => {
     // Generate CSV content with fresh data
@@ -121,28 +102,25 @@ const Catalog = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t('common.loading')}</p>
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">{t('common.loading')}</p>
+            </div>
+          </div>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 font-bold text-lg mb-2">{error}</p>
-          <p className="text-muted-foreground">Vérifiez la configuration Supabase et la connexion internet.<br/>Contactez le support si le problème persiste.</p>
-        </div>
+        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen">
+      <Header />
+      
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="text-center mb-12">
@@ -220,66 +198,140 @@ const Catalog = () => {
             
             return (
               <div key={category.id} className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{category.icon}</span>
-                  <h3 className="text-xl font-bold text-foreground heading-professional">
-                    {category.name_fr || category.name}
-                  </h3>
-                  <Badge variant="secondary" className="ml-auto">
-                    {categoryProducts.length} produits
-                  </Badge>
-                </div>
-                
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {categoryProducts.map((product: any) => (
-                    <Card key={product.id} className="border-border">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-foreground text-sm line-clamp-2">
-                            {product.name_fr || product.name}
+                {/* Category Header */}
+                <Card className={`border-border bg-gradient-to-br ${category.color || 'from-blue-50 to-indigo-100'}`}>
+                  <CardContent className="p-6 text-center">
+                    <div className="text-4xl mb-4">{category.icon}</div>
+                    <h3 className="font-bold text-2xl mb-2 heading-professional text-foreground">
+                      {category.name_fr}
+                    </h3>
+                    <p className="text-muted-foreground text-professional">
+                      {category.description_fr}
+                    </p>
+                    <p className="text-sm text-primary font-medium mt-2">
+                      {categoryProducts.length} produit(s) disponible(s)
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Category Products */}
+                {categoryProducts.length > 0 && (
+                  <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {categoryProducts.map((product: any) => (
+                      <Card key={product.id} className="border-border hover:shadow-lg transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="aspect-square bg-muted rounded mb-3 flex items-center justify-center">
+                            <img 
+                              src={product.image} 
+                              alt={product.name_fr}
+                              className="w-full h-full object-cover rounded"
+                            />
+                          </div>
+                          <h4 className="font-medium text-sm mb-1 text-foreground heading-professional">
+                            {product.name_fr}
                           </h4>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => addItem({
-                              id: product.id,
-                              name: product.name_fr || product.name,
-                              nameAr: product.name_ar || '',
-                              nameFr: product.name_fr || product.name,
-                              price: product.price,
-                              originalPrice: product.original_price,
-                              image: product.image,
-                              description: product.description_fr || product.description,
-                              quantity: 1,
-                              type: 'product'
-                            })}
-                            className="p-1 h-auto"
-                          >
-                            <ShoppingCart className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        
-                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                          {product.description_fr || product.description}
-                        </p>
-                        
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-primary text-sm">
-                            {product.price?.toLocaleString()} DZD
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            #{product.product_code || product.product_id}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                          <p className="text-xs text-muted-foreground mb-2 text-professional">
+                            Code: {product.product_code}
+                          </p>
+                          <p className="font-bold text-primary heading-professional">
+                            {product.price.toLocaleString()} DZD
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2 text-professional line-clamp-3">
+                            {product.description_fr}
+                          </p>
+                          
+                          {/* Add to Cart Button */}
+                          <div className="mt-3">
+                            <Button
+                              className="w-full text-xs btn-professional"
+                              onClick={() => {
+                                const productForCart: Product = {
+                                  id: product.id,
+                                  name: product.name_fr,
+                                  nameAr: product.name_ar || '',
+                                  nameFr: product.name_fr,
+                                  description: product.description_fr,
+                                  descriptionAr: product.description_ar || '',
+                                  descriptionFr: product.description_fr,
+                                  price: product.price,
+                                  originalPrice: product.original_price,
+                                  image: product.image,
+                                  category: product.categories?.name_fr || 'Non catégorisé',
+                                  rating: product.rating || 4.5,
+                                  reviews: product.reviews || 0,
+                                  inStock: product.in_stock,
+                                  badge: product.badge,
+                                  specifications: product.specifications,
+                                  productId: product.product_id,
+                                  productCode: product.product_code
+                                };
+                                addItem(productForCart);
+                                toast.success('Produit ajouté au panier');
+                              }}
+                              disabled={!product.in_stock}
+                            >
+                              <ShoppingCart className="w-3 h-3 mr-1" />
+                              {t('common.addToCart')}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                {categoryProducts.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground text-professional">
+                      Aucun produit disponible dans cette catégorie pour le moment.
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
+
+        {/* Contact Information */}
+        <Card className="text-center border-border mt-12">
+          <CardContent className="p-8">
+            <h2 className="text-2xl font-bold text-foreground mb-4 heading-professional">
+              Besoin d'aide pour passer commande ?
+            </h2>
+            <p className="text-muted-foreground mb-6 text-professional">
+              Notre équipe est disponible pour vous accompagner dans vos choix et traiter vos commandes.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                variant="outline" 
+                className="gap-2 border-border"
+                onClick={() => window.open('tel:+213XXXXXXXXX')}
+              >
+                <Phone className="w-4 h-4" />
+                +213 XXX XXX XXX
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2 border-border"
+                onClick={() => window.open('https://wa.me/213XXXXXXXXX?text=Bonjour! J\'aimerais passer une commande.', '_blank')}
+              >
+                <MessageCircle className="w-4 h-4" />
+                Commander via WhatsApp
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2 border-border"
+                onClick={() => window.open('https://t.me/+213XXXXXXXXX?text=Bonjour! J\'aimerais passer une commande.', '_blank')}
+              >
+                <Send className="w-4 h-4" />
+                Commander via Telegram
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <Footer />
     </div>
   );
 };

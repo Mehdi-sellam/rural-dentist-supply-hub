@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,14 +9,14 @@ import { Minus, Plus, Trash2, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/hooks/useLanguage';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 const Cart = () => {
   const { items, bundles, totalAmount, itemCount, updateQuantity, updateBundleQuantity, removeItem, removeBundle, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
-
-  console.log('[Cart] Rendering cart with', items.length, 'items and', bundles.length, 'bundles');
 
   const generateWhatsAppOrder = () => {
     let message = "Bonjour! J'aimerais passer une commande:\n\n";
@@ -41,6 +42,7 @@ const Cart = () => {
   if (items.length === 0 && bundles.length === 0) {
     return (
       <div className="min-h-screen">
+        <Header />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <ShoppingBag className="w-24 h-24 text-gray-300 mx-auto mb-6" />
@@ -53,12 +55,15 @@ const Cart = () => {
             </Link>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen">
+      <Header />
+      
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t('cart.title')}</h1>
@@ -193,73 +198,66 @@ const Cart = () => {
               <Button variant="outline" onClick={clearCart}>
                 Vider le panier
               </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => window.open(generateWhatsAppOrder(), '_blank')}
-                className="gap-2"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Commander via WhatsApp
-              </Button>
+              <Link to="/shop">
+                <Button variant="outline">
+                  {t('cart.continueShopping')}
+                </Button>
+              </Link>
             </div>
           </div>
 
           {/* Order Summary */}
-          <div className="space-y-4">
-            <Card>
+          <div className="lg:col-span-1">
+            <Card className="sticky top-4">
               <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4">Résumé de la commande</h3>
+                <h3 className="font-bold text-lg mb-4">{t('cart.orderSummary')}</h3>
                 
-                <div className="space-y-2 mb-4">
+                <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
-                    <span>Sous-total</span>
+                    <span>{t('cart.subtotal')} ({itemCount} articles)</span>
                     <span>{totalAmount.toLocaleString()} DZD</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Livraison</span>
-                    <span className="text-green-600">Gratuite</span>
+                    <span className="text-green-600">{t('cart.free')}</span>
                   </div>
-                  <div className="border-t pt-2 flex justify-between font-semibold">
+                  <hr />
+                  <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
                     <span>{totalAmount.toLocaleString()} DZD</span>
                   </div>
                 </div>
 
-                <Button 
-                  onClick={handleCheckout}
-                  className="w-full mb-3"
-                  size="lg"
-                >
-                  Passer la commande
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.open(generateWhatsAppOrder(), '_blank')}
-                  className="w-full gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Commander via WhatsApp
-                </Button>
-              </CardContent>
-            </Card>
+                <div className="space-y-3">
+                  <Button className="w-full" size="lg" onClick={handleCheckout}>
+                    {isAuthenticated ? t('cart.proceedCheckout') : t('cart.loginCheckout')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full gap-2" 
+                    onClick={() => window.open(generateWhatsAppOrder(), '_blank')}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    {t('cart.orderViaWhatsApp')}
+                  </Button>
+                </div>
 
-            {/* Shipping Info */}
-            <Card>
-              <CardContent className="p-6">
-                <h4 className="font-semibold mb-3">Informations de livraison</h4>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>🚚 Livraison gratuite partout en Algérie</p>
-                  <p>⏰ Délai: 24-48h dans les grandes villes</p>
-                  <p>🏘️ 48h garantie dans les zones rurales</p>
-                  <p>💳 Paiement à la livraison</p>
+                <div className="mt-6 p-4 bg-green-50 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    🚚 {t('cart.freeDelivery')}
+                    <br />
+                    📞 {t('cart.support247')}
+                    <br />
+                    ✅ {t('cart.qualityGuaranteed')}
+                  </p>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

@@ -1,54 +1,47 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const CategoryGrid = () => {
-  // Static categories data instead of fetching from Supabase
-  const categories = [
-    {
-      id: '1',
-      name_fr: 'Restaurations',
-      description_fr: 'Composites, amalgames et matériaux de restauration',
-      icon: '🦷',
-      color: 'from-blue-50 to-blue-100'
-    },
-    {
-      id: '2',
-      name_fr: 'Instruments Chirurgicaux',
-      description_fr: 'Scalpels, pinces et instruments de chirurgie',
-      icon: '🔪',
-      color: 'from-green-50 to-green-100'
-    },
-    {
-      id: '3',
-      name_fr: 'Jetables',
-      description_fr: 'Gants, masques et produits à usage unique',
-      icon: '🧤',
-      color: 'from-purple-50 to-purple-100'
-    },
-    {
-      id: '4',
-      name_fr: 'Équipements',
-      description_fr: 'Fauteuils, lampes et équipements de cabinet',
-      icon: '🪑',
-      color: 'from-orange-50 to-orange-100'
-    },
-    {
-      id: '5',
-      name_fr: 'Orthodontie',
-      description_fr: 'Brackets, fils et matériaux orthodontiques',
-      icon: '🦿',
-      color: 'from-pink-50 to-pink-100'
-    },
-    {
-      id: '6',
-      name_fr: 'Endodontie',
-      description_fr: 'Limes, cônes et matériaux endodontiques',
-      icon: '🔧',
-      color: 'from-indigo-50 to-indigo-100'
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .limit(6);
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return;
+      }
+
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  if (loading) {
+    return (
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="container mx-auto text-center">
+          <p>Chargement des catégories...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 px-4 bg-gray-50">
@@ -69,10 +62,10 @@ const CategoryGrid = () => {
                 <CardContent className="p-6 text-center">
                   <div className="text-4xl mb-4">{category.icon}</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {category.name_fr}
+                    {category.name_fr || category.name}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    {category.description_fr}
+                    {category.description_fr || category.description || 'Découvrez notre sélection'}
                   </p>
                 </CardContent>
               </Card>

@@ -1,137 +1,84 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import HeroSection from '@/components/HeroSection';
-import CategoryGrid from '@/components/CategoryGrid';
-import About from '@/pages/About';
-import Contact from '@/pages/Contact';
-import FAQ from '@/pages/FAQ';
-import Shop from '@/pages/Shop';
-import Catalog from '@/pages/Catalog';
-import Bundles from '@/pages/Bundles';
-import Cart from '@/pages/Cart';
 
-// Simple Home page
-const HomePage = () => {
-  return (
-    <div className="min-h-screen">
-      <HeroSection />
-      <CategoryGrid />
-      <div className="bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            🦷 DentGo - Home Page
-          </h1>
-          <p className="text-lg text-gray-600 mb-4">
-            Welcome to DentGo! This is the home page with routing working.
-          </p>
-          <div className="bg-white p-6 rounded-lg border shadow-sm">
-            <h2 className="text-2xl font-semibold mb-4">Features</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>✅ CSS is loading correctly</li>
-              <li>✅ JavaScript is working</li>
-              <li>✅ React Router is functional</li>
-              <li>✅ Components are rendering</li>
-              <li>✅ Original Header component added</li>
-              <li>✅ HeroSection component added</li>
-              <li>✅ CategoryGrid component added</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+import React, { useEffect } from 'react';
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from "@/context/CartContext";
+import { LanguageProvider } from "@/hooks/useLanguage";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
+import Index from "./pages/Index";
+import Shop from "./pages/Shop";
+import Cart from "./pages/Cart";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Bundles from "./pages/Bundles";
+import Catalog from "./pages/Catalog";
+import FAQ from "./pages/FAQ";
+import Loyalty from "./pages/Loyalty";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
+import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import Account from "./pages/Account";
+import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import TestSuite from "./pages/TestSuite";
 
-// Simple About page
-const AboutPage = () => {
-  return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          About DentGo
-        </h1>
-        <p className="text-lg text-gray-600 mb-4">
-          This is the about page. Routing is working correctly!
-        </p>
-      </div>
-    </div>
-  );
-};
+const queryClient = new QueryClient();
 
-const App = () => {
-  const [isReady, setIsReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  console.log('App component is rendering');
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    // Set a timeout to prevent infinite loading
-    const timer = setTimeout(() => {
-      if (!isReady) {
-        console.log('App: Timeout reached, forcing ready state');
-        setIsReady(true);
-      }
-    }, 5000);
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
-    // Try to initialize the app
-    try {
-      console.log('App: Initializing...');
-      // Simulate initialization
-      setTimeout(() => {
-        console.log('App: Initialization complete');
-        setIsReady(true);
-      }, 100);
-    } catch (err) {
-      console.error('App: Initialization error:', err);
-      setError('Failed to initialize application');
-      setIsReady(true);
-    }
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!isReady) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Initializing DentGo...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 font-bold text-lg mb-2">{error}</p>
-          <p className="text-muted-foreground">Please refresh the page or contact support.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/bundles" element={<Bundles />} />
-          <Route path="/cart" element={<Cart />} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
-  );
+  return null;
 };
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <LanguageProvider>
+      <AuthProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <BrowserRouter>
+              <ScrollToTop />
+              <div className="page-transition">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/bundles" element={<Bundles />} />
+                  <Route path="/catalog" element={<Catalog />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/loyalty" element={<Loyalty />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/order-confirmation" element={<OrderConfirmation />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/test" element={<TestSuite />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <WhatsAppFloat />
+              </div>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
+      </AuthProvider>
+    </LanguageProvider>
+  </QueryClientProvider>
+);
 
 export default App;

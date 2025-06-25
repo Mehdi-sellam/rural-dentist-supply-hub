@@ -1,8 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-
-// Try to import supabase client, but don't crash if it fails
-let supabase: any = null;
+import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
   id: string;
@@ -31,42 +30,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  console.log('AuthProvider: Initializing...');
-  
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-
-  console.log('AuthProvider: State initialized');
-
-  // Initialize Supabase client
-  useEffect(() => {
-    const initSupabase = async () => {
-      try {
-        const { supabase: supabaseClient } = await import('@/integrations/supabase/client');
-        supabase = supabaseClient;
-        console.log('Supabase client loaded successfully');
-      } catch (error) {
-        console.error('Failed to load Supabase client:', error);
-        // Create a mock supabase client for development
-        supabase = {
-          auth: {
-            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-            getSession: () => Promise.resolve({ data: { session: null } }),
-            signOut: () => Promise.resolve({ error: null }),
-            signInWithPassword: () => Promise.resolve({ error: null }),
-            signUp: () => Promise.resolve({ error: null })
-          },
-          from: () => ({
-            select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) })
-          })
-        };
-      }
-    };
-    
-    initSupabase();
-  }, []);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -96,57 +63,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    console.log('AuthProvider: Setting up auth state listener');
+    console.log('Setting up auth state listener');
     
-    if (!supabase) {
-      console.log('Supabase not ready yet, skipping auth setup');
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      // Set up auth state listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          console.log('Auth state changed:', event, session?.user?.email);
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            // Defer profile fetching to avoid blocking auth state updates
-            setTimeout(() => {
-              fetchProfile(session.user.id);
-            }, 0);
-          } else {
-            setProfile(null);
-          }
-          
-          setLoading(false);
-        }
-      );
-
-      // Get initial session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        console.log('Initial session check:', session?.user?.email);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          fetchProfile(session.user.id);
+          // Defer profile fetching to avoid blocking auth state updates
+          setTimeout(() => {
+            fetchProfile(session.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
         }
         
         setLoading(false);
-      });
+      }
+    );
 
-      return () => {
-        console.log('Cleaning up auth subscription');
-        subscription.unsubscribe();
-      };
-    } catch (error) {
-      console.error('AuthProvider: Error in useEffect:', error);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      }
+      
       setLoading(false);
-    }
-  }, [supabase]);
+    });
+
+    return () => {
+      console.log('Cleaning up auth subscription');
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
@@ -210,8 +166,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     refreshProfile
   };
-
-  console.log('AuthProvider: Rendering with value:', { user: !!user, loading, isAuthenticated: !!user });
 
   return (
     <AuthContext.Provider value={value}>

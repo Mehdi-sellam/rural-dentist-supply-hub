@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,10 +72,15 @@ const CategoryGrid = () => {
           ))}
         </div>
 
-        <div className="text-center">
+        <div className="flex flex-col md:flex-row justify-center gap-4 mt-8">
           <Link to="/shop">
             <Button size="lg" className="text-lg px-8 py-6">
-              Voir Toutes les Catégories
+              Commencer à Acheter Aujourd'hui
+            </Button>
+          </Link>
+          <Link to="/catalog">
+            <Button size="lg" className="text-lg px-8 py-6" variant="outline">
+              Demander le Catalogue
             </Button>
           </Link>
         </div>

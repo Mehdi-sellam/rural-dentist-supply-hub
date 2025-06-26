@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,30 +9,64 @@ import { useLanguage } from '@/hooks/useLanguage';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 const Contact = () => {
   const { t } = useLanguage();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
+  const [form, setForm] = useState({ nom: '', email: '', sujet: '', message: '' });
+  const [sending, setSending] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const { user } = useAuth();
+  const [conversation, setConversation] = useState<any[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const fetchConversation = async () => {
+    if (!user) return;
+    // Fetch messages for this user
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('*, message_responses(*)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (!error) setConversation(messages || []);
+  };
+
+  useEffect(() => { fetchConversation(); }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Message envoyé avec succès !');
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    setSending(true);
+    setError('');
+    setSuccess(false);
+    try {
+      if (!user) throw new Error('Vous devez être connecté.');
+      const { error } = await supabase.from('messages').insert([
+        { ...form, user_id: user.id }
+      ]);
+      if (error) throw error;
+      setSuccess(true);
+      setForm({ nom: '', email: '', sujet: '', message: '' });
+      fetchConversation();
+    } catch (err) {
+      setError('Erreur lors de l\'envoi du message.');
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleWhatsAppSubmit = () => {
     const message = `Bonjour! 
     
-Nom: ${formData.name}
-Email: ${formData.email}
-Sujet: ${formData.subject}
+Nom: ${form.nom}
+Email: ${form.email}
+Sujet: ${form.sujet}
 
-Message: ${formData.message}`;
+Message: ${form.message}`;
     
     const url = `https://wa.me/213XXXXXXXXX?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -41,18 +75,14 @@ Message: ${formData.message}`;
   const handleTelegramSubmit = () => {
     const message = `Bonjour! 
     
-Nom: ${formData.name}
-Email: ${formData.email}
-Sujet: ${formData.subject}
+Nom: ${form.nom}
+Email: ${form.email}
+Sujet: ${form.sujet}
 
-Message: ${formData.message}`;
+Message: ${form.message}`;
     
     const url = `https://t.me/+213XXXXXXXXX?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
-  };
-
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   // Scroll to top when component mounts
@@ -84,11 +114,12 @@ Message: ${formData.message}`;
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="name">{t('contact.name')} *</Label>
+                  <Label htmlFor="nom">{t('contact.name')} *</Label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleChange('name', e.target.value)}
+                    id="nom"
+                    name="nom"
+                    value={form.nom}
+                    onChange={handleChange}
                     required
                     className="border-border"
                   />
@@ -98,20 +129,22 @@ Message: ${formData.message}`;
                   <Label htmlFor="email">{t('contact.email')} *</Label>
                   <Input
                     id="email"
+                    name="email"
                     type="email"
-                    value={formData.email}
-                    onChange={(e) => handleChange('email', e.target.value)}
+                    value={form.email}
+                    onChange={handleChange}
                     required
                     className="border-border"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="subject">Sujet *</Label>
+                  <Label htmlFor="sujet">Sujet *</Label>
                   <Input
-                    id="subject"
-                    value={formData.subject}
-                    onChange={(e) => handleChange('subject', e.target.value)}
+                    id="sujet"
+                    name="sujet"
+                    value={form.sujet}
+                    onChange={handleChange}
                     required
                     className="border-border"
                   />
@@ -121,8 +154,9 @@ Message: ${formData.message}`;
                   <Label htmlFor="message">{t('contact.message')} *</Label>
                   <Textarea
                     id="message"
-                    value={formData.message}
-                    onChange={(e) => handleChange('message', e.target.value)}
+                    name="message"
+                    value={form.message}
+                    onChange={handleChange}
                     required
                     rows={5}
                     className="border-border"
@@ -130,8 +164,8 @@ Message: ${formData.message}`;
                 </div>
 
                 <div className="space-y-3">
-                  <Button type="submit" className="w-full btn-professional">
-                    {t('contact.send')}
+                  <Button type="submit" className="w-full btn-professional" disabled={sending}>
+                    {sending ? 'Envoi...' : t('contact.send')}
                   </Button>
                   
                   <div className="flex gap-2">
@@ -155,6 +189,9 @@ Message: ${formData.message}`;
                     </Button>
                   </div>
                 </div>
+
+                {success && <p className="text-green-600">Message envoyé avec succès !</p>}
+                {error && <p className="text-red-600">{error}</p>}
               </form>
             </CardContent>
           </Card>
@@ -241,6 +278,29 @@ Message: ${formData.message}`;
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Below the form, add a section for conversation history */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold mb-2">Vos messages et réponses de l'administration</h2>
+          {conversation.length === 0 && <p>Aucun message envoyé.</p>}
+          {conversation.map(msg => (
+            <div key={msg.id} className="mb-4 p-4 border rounded">
+              <div><b>Sujet:</b> {msg.sujet}</div>
+              <div><b>Message:</b> {msg.message}</div>
+              <div className="text-xs text-gray-500">Envoyé le {new Date(msg.created_at).toLocaleString()}</div>
+              {msg.message_responses && msg.message_responses.length > 0 && (
+                <div className="mt-2 pl-4 border-l">
+                  {msg.message_responses.map((resp: any) => (
+                    <div key={resp.id} className="mb-2">
+                      <div><b>Réponse admin:</b> {resp.response}</div>
+                      <div className="text-xs text-gray-500">Répondu le {new Date(resp.created_at).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 

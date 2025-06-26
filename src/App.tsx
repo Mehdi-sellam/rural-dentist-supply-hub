@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +26,7 @@ import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import TestSuite from "./pages/TestSuite";
+import CategoryPage from './pages/CategoryPage';
 
 const queryClient = new QueryClient();
 
@@ -69,6 +69,7 @@ const App = () => (
                   <Route path="/account" element={<Account />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/test" element={<TestSuite />} />
+                  <Route path="/category/:id" element={<CategoryPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <WhatsAppFloat />

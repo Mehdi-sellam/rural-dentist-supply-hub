@@ -124,6 +124,11 @@ const AdminDashboard = () => {
     selectedProducts: [] as string[]
   });
 
+  // Messages state
+  const [messages, setMessages] = useState<any[]>([]);
+  const [selectedMessage, setSelectedMessage] = useState<any>(null);
+  const [response, setResponse] = useState('');
+
   // Clear form functions
   const clearProductForm = () => {
     setNewProduct({
@@ -892,6 +897,28 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchMessages = async () => {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*, message_responses(*)')
+      .order('created_at', { ascending: false });
+    if (!error) setMessages(data || []);
+  };
+
+  useEffect(() => { fetchMessages(); }, []);
+
+  const handleRespond = async () => {
+    if (!selectedMessage || !response) return;
+    const { error } = await supabase.from('message_responses').insert([
+      { message_id: selectedMessage.id, responder_id: user.id, response }
+    ]);
+    if (!error) {
+      setResponse('');
+      fetchMessages();
+      toast.success('Réponse envoyée !');
+    }
+  };
+
   if (!user || !profile?.is_admin) {
     return null;
   }
@@ -916,6 +943,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="bundles">Kits</TabsTrigger>
             <TabsTrigger value="orders">Commandes</TabsTrigger>
             <TabsTrigger value="clients">Clients</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -1746,6 +1774,50 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Messages Tab */}
+          <TabsContent value="messages" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Messages des clients</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {messages.map(msg => (
+                    <Card key={msg.id} className="cursor-pointer" onClick={() => setSelectedMessage(msg)}>
+                      <CardContent>
+                        <div><b>Nom:</b> {msg.nom}</div>
+                        <div><b>Email:</b> {msg.email}</div>
+                        <div><b>Sujet:</b> {msg.sujet}</div>
+                        <div><b>Message:</b> {msg.message}</div>
+                        <div className="text-xs text-gray-500">Envoyé le {new Date(msg.created_at).toLocaleString()}</div>
+                        {msg.message_responses && msg.message_responses.length > 0 && (
+                          <div className="mt-2 pl-4 border-l">
+                            {msg.message_responses.map((resp: any) => (
+                              <div key={resp.id} className="mb-2">
+                                <div><b>Réponse admin:</b> {resp.response}</div>
+                                <div className="text-xs text-gray-500">Répondu le {new Date(resp.created_at).toLocaleString()}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {selectedMessage && (
+                  <div className="mt-6 p-4 border rounded bg-gray-50">
+                    <h3 className="font-bold mb-2">Répondre à {selectedMessage.nom}</h3>
+                    <div><b>Sujet:</b> {selectedMessage.sujet}</div>
+                    <div><b>Message:</b> {selectedMessage.message}</div>
+                    <Textarea value={response} onChange={e => setResponse(e.target.value)} placeholder="Votre réponse..." className="my-2" />
+                    <Button onClick={handleRespond} disabled={!response}>Envoyer la réponse</Button>
+                    <Button variant="outline" className="ml-2" onClick={() => setSelectedMessage(null)}>Fermer</Button>
                   </div>
                 )}
               </CardContent>

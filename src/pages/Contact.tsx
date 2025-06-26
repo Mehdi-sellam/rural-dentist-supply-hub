@@ -31,9 +31,9 @@ const Contact = () => {
 
   const fetchConversation = async () => {
     if (!user) return;
-    // Fetch messages for this user
+    // Fetch messages for this user, join message_responses with profiles to get responder names
     const { data: messages, error } = await sb.from('messages')
-      .select('*, message_responses(*)')
+      .select('*, message_responses(*, profiles:responder_id(full_name, is_admin))')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (!error) setConversation(messages || []);
@@ -346,7 +346,9 @@ Message: ${form.message}`;
               <div className="flex justify-between items-center mb-2">
                 <div className="font-bold">Sujet: {msg.sujet}</div>
                 {activeTab === 'open' && (
-                  <Button size="sm" variant="destructive" onClick={() => handleCloseTicket(msg.id)}>Fermer le ticket</Button>
+                  <Button size="sm" variant="destructive" onClick={async () => { await handleCloseTicket(msg.id); }} disabled={msg.status === 'closed'}>
+                    Fermer le ticket
+                  </Button>
                 )}
               </div>
               <div className="text-xs text-gray-500 mb-4">Créé le {new Date(msg.created_at).toLocaleString()}</div>
@@ -363,14 +365,20 @@ Message: ${form.message}`;
                 {msg.message_responses && msg.message_responses.map((resp: any) => (
                   <div key={resp.id} className={`flex gap-2 items-end ${resp.responder_id === user?.id ? 'justify-end' : 'justify-start'}`}>
                     <div className={`${resp.responder_id === user?.id ? 'bg-green-100 text-green-900 self-end' : 'bg-gray-200 text-gray-900 self-start'} rounded-lg px-4 py-2 max-w-[70%]`}>
-                      <div className="font-semibold">{resp.responder_id === user?.id ? 'Vous' : 'Admin'}</div>
+                      <div className="font-semibold">
+                        {resp.responder_id === user?.id
+                          ? 'Vous'
+                          : resp.profiles?.is_admin
+                            ? `Admin: ${resp.profiles?.full_name || 'Admin'}`
+                            : resp.profiles?.full_name || 'Utilisateur'}
+                      </div>
                       <div>{resp.response}</div>
                       <div className="text-xs text-gray-500 mt-1">{new Date(resp.created_at).toLocaleString()}</div>
                     </div>
                   </div>
                 ))}
               </div>
-              {user && activeTab === 'open' && (
+              {user && activeTab === 'open' && msg.status !== 'closed' && (
                 <div className="mt-4 flex gap-2 items-end">
                   <Textarea
                     value={reply[msg.id] || ''}
@@ -378,7 +386,7 @@ Message: ${form.message}`;
                     placeholder="Votre réponse..."
                     className="mb-2 flex-1"
                   />
-                  <Button size="sm" onClick={() => handleClientReply(msg.id)} disabled={!reply[msg.id]?.trim()}>
+                  <Button size="sm" onClick={async () => { await handleClientReply(msg.id); }} disabled={!reply[msg.id]?.trim()}>
                     Envoyer
                   </Button>
                 </div>

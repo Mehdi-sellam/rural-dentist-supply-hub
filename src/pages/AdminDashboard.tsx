@@ -1793,7 +1793,10 @@ const AdminDashboard = () => {
                   {messages.map(msg => (
                     <Card key={msg.id} className="cursor-pointer" onClick={() => setSelectedMessage(msg)}>
                       <CardContent>
-                        <div><b>Nom:</b> {msg.nom}</div>
+                        <div className="flex justify-between items-center">
+                          <div><b>Nom:</b> {msg.nom}</div>
+                          <Badge variant={msg.status === 'closed' ? 'destructive' : 'default'}>{msg.status === 'closed' ? 'Fermé' : 'Ouvert'}</Badge>
+                        </div>
                         <div><b>Email:</b> {msg.email}</div>
                         <div><b>Sujet:</b> {msg.sujet}</div>
                         <div><b>Message:</b> {msg.message}</div>
@@ -1815,12 +1818,21 @@ const AdminDashboard = () => {
                 {selectedMessage && (
                   <div className="mt-6 p-4 border rounded bg-gray-50">
                     <h3 className="font-bold mb-2">Répondre à {selectedMessage.nom}</h3>
-                    <div><b>Nom du cabinet:</b> {selectedMessage.cabinet_name || ''}</div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div><b>Nom du cabinet:</b> {selectedMessage.cabinet_name || ''}</div>
+                      <Badge variant={selectedMessage.status === 'closed' ? 'destructive' : 'default'}>{selectedMessage.status === 'closed' ? 'Fermé' : 'Ouvert'}</Badge>
+                      {selectedMessage.status !== 'closed' && (
+                        <Button size="sm" variant="destructive" onClick={async () => {
+                          await sb.from('messages').update({ status: 'closed' }).eq('id', selectedMessage.id);
+                          fetchMessages();
+                        }}>Fermer le ticket</Button>
+                      )}
+                    </div>
                     <div><b>Numéro de téléphone:</b> {selectedMessage.phone || ''}</div>
                     <div><b>Sujet:</b> {selectedMessage.sujet}</div>
                     <div><b>Message:</b> {selectedMessage.message}</div>
-                    <Textarea value={response} onChange={e => setResponse(e.target.value)} placeholder="Votre réponse..." className="my-2" />
-                    <Button onClick={handleRespond} disabled={!response}>Envoyer la réponse</Button>
+                    <Textarea value={response} onChange={e => setResponse(e.target.value)} placeholder="Votre réponse..." className="my-2" disabled={selectedMessage.status === 'closed'} />
+                    <Button onClick={handleRespond} disabled={!response || selectedMessage.status === 'closed'}>Envoyer la réponse</Button>
                     <Button variant="outline" className="ml-2" onClick={() => setSelectedMessage(null)}>Fermer</Button>
                   </div>
                 )}

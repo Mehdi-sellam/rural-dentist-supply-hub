@@ -536,6 +536,95 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          id: string
+          user_id: string
+          nom: string
+          email: string
+          phone: string | null
+          sujet: string
+          message: string
+          cabinet_name: string | null
+          status: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          nom: string
+          email: string
+          phone?: string | null
+          sujet: string
+          message: string
+          cabinet_name?: string | null
+          status?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          nom?: string
+          email?: string
+          phone?: string | null
+          sujet?: string
+          message?: string
+          cabinet_name?: string | null
+          status?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_responses: {
+        Row: {
+          id: string
+          message_id: string
+          responder_id: string
+          response: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          responder_id: string
+          response: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          responder_id?: string
+          response?: string
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_responses_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_responses_responder_id_fkey"
+            columns: ["responder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

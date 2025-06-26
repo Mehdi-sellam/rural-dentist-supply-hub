@@ -34,7 +34,7 @@ const Contact = () => {
     console.log('Fetching conversation for user:', user.id);
     // Fetch messages for this user, join message_responses with profiles to get responder names
     const { data: messages, error } = await sb.from('messages')
-      .select('*, message_responses(*, profiles:responder_id(full_name, is_admin))')
+      .select('*, message_responses(*, profiles!responder_id(full_name, is_admin))')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) {

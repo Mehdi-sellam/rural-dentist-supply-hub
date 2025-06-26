@@ -18,7 +18,7 @@ const Contact = () => {
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [conversation, setConversation] = useState<any[]>([]);
 
   const sb: any = supabase;
@@ -36,6 +36,16 @@ const Contact = () => {
       .order('created_at', { ascending: false });
     if (!error) setConversation(messages || []);
   };
+
+  useEffect(() => {
+    if (user && profile) {
+      setForm(form => ({
+        ...form,
+        nom: profile.full_name || '',
+        email: profile.email || '',
+      }));
+    }
+  }, [user, profile]);
 
   useEffect(() => { fetchConversation(); }, [user]);
 
@@ -114,8 +124,20 @@ Message: ${form.message}`;
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {user && profile && (
+                  <>
+                    <div>
+                      <Label>Nom du cabinet</Label>
+                      <Input value={profile.dental_office_name || ''} disabled className="border-border" />
+                    </div>
+                    <div>
+                      <Label>Numéro de téléphone</Label>
+                      <Input value={profile.phone || ''} disabled className="border-border" />
+                    </div>
+                  </>
+                )}
                 <div>
-                  <Label htmlFor="nom">{t('contact.name')} *</Label>
+                  <Label htmlFor="nom">Nom *</Label>
                   <Input
                     id="nom"
                     name="nom"
@@ -127,7 +149,7 @@ Message: ${form.message}`;
                 </div>
 
                 <div>
-                  <Label htmlFor="email">{t('contact.email')} *</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     name="email"

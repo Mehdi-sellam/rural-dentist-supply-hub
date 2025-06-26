@@ -21,6 +21,8 @@ const Contact = () => {
   const { user } = useAuth();
   const [conversation, setConversation] = useState<any[]>([]);
 
+  const sb: any = supabase;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -28,8 +30,7 @@ const Contact = () => {
   const fetchConversation = async () => {
     if (!user) return;
     // Fetch messages for this user
-    const { data: messages, error } = await supabase
-      .from('messages')
+    const { data: messages, error } = await sb.from('messages')
       .select('*, message_responses(*)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
@@ -45,7 +46,7 @@ const Contact = () => {
     setSuccess(false);
     try {
       if (!user) throw new Error('Vous devez être connecté.');
-      const { error } = await supabase.from('messages').insert([
+      const { error } = await sb.from('messages').insert([
         { ...form, user_id: user.id }
       ]);
       if (error) throw error;

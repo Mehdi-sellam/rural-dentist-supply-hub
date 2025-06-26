@@ -38,6 +38,8 @@ const CATEGORY_COLORS = [
 const PRODUCT_BADGES = ['Nouveau', 'Populaire', 'Promo', 'Recommandé', 'Exclusif'];
 const BUNDLE_BADGES = ['Bestseller', 'Économique', 'Complet', 'Premium', 'Essentiel'];
 
+const sb: any = supabase;
+
 const AdminDashboard = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -201,11 +203,11 @@ const AdminDashboard = () => {
       console.log('Fetching data...');
       // Fetch all data
       const [productsRes, categoriesRes, bundlesRes, ordersRes, clientsRes] = await Promise.all([
-        supabase.from('products').select('*, categories(name_fr)'),
-        supabase.from('categories').select('*'),
-        supabase.from('bundles').select('*'),
-        supabase.from('orders').select('*, profiles(full_name, dental_office_name)'),
-        supabase.from('profiles').select('*').eq('is_admin', false)
+        sb.from('products').select('*, categories(name_fr)'),
+        sb.from('categories').select('*'),
+        sb.from('bundles').select('*'),
+        sb.from('orders').select('*, profiles(full_name, dental_office_name)'),
+        sb.from('profiles').select('*').eq('is_admin', false)
       ]);
 
       console.log('Orders response:', ordersRes);
@@ -334,7 +336,7 @@ const AdminDashboard = () => {
     try {
       console.log('Cancelling order:', orderId);
       
-      const { error } = await supabase
+      const { error } = await sb
         .from('orders')
         .update({ status: 'cancelled' })
         .eq('id', orderId);
@@ -356,7 +358,7 @@ const AdminDashboard = () => {
   const uploadFile = async (file: File, bucket: string, path: string) => {
     setUploadingImage(true);
     try {
-      const { data, error } = await supabase.storage
+      const { data, error } = await sb.storage
         .from(bucket)
         .upload(path, file, {
           cacheControl: '3600',
@@ -365,7 +367,7 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = sb.storage
         .from(bucket)
         .getPublicUrl(path);
 
@@ -383,7 +385,7 @@ const AdminDashboard = () => {
     try {
       console.log('Updating order status:', orderId, status);
       
-      const { error } = await supabase
+      const { error } = await sb
         .from('orders')
         .update({ status })
         .eq('id', orderId);
@@ -436,7 +438,7 @@ const AdminDashboard = () => {
 
       // remaining_balance is a generated column, so no need to update manually
 
-      const { error } = await supabase
+      const { error } = await sb
         .from('orders')
         .update(updateData)
         .eq('id', orderId);
@@ -535,7 +537,7 @@ const AdminDashboard = () => {
         imageUrl = await uploadFile(productImageFile, 'product-images', fileName);
       }
 
-      const { error } = await supabase
+      const { error } = await sb
         .from('products')
         .update({
           ...newProduct,
@@ -586,7 +588,7 @@ const AdminDashboard = () => {
         iconUrl = await uploadFile(categoryIconFile, 'category-icons', fileName);
       }
       
-      const { error } = await supabase
+      const { error } = await sb
         .from('categories')
         .update({
           ...newCategory,
@@ -637,7 +639,7 @@ const AdminDashboard = () => {
     try {
       const savings = calculateSavings(newBundle.original_price, newBundle.bundle_price);
       
-      const { error } = await supabase
+      const { error } = await sb
         .from('bundles')
         .update({
           name: newBundle.name_fr,
@@ -685,7 +687,7 @@ const AdminDashboard = () => {
       // Generate a unique product_id if not provided
       const productId = newProduct.product_id || generateUniqueProductId();
 
-      const { error } = await supabase
+      const { error } = await sb
         .from('products')
         .insert({
           ...newProduct,
@@ -739,7 +741,7 @@ const AdminDashboard = () => {
         iconUrl = await uploadFile(categoryIconFile, 'category-icons', fileName);
       }
       
-      const { error } = await supabase
+      const { error } = await sb
         .from('categories')
         .insert({
           ...newCategory,
@@ -769,7 +771,7 @@ const AdminDashboard = () => {
     try {
       const savings = calculateSavings(newBundle.original_price, newBundle.bundle_price);
       
-      const { error } = await supabase
+      const { error } = await sb
         .from('bundles')
         .insert({
           name: newBundle.name_fr,
@@ -801,7 +803,7 @@ const AdminDashboard = () => {
 
   const handleDeleteProduct = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await sb
         .from('products')
         .delete()
         .eq('id', id);
@@ -818,7 +820,7 @@ const AdminDashboard = () => {
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await sb
         .from('categories')
         .delete()
         .eq('id', id);
@@ -835,7 +837,7 @@ const AdminDashboard = () => {
 
   const handleDeleteBundle = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await sb
         .from('bundles')
         .delete()
         .eq('id', id);
@@ -898,21 +900,21 @@ const AdminDashboard = () => {
   };
 
   const fetchMessages = async () => {
-    const { data, error } = await supabase
+    const { data, error: fetchError } = await sb
       .from('messages')
       .select('*, message_responses(*)')
       .order('created_at', { ascending: false });
-    if (!error) setMessages(data || []);
+    if (!fetchError) setMessages(data || []);
   };
 
   useEffect(() => { fetchMessages(); }, []);
 
   const handleRespond = async () => {
     if (!selectedMessage || !response) return;
-    const { error } = await supabase.from('message_responses').insert([
+    const { error: respondError } = await sb.from('message_responses').insert([
       { message_id: selectedMessage.id, responder_id: user.id, response }
     ]);
-    if (!error) {
+    if (!respondError) {
       setResponse('');
       fetchMessages();
       toast.success('Réponse envoyée !');

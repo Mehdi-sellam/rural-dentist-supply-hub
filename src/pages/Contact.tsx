@@ -20,6 +20,7 @@ const Contact = () => {
   const [error, setError] = useState('');
   const { user, profile } = useAuth();
   const [conversation, setConversation] = useState<any[]>([]);
+  const [reply, setReply] = useState<{ [key: string]: string }>({});
 
   const sb: any = supabase;
 
@@ -95,6 +96,19 @@ Message: ${form.message}`;
     
     const url = `https://t.me/+213XXXXXXXXX?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
+  };
+
+  const handleClientReply = async (messageId: string) => {
+    if (!user) return;
+    const content = reply[messageId]?.trim();
+    if (!content) return;
+    const { error } = await sb.from('message_responses').insert([
+      { message_id: messageId, responder_id: user.id, response: content }
+    ]);
+    if (!error) {
+      setReply(r => ({ ...r, [messageId]: '' }));
+      fetchConversation();
+    }
   };
 
   // Scroll to top when component mounts
@@ -324,10 +338,25 @@ Message: ${form.message}`;
                 <div className="mt-2 pl-4 border-l">
                   {msg.message_responses.map((resp: any) => (
                     <div key={resp.id} className="mb-2">
-                      <div><b>Réponse admin:</b> {resp.response}</div>
+                      <div>
+                        <b>{resp.responder_id === user?.id ? 'Votre réponse' : 'Réponse admin'}:</b> {resp.response}
+                      </div>
                       <div className="text-xs text-gray-500">Répondu le {new Date(resp.created_at).toLocaleString()}</div>
                     </div>
                   ))}
+                </div>
+              )}
+              {user && (
+                <div className="mt-2">
+                  <Textarea
+                    value={reply[msg.id] || ''}
+                    onChange={e => setReply(r => ({ ...r, [msg.id]: e.target.value }))}
+                    placeholder="Votre réponse..."
+                    className="mb-2"
+                  />
+                  <Button size="sm" onClick={() => handleClientReply(msg.id)} disabled={!reply[msg.id]?.trim()}>
+                    Répondre
+                  </Button>
                 </div>
               )}
             </div>

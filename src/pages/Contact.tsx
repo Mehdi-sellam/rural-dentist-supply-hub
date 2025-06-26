@@ -14,7 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const Contact = () => {
   const { t } = useLanguage();
-  const [form, setForm] = useState({ nom: '', email: '', sujet: '', message: '' });
+  const [form, setForm] = useState({ nom: '', email: '', sujet: '', message: '', phone: '' });
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -43,6 +43,7 @@ const Contact = () => {
         ...form,
         nom: profile.full_name || '',
         email: profile.email || '',
+        phone: profile.phone || '',
       }));
     }
   }, [user, profile]);
@@ -57,11 +58,11 @@ const Contact = () => {
     try {
       if (!user) throw new Error('Vous devez être connecté.');
       const { error } = await sb.from('messages').insert([
-        { ...form, user_id: user.id }
+        { ...form, user_id: user.id, cabinet_name: profile?.dental_office_name || '' }
       ]);
       if (error) throw error;
       setSuccess(true);
-      setForm({ nom: '', email: '', sujet: '', message: '' });
+      setForm({ nom: '', email: '', sujet: '', message: '', phone: '' });
       fetchConversation();
     } catch (err) {
       setError('Erreur lors de l\'envoi du message.');
@@ -131,8 +132,15 @@ Message: ${form.message}`;
                       <Input value={profile.dental_office_name || ''} disabled className="border-border" />
                     </div>
                     <div>
-                      <Label>Numéro de téléphone</Label>
-                      <Input value={profile.phone || ''} disabled className="border-border" />
+                      <Label htmlFor="phone">Numéro de téléphone</Label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        required
+                        className="border-border"
+                      />
                     </div>
                   </>
                 )}

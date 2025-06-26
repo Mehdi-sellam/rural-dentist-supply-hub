@@ -1815,6 +1815,8 @@ const AdminDashboard = () => {
                 {selectedMessage && (
                   <div className="mt-6 p-4 border rounded bg-gray-50">
                     <h3 className="font-bold mb-2">Répondre à {selectedMessage.nom}</h3>
+                    <div><b>Nom du cabinet:</b> {selectedMessage.cabinet_name || ''}</div>
+                    <div><b>Numéro de téléphone:</b> {selectedMessage.phone || ''}</div>
                     <div><b>Sujet:</b> {selectedMessage.sujet}</div>
                     <div><b>Message:</b> {selectedMessage.message}</div>
                     <Textarea value={response} onChange={e => setResponse(e.target.value)} placeholder="Votre réponse..." className="my-2" />

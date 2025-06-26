@@ -31,12 +31,18 @@ const Contact = () => {
 
   const fetchConversation = async () => {
     if (!user) return;
+    console.log('Fetching conversation for user:', user.id);
     // Fetch messages for this user, join message_responses with profiles to get responder names
     const { data: messages, error } = await sb.from('messages')
       .select('*, message_responses(*, profiles:responder_id(full_name, is_admin))')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
-    if (!error) setConversation(messages || []);
+    if (error) {
+      console.error('Fetch error:', error);
+    } else {
+      console.log('Fetched messages:', messages);
+      setConversation(messages || []);
+    }
   };
 
   useEffect(() => {
@@ -59,14 +65,21 @@ const Contact = () => {
     setSuccess(false);
     try {
       if (!user) throw new Error('Vous devez être connecté.');
-      const { error } = await sb.from('messages').insert([
-        { ...form, user_id: user.id, cabinet_name: profile?.dental_office_name || '' }
-      ]);
-      if (error) throw error;
+      console.log('User ID:', user.id);
+      console.log('Form data:', form);
+      const insertData = { ...form, user_id: user.id, cabinet_name: profile?.dental_office_name || '' };
+      console.log('Insert data:', insertData);
+      const { error } = await sb.from('messages').insert([insertData]);
+      if (error) {
+        console.error('Insert error:', error);
+        throw error;
+      }
+      console.log('Message inserted successfully');
       setSuccess(true);
       setForm({ nom: '', email: '', sujet: '', message: '', phone: '' });
       fetchConversation();
     } catch (err) {
+      console.error('Submit error:', err);
       setError('Erreur lors de l\'envoi du message.');
     } finally {
       setSending(false);

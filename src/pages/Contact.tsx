@@ -31,16 +31,38 @@ const Contact = () => {
 
   const fetchConversation = async () => {
     if (!user) return;
-    // Fetch messages for this user, join message_responses with profiles to get responder names
+    // Fetch messages for this user, including responses
     const { data: messages, error } = await sb.from('messages')
-      .select('*, message_responses(*, responder_profile:profiles!responder_id(full_name, is_admin))')
+      .select('*, message_responses(*)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) {
       console.error('Fetch error:', error);
-    } else {
-      setConversation(messages || []);
+      setConversation([]);
+      return;
     }
+    // Gather all unique responder_ids from all responses
+    const allResponses = (messages || []).flatMap((msg: any) => msg.message_responses || []);
+    const responderIds = Array.from(new Set(allResponses.map((r: any) => r.responder_id)));
+    // Fetch all responder profiles in one query
+    let profilesById: Record<string, any> = {};
+    if (responderIds.length > 0) {
+      const { data: profiles, error: profileError } = await sb.from('profiles')
+        .select('id, full_name, is_admin')
+        .in('id', responderIds);
+      if (!profileError && profiles) {
+        profilesById = Object.fromEntries(profiles.map((p: any) => [p.id, p]));
+      }
+    }
+    // Attach profile to each response
+    const messagesWithProfiles = (messages || []).map((msg: any) => ({
+      ...msg,
+      message_responses: (msg.message_responses || []).map((resp: any) => ({
+        ...resp,
+        responder_profile: profilesById[resp.responder_id] || null,
+      })),
+    }));
+    setConversation(messagesWithProfiles);
   };
 
   useEffect(() => {

@@ -33,7 +33,7 @@ const Contact = () => {
     if (!user) return;
     // Fetch messages for this user, join message_responses with profiles to get responder names
     const { data: messages, error } = await sb.from('messages')
-      .select('*, message_responses(*, profiles!responder_id(full_name, is_admin))')
+      .select('*, message_responses(*, responder_profile:profiles!responder_id(full_name, is_admin))')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) {
@@ -375,9 +375,9 @@ Message: ${form.message}`;
                       <div className="font-semibold">
                         {resp.responder_id === user?.id
                           ? 'Vous'
-                          : resp.profiles?.is_admin
-                            ? `Admin: ${resp.profiles?.full_name || 'Admin'}`
-                            : resp.profiles?.full_name || 'Utilisateur'}
+                          : resp.responder_profile?.is_admin
+                            ? `Admin: ${resp.responder_profile?.full_name || 'Admin'}`
+                            : resp.responder_profile?.full_name || 'Utilisateur'}
                       </div>
                       <div>{resp.response}</div>
                       <div className="text-xs text-gray-500 mt-1">{new Date(resp.created_at).toLocaleString()}</div>

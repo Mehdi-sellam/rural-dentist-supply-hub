@@ -1,21 +1,19 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Menu, Search, ShoppingCart, User, LogOut, Settings, Bell } from 'lucide-react';
+import { Menu, Search, ShoppingCart, User, LogOut, Settings } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/hooks/useLanguage';
-import { supabase } from '@/integrations/supabase/client';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { itemCount } = useCart();
   const { user, profile, logout } = useAuth();
   const { t } = useLanguage();
@@ -36,49 +34,6 @@ const Header = () => {
   };
 
   const isAdmin = profile?.is_admin;
-
-  // Check for unread notifications (new responses from admins)
-  useEffect(() => {
-    const checkNotifications = async () => {
-      if (!user || isAdmin) return;
-      
-      const { data: messages } = await supabase
-        .from('messages')
-        .select('id, message_responses(created_at, responder_id)')
-        .eq('user_id', user.id)
-        .neq('status', 'closed');
-      
-      if (messages) {
-        let unreadCount = 0;
-        messages.forEach((msg: any) => {
-          const adminResponses = msg.message_responses?.filter((resp: any) => resp.responder_id !== user.id) || [];
-          if (adminResponses.length > 0) {
-            // Check if there are admin responses newer than user's last read (simplified: just count them)
-            unreadCount += adminResponses.length;
-          }
-        });
-        setUnreadNotifications(unreadCount);
-      }
-    };
-
-    checkNotifications();
-    
-    // Set up real-time subscription for new responses
-    const channel = supabase
-      .channel('message_responses_changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'message_responses'
-      }, () => {
-        checkNotifications();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, isAdmin]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -130,21 +85,6 @@ const Header = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4">
-            {/* Notifications - Only for non-admin users */}
-            {!isAdmin && user && unreadNotifications > 0 && (
-              <div className="relative">
-                <Button variant="ghost" size="sm" className="relative">
-                  <Bell className="w-5 h-5" />
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                  >
-                    {unreadNotifications}
-                  </Badge>
-                </Button>
-              </div>
-            )}
-
             {/* Cart - Hidden for admin users */}
             {!isAdmin && (
               <Link to="/cart" className="relative">

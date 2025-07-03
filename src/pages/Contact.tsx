@@ -31,38 +31,16 @@ const Contact = () => {
 
   const fetchConversation = async () => {
     if (!user) return;
-    // Fetch messages for this user, including responses
+    // Fetch messages for this user, join message_responses with profiles to get responder names
     const { data: messages, error } = await sb.from('messages')
-      .select('*, message_responses(*)')
+      .select('*, message_responses(*, responder_profile:profiles!responder_id(full_name, is_admin))')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) {
       console.error('Fetch error:', error);
-      setConversation([]);
-      return;
+    } else {
+      setConversation(messages || []);
     }
-    // Gather all unique responder_ids from all responses
-    const allResponses = (messages || []).flatMap((msg: any) => msg.message_responses || []);
-    const responderIds = Array.from(new Set(allResponses.map((r: any) => r.responder_id)));
-    // Fetch all responder profiles in one query
-    let profilesById: Record<string, any> = {};
-    if (responderIds.length > 0) {
-      const { data: profiles, error: profileError } = await sb.from('profiles')
-        .select('id, full_name, is_admin')
-        .in('id', responderIds);
-      if (!profileError && profiles) {
-        profilesById = Object.fromEntries(profiles.map((p: any) => [p.id, p]));
-      }
-    }
-    // Attach profile to each response
-    const messagesWithProfiles = (messages || []).map((msg: any) => ({
-      ...msg,
-      message_responses: (msg.message_responses || []).map((resp: any) => ({
-        ...resp,
-        responder_profile: profilesById[resp.responder_id] || null,
-      })),
-    }));
-    setConversation(messagesWithProfiles);
   };
 
   useEffect(() => {
@@ -360,6 +338,69 @@ Message: ${form.message}`;
           </div>
         </div>
 
+        {/* Below the form, add a section for conversation history */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold mb-2">Vos tickets de support</h2>
+          <div className="flex gap-4 mb-4">
+            <Button variant={activeTab === 'open' ? 'default' : 'outline'} onClick={() => setActiveTab('open')}>Tickets ouverts</Button>
+            <Button variant={activeTab === 'closed' ? 'default' : 'outline'} onClick={() => setActiveTab('closed')}>Tickets fermés</Button>
+          </div>
+          {conversation.filter(msg => (activeTab === 'open' ? msg.status !== 'closed' : msg.status === 'closed')).length === 0 && (
+            <p>Aucun ticket {activeTab === 'open' ? 'ouvert' : 'fermé'}.</p>
+          )}
+          {conversation.filter(msg => (activeTab === 'open' ? msg.status !== 'closed' : msg.status === 'closed')).map(msg => (
+            <div key={msg.id} className="mb-8 p-4 border rounded bg-gray-50">
+              <div className="flex justify-between items-center mb-2">
+                <div className="font-bold">Sujet: {msg.sujet}</div>
+                {activeTab === 'open' && (
+                  <Button size="sm" variant="destructive" onClick={async () => { await handleCloseTicket(msg.id); }} disabled={msg.status === 'closed'}>
+                    Fermer le ticket
+                  </Button>
+                )}
+              </div>
+              <div className="text-xs text-gray-500 mb-4">Créé le {new Date(msg.created_at).toLocaleString()}</div>
+              <div className="space-y-2">
+                {/* Initial client message */}
+                <div className="flex gap-2 items-end">
+                  <div className="bg-blue-100 text-blue-900 rounded-lg px-4 py-2 max-w-[70%] self-start">
+                    <div className="font-semibold">Vous</div>
+                    <div>{msg.message}</div>
+                    <div className="text-xs text-gray-500 mt-1">{new Date(msg.created_at).toLocaleString()}</div>
+                  </div>
+                </div>
+                {/* All responses (admin and client) */}
+                {msg.message_responses && msg.message_responses.map((resp: any) => (
+                  <div key={resp.id} className={`flex gap-2 items-end ${resp.responder_id === user?.id ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`${resp.responder_id === user?.id ? 'bg-green-100 text-green-900 self-end' : 'bg-gray-200 text-gray-900 self-start'} rounded-lg px-4 py-2 max-w-[70%]`}>
+                      <div className="font-semibold">
+                        {resp.responder_id === user?.id
+                          ? 'Vous'
+                          : resp.responder_profile?.is_admin
+                            ? `Admin: ${resp.responder_profile?.full_name || 'Admin'}`
+                            : resp.responder_profile?.full_name || 'Utilisateur'}
+                      </div>
+                      <div>{resp.response}</div>
+                      <div className="text-xs text-gray-500 mt-1">{new Date(resp.created_at).toLocaleString()}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {user && activeTab === 'open' && msg.status !== 'closed' && (
+                <div className="mt-4 flex gap-2 items-end">
+                  <Textarea
+                    value={reply[msg.id] || ''}
+                    onChange={e => setReply(r => ({ ...r, [msg.id]: e.target.value }))}
+                    placeholder="Votre réponse..."
+                    className="mb-2 flex-1"
+                  />
+                  <Button size="sm" onClick={async () => { await handleClientReply(msg.id); }} disabled={!reply[msg.id]?.trim()}>
+                    Envoyer
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       <Footer />

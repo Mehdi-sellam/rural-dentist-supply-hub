@@ -7,7 +7,6 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/hooks/useLanguage";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
-import SupportBubble from "@/components/SupportBubble";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
@@ -74,7 +73,6 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <WhatsAppFloat />
-                <SupportBubble />
               </div>
             </BrowserRouter>
           </TooltipProvider>

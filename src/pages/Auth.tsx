@@ -61,11 +61,14 @@ const Auth = () => {
     setAuthError(null);
 
     try {
+      console.log('Attempting login with:', loginForm.email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
       });
+
+      console.log('Login response:', { data, error });
 
       if (error) {
         console.error('Login error:', error);
@@ -76,6 +79,7 @@ const Auth = () => {
       }
 
       if (data.user) {
+        console.log('Login successful for user:', data.user.id);
         toast.success('Connexion réussie');
         navigate('/');
       }
@@ -110,6 +114,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
+      console.log('Attempting signup with:', signupForm.email);
       
       const { data, error } = await supabase.auth.signUp({
         email: signupForm.email,
@@ -126,6 +131,8 @@ const Auth = () => {
         }
       });
 
+      console.log('Signup response:', { data, error });
+
       if (error) {
         console.error('Signup error:', error);
         const errorMsg = getErrorMessage(error);
@@ -135,9 +142,11 @@ const Auth = () => {
       }
 
       if (data.user) {
+        console.log('Signup successful for user:', data.user.id);
         
         // Special handling for admin account
         if (signupForm.email === 'admin@dentgo.dz') {
+          console.log('Admin account created, ensuring admin privileges');
           try {
             const { error: adminError } = await supabase.rpc('ensure_admin_profile', {
               admin_user_id: data.user.id,

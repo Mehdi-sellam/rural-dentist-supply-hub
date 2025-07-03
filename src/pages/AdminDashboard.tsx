@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductSelector from '@/components/admin/ProductSelector';
-import DatabasePopulator from '@/components/admin/DatabasePopulator';
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Download, Upload, Eye, X, Search, Calendar } from 'lucide-react';

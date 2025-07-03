@@ -37,7 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -49,7 +48,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      console.log('Profile fetched successfully:', data);
       setProfile(data);
     } catch (error) {
       console.error('Exception fetching profile:', error);
@@ -63,12 +61,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    console.log('Setting up auth state listener');
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -87,7 +83,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -99,7 +94,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
-      console.log('Cleaning up auth subscription');
       subscription.unsubscribe();
     };
   }, []);
@@ -136,12 +130,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('Signing out user');
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Error signing out:', error);
       } else {
-        console.log('User signed out successfully');
         // Clear local state
         setUser(null);
         setSession(null);

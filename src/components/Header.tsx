@@ -44,18 +44,29 @@ const Header = () => {
       
       const { data: messages } = await supabase
         .from('messages')
-        .select('id, message_responses(created_at, responder_id)')
+        .select(`
+          id, 
+          message_responses(
+            id,
+            created_at, 
+            responder_id,
+            responder_profile:profiles!message_responses_responder_id_fkey(
+              id,
+              full_name,
+              is_admin
+            )
+          )
+        `)
         .eq('user_id', user.id)
         .neq('status', 'closed');
       
       if (messages) {
         let unreadCount = 0;
         messages.forEach((msg: any) => {
-          const adminResponses = msg.message_responses?.filter((resp: any) => resp.responder_id !== user.id) || [];
-          if (adminResponses.length > 0) {
-            // Check if there are admin responses newer than user's last read (simplified: just count them)
-            unreadCount += adminResponses.length;
-          }
+          const adminResponses = msg.message_responses?.filter((resp: any) => 
+            resp.responder_id !== user.id && resp.responder_profile?.is_admin
+          ) || [];
+          unreadCount += adminResponses.length;
         });
         setUnreadNotifications(unreadCount);
       }
@@ -70,7 +81,8 @@ const Header = () => {
         event: 'INSERT',
         schema: 'public',
         table: 'message_responses'
-      }, () => {
+      }, (payload) => {
+        console.log('New message response received:', payload);
         checkNotifications();
       })
       .subscribe();

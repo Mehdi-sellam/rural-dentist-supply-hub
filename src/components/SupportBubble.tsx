@@ -26,7 +26,17 @@ const SupportBubble = () => {
   const fetchConversation = async () => {
     if (!user) return;
     const { data: messages, error } = await sb.from('messages')
-      .select('*, message_responses(*)')
+      .select(`
+        *, 
+        message_responses(
+          *,
+          responder_profile:profiles!message_responses_responder_id_fkey(
+            id,
+            full_name,
+            is_admin
+          )
+        )
+      `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     
@@ -36,28 +46,7 @@ const SupportBubble = () => {
       return;
     }
     
-    const allResponses = (messages || []).flatMap((msg: any) => msg.message_responses || []);
-    const responderIds = Array.from(new Set(allResponses.map((r: any) => r.responder_id)));
-    
-    let profilesById: Record<string, any> = {};
-    if (responderIds.length > 0) {
-      const { data: profiles, error: profileError } = await sb.from('profiles')
-        .select('id, full_name, is_admin')
-        .in('id', responderIds);
-      if (!profileError && profiles) {
-        profilesById = Object.fromEntries(profiles.map((p: any) => [p.id, p]));
-      }
-    }
-    
-    const messagesWithProfiles = (messages || []).map((msg: any) => ({
-      ...msg,
-      message_responses: (msg.message_responses || []).map((resp: any) => ({
-        ...resp,
-        responder_profile: profilesById[resp.responder_id] || null,
-      })),
-    }));
-    
-    setConversation(messagesWithProfiles);
+    setConversation(messages || []);
   };
 
   useEffect(() => {

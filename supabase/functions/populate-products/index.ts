@@ -185,45 +185,6 @@ serve(async (req) => {
         stock_status: true,
         rating: 4.9,
         reviews: 3
-      },
-      {
-        name: 'Clou Tibial Verrouillé 14°',
-        name_fr: 'Clou Tibial Verrouillé 14°',
-        name_ar: 'مسمار عظم الساق المقفل 14°',
-        description: 'Clou intramédullaire tibial avec système de verrouillage',
-        description_fr: 'Clou intramédullaire tibial avec système de verrouillage',
-        description_ar: 'مسمار داخل النخاع الشوكي للساق مع نظام قفل',
-        product_code: 'NAIL-T14',
-        product_id: 'NAIL-T14',
-        price: 25000,
-        original_price: 35000,
-        category_id: insertedCategories?.find(c => c.name === 'Implants Orthopédiques')?.id,
-        image_url: 'https://actual-med.com/wp-content/uploads/2023/08/14%C2%B0-LOCKED-TIBIAL-NAIL-2048x745.jpg',
-        specifications: ['Angle 14°', 'Verrouillage', 'Intramédullaire', 'Titane Grade 5'],
-        badge: 'Avancé',
-        in_stock: true,
-        stock_status: true,
-        rating: 4.7,
-        reviews: 2
-      },
-      {
-        name: 'Plaque Radius en L 20°',
-        name_fr: 'Plaque Radius en L 20°',
-        name_ar: 'لوحة الكعبرة على شكل L 20°',
-        description: 'Plaque en forme de L pour radius, angle de 20°',
-        description_fr: 'Plaque en forme de L pour radius, angle de 20°',
-        description_ar: 'لوحة على شكل L للكعبرة، بزاوية 20°',
-        product_code: 'RAD-L20',
-        product_id: 'RAD-L20',
-        price: 12000,
-        original_price: 18000,
-        category_id: insertedCategories?.find(c => c.name === 'Implants Orthopédiques')?.id,
-        image_url: 'https://actual-med.com/wp-content/uploads/2023/08/20%C2%B0-L-SHAPED-RADIUS-PLATE.jpg',
-        specifications: ['Forme L', 'Angle 20°', 'Radius distal', 'Vis autotaraudeuses'],
-        in_stock: true,
-        stock_status: true,
-        rating: 4.5,
-        reviews: 7
       }
     ]
 
@@ -272,23 +233,6 @@ serve(async (req) => {
         badge: 'Professionnel',
         procedures: '8+',
         popular: false
-      },
-      {
-        name: 'Kit Traumatologie Avancé',
-        name_fr: 'Kit Traumatologie Avancé',
-        name_ar: 'طقم الصدمات المتقدم',
-        description: 'Kit avancé pour traumatologie et urgences orthopédiques',
-        description_fr: 'Kit avancé pour traumatologie et urgences orthopédiques',
-        description_ar: 'طقم متقدم لطب الصدمات وحالات الطوارئ العظمية',
-        sub_description: 'Pour cas complexes et urgences',
-        items: ['Clou Tibial Verrouillé', 'Plaque DHS 135°', 'Plaque Radius L'],
-        bundle_price: '48000 DA',
-        original_price: '70000 DA',
-        calculated_savings: 22000,
-        savings: '22000 DA',
-        badge: 'Premium',
-        procedures: '5+',
-        popular: true
       }
     ]
 

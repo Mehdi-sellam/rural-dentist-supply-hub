@@ -189,7 +189,7 @@ const Shop = () => {
                 {/* Product Image Area */}
                 <div className="relative aspect-square bg-muted flex items-center justify-center overflow-hidden">
                   <img 
-                    src={product.image} 
+                    src={product.image_url || product.image} 
                     alt={product.name_fr || product.name}
                     className="w-full h-full object-cover"
                   />
